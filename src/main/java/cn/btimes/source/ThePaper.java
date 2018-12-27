@@ -49,6 +49,9 @@ public class ThePaper extends Source {
             try {
                 Article article = new Article();
 
+                if (StringUtils.isBlank(row.html())) {
+                    continue;
+                }
                 Element linkElm = row.select("h2 > a").get(0);
                 article.setUrl(BASE_URL + linkElm.attr("href"));
                 article.setTitle(linkElm.text());
@@ -56,7 +59,7 @@ public class ThePaper extends Source {
                 String timeText = HtmlParser.text(row, ".pdtt_trbs > span");
                 article.setDate((this.parseDateText(timeText)));
 
-                article.setSummary(HtmlParser.text(row, "p:eq(0)"));
+                article.setSummary(HtmlParser.text(row, "p"));
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -109,7 +112,7 @@ public class ThePaper extends Source {
                 this.readArticle(driver, article);
                 this.saveArticle(article, driver);
             } catch (PastDateException e) {
-                logger.error("Article publish date has past 30 minutes: {}", article.getUrl());
+                logger.error("Article publish date has past {} minutes: {}", MAX_PAST_MINUTES, article.getUrl());
             } catch (BusinessException e) {
                 logger.error("Unable to read article {}", article.getUrl(), e);
             }
