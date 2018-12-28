@@ -11,6 +11,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -46,9 +47,9 @@ public abstract class Source {
     private static final String ARTICLE_SAVE_URL = ADMIN_URL + "/pages/publish/publish/update.php";
     private static final String CDN_URL = Tools.getCustomizingValue("CDN_URL");
     private static final String DATA_IMAGES_FULL = "/data/images/full/";
-    final Logger logger = LoggerFactory.getLogger(this.getClass());
-    static final int MAX_PAST_MINUTES = 60;
-    static Map<String, String> adminCookies;
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    static final int MAX_PAST_MINUTES = NumberUtils.toInt(Tools.getCustomizingValue("MAX_PAST_MINUTES"));
+    private static Map<String, String> adminCookies;
 
     protected abstract String getUrl();
 
