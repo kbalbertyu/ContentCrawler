@@ -103,8 +103,9 @@ public abstract class Source {
             .data("ar_related", "")
             .data("arDate", (new SimpleDateFormat("MM/dd/YYYY HH:mm")).format(article.getDate()))
             .data("ar_reporter", "")
+            .data("ar_originlink", article.getUrl())
             .data("ar_reporter_email", "")
-            .data("ar_source", String.valueOf(this.getSourceId()));
+            .data("ar_source", this.determineSource(article.getSource(), this.getSourceId()));
         if (article.hasImageIds()) {
             StringBuilder sb = new StringBuilder();
 
@@ -129,6 +130,10 @@ public abstract class Source {
         } catch (IOException e) {
             logger.error("Unable to save the article:", e);
         }
+    }
+
+    private String determineSource(String source, int sourceId) {
+        return String.valueOf(sourceId);
     }
 
     /**
