@@ -4,12 +4,16 @@ import cn.btimes.model.Article;
 import cn.btimes.model.ImageUploadResult;
 import cn.btimes.model.SavedImage;
 import cn.btimes.model.UploadedImage;
+import cn.btimes.service.WebDriverLauncher;
+import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSONObject;
+import com.amzass.enums.common.Directory;
+import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.*;
 import com.amzass.utils.common.Exceptions.BusinessException;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpStatus;
@@ -22,7 +26,10 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.jsoup.Connection;
 import org.jsoup.Connection.Method;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +39,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +48,7 @@ import java.util.Map;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/24/2018 6:29 PM
  */
 public abstract class Source {
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final String DOWNLOAD_PATH = "downloads";
     public static final String ADMIN_URL = Tools.getCustomizingValue("ADMIN_URL");
     private static final String FILE_UPLOAD_URL = ADMIN_URL + "/plugin/jqueryfileupload/server/php/";
@@ -47,9 +56,8 @@ public abstract class Source {
     private static final String ARTICLE_SAVE_URL = ADMIN_URL + "/pages/publish/publish/update.php";
     private static final String CDN_URL = Tools.getCustomizingValue("CDN_URL");
     private static final String DATA_IMAGES_FULL = "/data/images/full/";
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     static final int MAX_PAST_MINUTES = NumberUtils.toInt(Tools.getCustomizingValue("MAX_PAST_MINUTES"));
-    private static Map<String, String> adminCookies;
+    private static final List<String[]> sources = readSources();
 
     protected abstract String getUrl();
 
@@ -73,20 +81,18 @@ public abstract class Source {
 
     protected abstract int getSourceId();
 
-    public void initAdminCookies(Map<String, String> cookies) {
-        adminCookies = cookies;
-    }
-
     void saveArticle(Article article, WebDriver driver) {
         if (article.hasImages()) {
             ImageUploadResult result = this.uploadImages(article, driver);
-            List<SavedImage> savedImages = this.saveImages(article, result);
-            this.replaceImages(article, savedImages);
+            if (result != null) {
+                List<SavedImage> savedImages = this.saveImages(article, result);
+                this.replaceImages(article, savedImages);
+            }
         }
-        Connection conn = this.createWebConnection(ARTICLE_SAVE_URL)
+        Connection conn = this.createWebConnection(ARTICLE_SAVE_URL, WebDriverLauncher.adminCookies)
             .data("getstring", "")
             .data("mb_no", "")
-            .data("ar_status", "0")
+            .data("ar_status", "1")
             .data("ar_status_old", "")
             .data("ar_copy_edited_finished", "")
             .data("use_article_all_table", "")
@@ -95,7 +101,7 @@ public abstract class Source {
             .data("ar_summary", article.getSummary())
             .data("ar_content", article.getContent())
             .data("tex", "")
-            .data("ar_keyword", article.getTitle())
+            .data("ar_keyword", RandomStringUtils.randomNumeric(10))
             .data("ar_newskeyword", article.getTitle())
             .data("ar_youtube", "")
             .data("ar_typology", "1")
@@ -104,8 +110,8 @@ public abstract class Source {
             .data("ar_related", "")
             .data("arDate", (new SimpleDateFormat("MM/dd/YYYY HH:mm")).format(article.getDate()))
             .data("ar_reporter", "")
-            .data("ar_originlink", article.getUrl())
             .data("ar_reporter_email", "")
+            .data("ar_originlink", article.getUrl())
             .data("ar_source", this.determineSource(article.getSource(), this.getSourceId()));
         if (article.hasImageIds()) {
             StringBuilder sb = new StringBuilder();
@@ -121,36 +127,50 @@ public abstract class Source {
             }
             conn.data("ar_image", sb.toString());
         }
-        try {
-            String articleId = conn.execute().body();
-            if (RegexUtils.match(articleId, "\\d+")) {
-                logger.info("Article saved: {} -> {}", article.getTitle(), articleId);
-            } else {
-                logger.error("Article saved failed: {}", article.getTitle());
+        for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
+            try {
+                String articleId = conn.execute().body();
+                if (RegexUtils.match(articleId, "\\d+")) {
+                    logger.info("Article saved: {} -> {}", article.getTitle(), articleId);
+                    return;
+                } else {
+                    logger.error("Article saved failed: {}", article.getTitle());
+                }
+            } catch (IOException e) {
+                logger.error("Unable to save the article:", e);
+                WaitTime.Normal.execute();
             }
-        } catch (IOException e) {
-            logger.error("Unable to save the article:", e);
         }
+        throw new BusinessException(String.format("Unable to save the article: [%s]%s -> %s",
+            article.getSource(), article.getTitle(), article.getUrl()));
     }
 
     private String determineSource(String source, int sourceId) {
+        for (String[] sourcePair : sources) {
+            if (Tools.contains(sourcePair[1], source)) {
+                return sourcePair[0];
+            }
+        }
         return String.valueOf(sourceId);
     }
 
     /**
      * Create web connection to admin site
      */
-    private Connection createWebConnection(String url) {
-        return Jsoup.connect(url)
+    private Connection createWebConnection(String url, Map<String, String> cookies) {
+        Connection conn = Jsoup.connect(url)
             .userAgent("Mozilla")
             .method(Method.POST)
-            .cookies(adminCookies)
             .data("maxFileNum", "50")
             .data("maxFileSize", "20 MB")
-            .data("unique_key", "3390b81039ead56eb0911893a04dabb3")
+            .data("unique_key", Common.toMD5(String.valueOf(System.currentTimeMillis())))
             .data("field", "image_hidden")
             .data("func", "photo_image_content")
             .data("request_from", "ContentCrawler");
+        if (cookies != null) {
+            conn.cookies(cookies);
+        }
+        return conn;
     }
 
     private void replaceImages(Article article, List<SavedImage> savedImages) {
@@ -178,12 +198,11 @@ public abstract class Source {
      * Download the images from article source,
      * then upload to server temp directory
      */
-    private ImageUploadResult uploadImages(Article article, WebDriver driver) {
+    ImageUploadResult uploadImages(Article article, WebDriver driver) {
         if (!article.hasImages()) {
             return null;
         }
-
-        Connection request = this.createWebConnection(FILE_UPLOAD_URL);
+        Connection conn = this.createWebConnection(FILE_UPLOAD_URL, null);
 
         int i = 0;
         for (String imageUrl : article.getContentImages()) {
@@ -191,53 +210,58 @@ public abstract class Source {
             File file = FileUtils.getFile(image);
             try {
                 FileInputStream fs = new FileInputStream(file);
-                request.data("files[" + i + "]", image, fs);
+                conn.data("files[" + i + "]", image, fs);
                 i++;
             } catch (IOException e) {
                 logger.error("Unable to download file: {}", image, e);
             }
         }
-        ImageUploadResult result;
-        try {
-            String body = request.execute().body();
-            result = JSONObject.parseObject(body, ImageUploadResult.class);
-            if (CollectionUtils.isEmpty(result.getFiles())) {
-                return null;
+        for (int j = 0; j < Constants.MAX_REPEAT_TIMES; j++) {
+            try {
+                String body = conn.execute().body();
+                ImageUploadResult result = JSONObject.parseObject(body, ImageUploadResult.class);
+                if (!result.hasFiles()) {
+                    return null;
+                }
+                return result;
+            } catch (IOException e) {
+                logger.error("Unable to upload files, retry in {} seconds:", WaitTime.Normal.val(),  e);
+                WaitTime.Normal.execute();
             }
-            return result;
-        } catch (IOException e) {
-            logger.error("Unable to upload file:", e);
-            return null;
         }
+        return null;
     }
 
     /**
      * Save uploaded images to DB, and move out of the temp directory
      */
     private List<SavedImage> saveImages(Article article, ImageUploadResult result) {
-        Connection saveRequest = this.createWebConnection(FILE_SAVE_URL);
+        Connection conn = this.createWebConnection(FILE_SAVE_URL, WebDriverLauncher.adminCookies);
 
-        int j = 0;
+        int i = 0;
         for (UploadedImage imageFile : result.getFiles()) {
-            saveRequest.data("im_title[" + j + "]", article.getTitle())
-                .data("im_content[" + j + "]", "")
-                .data("im_credit[" + j + "]", article.getSource())
-                .data("im_link[" + j + "]", article.getUrl())
-                .data("im_reporter[" + j + "]", article.getReporter())
-                .data("im_x_pos[" + j + "]", "50")
-                .data("im_y_pos[" + j + "]", "40")
-                .data("uploadedFile[" + j + "]", imageFile.getName())
-                .data("originalFile[" + j + "]", imageFile.getOriginalFile());
-            j++;
+            conn.data("im_title[" + i + "]", article.getTitle())
+                .data("im_content[" + i + "]", "")
+                .data("im_credit[" + i + "]", article.getSource())
+                .data("im_link[" + i + "]", article.getUrl())
+                .data("im_reporter[" + i + "]", article.getReporter())
+                .data("im_x_pos[" + i + "]", "50")
+                .data("im_y_pos[" + i + "]", "40")
+                .data("uploadedFile[" + i + "]", imageFile.getName())
+                .data("originalFile[" + i + "]", imageFile.getOriginalFile());
+            i++;
         }
 
-        try {
-            String body = saveRequest.execute().body();
-            return JSONObject.parseArray(body, SavedImage.class);
-        } catch (IOException e) {
-            logger.error("Unable to save the files:", e);
-            return null;
+        for (int j = 0; j < Constants.MAX_REPEAT_TIMES; j++) {
+            try {
+                String body = conn.execute().body();
+                return JSONObject.parseArray(body, SavedImage.class);
+            } catch (IOException e) {
+                logger.error("Unable to save the files, retry in {} seconds:", WaitTime.Normal.val(),  e);
+                WaitTime.Normal.execute();
+            }
         }
+        return null;
     }
 
     /**
@@ -283,5 +307,42 @@ public abstract class Source {
         String[] pathParts = StringUtils.split(url, "\\/");
         String[] nameParts = StringUtils.split(pathParts[pathParts.length - 1], "?");
         return nameParts[0];
+    }
+
+    private static List<String[]> readSources() {
+        List<String> sourceList = Tools.readFile(FileUtils.getFile(Directory.Customize.path(), "sources.txt"));
+        List<String[]> sources = new ArrayList<>();
+        for (String sourceText : sourceList) {
+            if (StringUtils.isBlank(sourceText)) {
+                continue;
+            }
+            String[] parts = StringUtils.split(sourceText, ":");
+            if (parts.length != 2) {
+                continue;
+            }
+            sources.add(parts);
+        }
+        return sources;
+    }
+
+    String cleanHtml(Element dom) {
+        Elements elements = dom.children();
+        for (Element element : elements) {
+            String tagName = element.tagName();
+            // Replace tag names to p
+            if (!StringUtils.equalsIgnoreCase(tagName, "img") &&
+                !StringUtils.equalsIgnoreCase(tagName, "br")) {
+                if (StringUtils.isBlank(element.text())) {
+                    element.remove();
+                }
+                element.tagName("p");
+
+                // Remove tag attributes
+                for (Attribute attr : element.attributes()) {
+                    element.removeAttr(attr.getKey());
+                }
+            }
+        }
+        return StringUtils.trim(dom.html());
     }
 }

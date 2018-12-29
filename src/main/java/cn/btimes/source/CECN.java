@@ -57,6 +57,7 @@ public class CECN extends Source {
                 logger.error("Article publish date has past 30 minutes: {}", link);
             } catch (BusinessException e) {
                 logger.error("Unable to read article {}", link, e);
+                continue;
             }
             dbManager.save(new ActionLog(logId), ActionLog.class);
         }

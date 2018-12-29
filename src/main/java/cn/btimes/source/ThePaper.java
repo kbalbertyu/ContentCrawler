@@ -12,6 +12,7 @@ import com.amzass.utils.common.RegexUtils;
 import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -32,7 +33,7 @@ import java.util.List;
  */
 public class ThePaper extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    @Inject DBManager dbManager;
+    @Inject private DBManager dbManager;
 
     private static final String BASE_URL = "https://www.thepaper.cn/";
 
@@ -71,7 +72,10 @@ public class ThePaper extends Source {
     }
 
     private Date parseDateText(String timeText) {
-        if (!Tools.containsAny(timeText, "分钟", "秒")) {
+        if (Tools.containsAny(timeText, "刚刚")) {
+            return new Date();
+        }
+        if (!Tools.containsAny(timeText, "分钟", "秒", "刚刚")) {
             throw new PastDateException();
         }
         int minutes = NumberUtils.toInt(RegexUtils.getMatched(timeText, "\\d+"));
@@ -93,9 +97,7 @@ public class ThePaper extends Source {
     public void execute(WebDriver driver) {
         driver.get(this.getUrl());
 
-        // Scroll to bottom twice to make sure latest articles are loaded
-        PageUtils.scrollToBottom(driver);
-        WaitTime.Normal.execute();
+        // Scroll to bottom to make sure latest articles are loaded
         PageUtils.scrollToBottom(driver);
         WaitTime.Normal.execute();
 
@@ -129,8 +131,8 @@ public class ThePaper extends Source {
         article.setTitle(this.parseTitle(doc));
         article.setSource(this.parseSource(doc));
 
-        Element contentElm = doc.select(".news_txt").get(0);
-        article.setContent(StringUtils.trim(contentElm.html()));
+        Element contentElm = doc.select(".news_txt").first();
+        article.setContent(this.cleanHtml(contentElm));
 
         Elements images = contentElm.select("img");
         List<String> contentImages = new ArrayList<>();
@@ -169,5 +171,12 @@ public class ThePaper extends Source {
     @Override
     protected int getSourceId() {
         return 12;
+    }
+
+    public static void main(String[] args) {
+        String content = Tools.readFileToString(FileUtils.getFile("C:/Work/Tmp/content.txt"));
+        Document doc = Jsoup.parse(content);
+        Element contentElm = doc.select(".news_txt").first();
+        new ThePaper().cleanHtml(contentElm);
     }
 }
