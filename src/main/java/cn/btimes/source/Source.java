@@ -27,6 +27,7 @@ import org.jsoup.Connection;
 import org.jsoup.Connection.Method;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.Attributes;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -89,6 +90,7 @@ public abstract class Source {
                 this.replaceImages(article, savedImages);
             }
         }
+        this.cleanThirdPartyImages(article);
         Connection conn = this.createWebConnection(ARTICLE_SAVE_URL, WebDriverLauncher.adminCookies)
             .data("getstring", "")
             .data("mb_no", "")
@@ -119,7 +121,8 @@ public abstract class Source {
             int length = article.getImageIds().length;
             for (int i = 0; i < length; i++) {
                 String imageId = String.valueOf(article.getImageIds()[i]);
-                conn.data("imghidden_" + imageId, "");
+                conn.data("imghidden_" + imageId, "")
+                    .data("ar_image_hide[" + i + "]", imageId);
                 sb.append(imageId);
                 if (i != length - 1) {
                     sb.append(Constants.COMMA);
@@ -145,10 +148,26 @@ public abstract class Source {
             article.getSource(), article.getTitle(), article.getUrl()));
     }
 
+    private void cleanThirdPartyImages(Article article) {
+        if (!article.hasImages()) {
+            return;
+        }
+        Document dom = Jsoup.parse(article.getContent());
+        for(Element image : dom.select("img")) {
+            if (StringUtils.containsIgnoreCase(image.attr("src"), CDN_URL)) {
+                continue;
+            }
+            image.remove();
+        }
+        article.setContent(dom.select("body").html());
+    }
+
     private String determineSource(String source, int sourceId) {
-        for (String[] sourcePair : sources) {
-            if (Tools.contains(sourcePair[1], source)) {
-                return sourcePair[0];
+        if (StringUtils.isNotBlank(source)) {
+            for (String[] sourcePair : sources) {
+                if (Tools.contains(sourcePair[1], source)) {
+                    return sourcePair[0];
+                }
             }
         }
         return String.valueOf(sourceId);
@@ -326,23 +345,56 @@ public abstract class Source {
     }
 
     String cleanHtml(Element dom) {
+        this.removeNeedlessHtmlTags(dom);
+        this.removeImgTagAttrs(dom);
+        return StringUtils.trim(dom.html());
+    }
+
+    private void removeNeedlessHtmlTags(Element dom) {
         Elements elements = dom.children();
+        if (elements.size() == 0) {
+            return;
+        }
+
         for (Element element : elements) {
             String tagName = element.tagName();
-            // Replace tag names to p
-            if (!StringUtils.equalsIgnoreCase(tagName, "img") &&
-                !StringUtils.equalsIgnoreCase(tagName, "br")) {
-                if (StringUtils.isBlank(element.text())) {
-                    element.remove();
-                }
-                element.tagName("p");
+            if (this.isImageOrBreak(tagName)) {
+                continue;
+            }
+            if (!this.hasContent(element)) {
+                element.remove();
+                continue;
+            }
 
-                // Remove tag attributes
-                for (Attribute attr : element.attributes()) {
+            // Remove tag attributes
+            Attributes attributes = element.attributes();
+            if (attributes.size() > 0) {
+                for (Attribute attr : attributes) {
                     element.removeAttr(attr.getKey());
                 }
             }
+
+            // Replace tag names to p
+            if (!StringUtils.equalsIgnoreCase(tagName, "p")) {
+                element.tagName("p");
+            }
+            this.removeNeedlessHtmlTags(element);
         }
-        return StringUtils.trim(dom.html());
+    }
+
+    private boolean hasContent(Element element) {
+        return StringUtils.isNotBlank(element.text()) || element.select("img").size() > 0;
+    }
+
+    private boolean isImageOrBreak(String tagName) {
+        return StringUtils.equalsIgnoreCase(tagName, "img") ||
+            StringUtils.equalsIgnoreCase(tagName, "br");
+    }
+
+    private void removeImgTagAttrs(Element dom) {
+        dom.select("img").removeAttr("width")
+            .removeAttr("height")
+            .removeAttr("class")
+            .removeAttr("style");
     }
 }
