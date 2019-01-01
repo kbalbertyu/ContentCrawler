@@ -9,7 +9,7 @@
         <artifactId>application</artifactId>
         <version>1.2</version>
     </parent>
-    <groupId>cn.btimes</groupId>
+    <groupId>com.kber</groupId>
     <artifactId>ContentCrawler</artifactId>
     <version>1.0</version>
 
