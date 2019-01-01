@@ -5,6 +5,5 @@
 /logs
 /downloads
 /drivers
-pom.xml
 /*.iml
 /ContentCrawler.vmoptions

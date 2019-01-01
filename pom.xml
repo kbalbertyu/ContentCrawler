@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.kber</groupId>
+        <artifactId>application</artifactId>
+        <version>1.2</version>
+    </parent>
+    <groupId>cn.businesstimes</groupId>
+    <artifactId>ContentCrawler</artifactId>
+    <version>1.0</version>
+
+    <name>ContentCrawler</name>
+    <description>BusinessTimes.cn third party article source crawler.</description>
+
+    <properties>
+        <java.language.level>1.8</java.language.level>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.kber</groupId>
+            <artifactId>mailman</artifactId>
+            <version>2.0</version>
+        </dependency>
+    </dependencies>
+</project>
