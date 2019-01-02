@@ -5,6 +5,7 @@ import cn.btimes.model.BTExceptions.PastDateException;
 import cn.btimes.service.WebDriverLauncher;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSONObject;
+import com.amzass.enums.common.DateFormat;
 import com.amzass.enums.common.Directory;
 import com.amzass.model.common.ActionLog;
 import com.amzass.ui.utils.UITools;
@@ -52,6 +53,8 @@ import java.util.*;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/24/2018 6:29 PM
  */
 public abstract class Source {
+    private static final String WITHOUT_YEAR = "1970";
+    private static final String WITHOUT_MONTH_DAY = "01/01";
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final String DOWNLOAD_PATH = "downloads";
     public static final String ADMIN_URL = Tools.getCustomizingValue("ADMIN_URL");
@@ -200,6 +203,20 @@ public abstract class Source {
         try {
             timeText = RegexUtils.getMatched(timeText, regex);
             Date date = DateUtils.parseDate(timeText, Locale.PRC, dateFormat);
+
+            // If dateFormat without year, set as current year
+            if (DateFormat.YEAR.format(date).equals(WITHOUT_YEAR)) {
+                int year = Calendar.getInstance().get(Calendar.YEAR);
+                date = DateUtils.setYears(date, year);
+            }
+            // If dateFormat without month and day, set today
+            if (StringUtils.equals(DateFormat.FULL_MONTH_DAY.format(date), WITHOUT_MONTH_DAY)) {
+                int month = Calendar.getInstance().get(Calendar.MONDAY);
+                int day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
+                date = DateUtils.setMonths(date, month);
+                date = DateUtils.setDays(date, day);
+            }
+
             if (this.calcMinutesAgo(date) > MAX_PAST_MINUTES) {
                 throw new PastDateException();
             }
