@@ -47,7 +47,7 @@ public class HeXun extends Source {
                 }
                 Article article = new Article();
                 String timeText = HtmlParser.text(row, "span");
-                article.setDate((this.parseDateText(timeText)));
+                article.setDate(this.parseDateText(timeText));
 
                 Element linkElm = row.select("a").get(0);
                 article.setUrl(linkElm.attr("href"));

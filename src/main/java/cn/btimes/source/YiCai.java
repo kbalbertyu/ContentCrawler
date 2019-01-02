@@ -46,7 +46,7 @@ public class YiCai extends Source {
             try {
                 Article article = new Article();
                 String timeText = HtmlParser.text(row, ".author > span");
-                article.setDate((this.parseDateText(timeText)));
+                article.setDate(this.parseDateText(timeText));
 
                 article.setUrl(BASE_URL + row.attr("href"));
                 Element titleElm = row.select("h2").get(0);

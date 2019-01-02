@@ -56,7 +56,7 @@ public class ThePaper extends Source {
 
                 String timeText = HtmlParser.text(row, ".pdtt_trbs > span");
                 try {
-                    article.setDate((this.parseDateText(timeText)));
+                    article.setDate(this.parseDateText(timeText));
                 } catch (PastDateException e) {
                     if (i++ < Constants.MAX_REPEAT_TIMES) {
                         continue;

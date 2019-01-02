@@ -53,7 +53,7 @@ public class Sina extends Source {
                 }
 
                 String timeText = HtmlParser.text(row, ".feed-card-time");
-                article.setDate((this.parseDateText(timeText)));
+                article.setDate(this.parseDateText(timeText));
 
                 Element linkElm = row.select("h2 > a").get(0);
                 article.setUrl(linkElm.attr("href"));

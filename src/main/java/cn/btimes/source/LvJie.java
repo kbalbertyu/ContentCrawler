@@ -40,7 +40,7 @@ public class LvJie extends ThePaper {
             try {
                 Article article = new Article();
                 String timeText = HtmlParser.text(row, ".time");
-                article.setDate((this.parseDateText(timeText)));
+                article.setDate(this.parseDateText(timeText));
 
                 Element linkElm = row.select(".Tlist > a").get(0);
                 article.setUrl(linkElm.attr("href"));

@@ -45,7 +45,7 @@ public class NBD extends Source {
             try {
                 Article article = new Article();
                 String timeText = HtmlParser.text(row, ".f-source");
-                article.setDate((this.parseDateText(timeText)));
+                article.setDate(this.parseDateText(timeText));
 
                 Element linkElm = row.select("a.f-title").get(0);
                 article.setUrl(linkElm.attr("href"));
