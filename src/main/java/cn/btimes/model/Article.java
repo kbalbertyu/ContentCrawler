@@ -19,9 +19,10 @@ public class Article {
     private String summary = StringUtils.EMPTY;
     private String content;
     private String reporter = StringUtils.EMPTY;
-    private String source;
+    private String source = StringUtils.EMPTY;
     private List<String> contentImages;
     private int[] imageIds;
+    private Category category;
 
     public boolean hasImages() {
         return CollectionUtils.isNotEmpty(contentImages);

@@ -15,6 +15,7 @@ public class ContentCrawler {
 
     public static void main(String[] args) {
         try {
+            LOGGER.info("Start crawling contents.");
             long totalStart = System.currentTimeMillis();
             ApplicationContext.getBean(ServiceExecutor.class).execute();
             LOGGER.info("Total execute time: {}", Tools.formatCostTime(totalStart));

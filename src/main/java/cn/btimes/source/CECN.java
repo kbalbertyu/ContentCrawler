@@ -2,6 +2,7 @@ package cn.btimes.source;
 
 import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.Category;
 import cn.btimes.utils.Common;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.sellerhunt.HtmlParser;
@@ -12,8 +13,6 @@ import com.google.inject.Inject;
 import com.kber.commons.DBManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.joda.time.DateTime;
-import org.joda.time.Minutes;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,10 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/24/2018 6:30 PM
@@ -39,7 +35,7 @@ public class CECN extends Source {
     @Inject DBManager dbManager;
 
     public void execute(WebDriver driver) {
-        driver.get(this.getUrl());
+        driver.get(URL);
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
         List<Article> articles = this.parseList(doc);
@@ -76,6 +72,11 @@ public class CECN extends Source {
     }
 
     @Override
+    protected Date parseDateText(String timeText) {
+        return null;
+    }
+
+    @Override
     protected Date parseDate(Document doc) {
         String dateText = HtmlParser.text(doc, "#articleTime");
         Date date;
@@ -90,8 +91,7 @@ public class CECN extends Source {
 
     @Override
     protected void validateDate(Date date) {
-        int diff = Minutes.minutesBetween(new DateTime(date), DateTime.now()).getMinutes();
-        if (diff >= 30) {
+        if (this.calcMinutesAgo(date) >= 30) {
             throw new PastDateException();
         }
     }
@@ -118,8 +118,8 @@ public class CECN extends Source {
     }
 
     @Override
-    protected String getUrl() {
-        return URL;
+    protected Map<String, Category> getUrls() {
+        return null;
     }
 
     @Override

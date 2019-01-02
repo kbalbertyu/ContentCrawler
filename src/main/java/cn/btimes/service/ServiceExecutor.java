@@ -1,7 +1,6 @@
 package cn.btimes.service;
 
-import cn.btimes.source.Source;
-import cn.btimes.source.ThePaper;
+import cn.btimes.source.*;
 import com.amzass.service.common.ApplicationContext;
 import com.google.inject.Inject;
 import org.openqa.selenium.WebDriver;
@@ -19,7 +18,10 @@ public class ServiceExecutor {
     private final static List<Source> sources = new ArrayList<>();
     @Inject private WebDriverLauncher webDriverLauncher;
     static {
+        sources.add(ApplicationContext.getBean(NBD.class));
+        sources.add(ApplicationContext.getBean(YiCai.class));
         sources.add(ApplicationContext.getBean(ThePaper.class));
+        sources.add(ApplicationContext.getBean(Sina.class));
     }
     public void execute() {
         WebDriver driver = webDriverLauncher.start();

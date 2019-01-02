@@ -1,16 +1,18 @@
 package cn.btimes.source;
 
-import cn.btimes.model.Article;
-import cn.btimes.model.ImageUploadResult;
-import cn.btimes.model.SavedImage;
-import cn.btimes.model.UploadedImage;
+import cn.btimes.model.*;
+import cn.btimes.model.BTExceptions.PastDateException;
 import cn.btimes.service.WebDriverLauncher;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.enums.common.Directory;
+import com.amzass.model.common.ActionLog;
+import com.amzass.ui.utils.UITools;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.*;
 import com.amzass.utils.common.Exceptions.BusinessException;
+import com.google.inject.Inject;
+import com.kber.commons.DBManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -23,6 +25,8 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.BasicHttpContext;
+import org.joda.time.DateTime;
+import org.joda.time.Minutes;
 import org.jsoup.Connection;
 import org.jsoup.Connection.Method;
 import org.jsoup.Jsoup;
@@ -59,16 +63,17 @@ public abstract class Source {
     private static final String DATA_IMAGES_FULL = "/data/images/full/";
     static final int MAX_PAST_MINUTES = NumberUtils.toInt(Tools.getCustomizingValue("MAX_PAST_MINUTES"));
     private static final List<String[]> sources = readSources();
+    @Inject private DBManager dbManager;
 
-    protected abstract String getUrl();
+    protected abstract Map<String, Category> getUrls();
 
     protected abstract List<Article> parseList(Document doc);
 
     protected abstract Boolean validateLink(String href);
 
-    public abstract void execute(WebDriver driver);
-
     protected abstract void readArticle(WebDriver driver, Article article);
+
+    protected abstract Date parseDateText(String timeText);
 
     protected abstract Date parseDate(Document doc);
 
@@ -81,6 +86,40 @@ public abstract class Source {
     protected abstract String parseContent(Document doc);
 
     protected abstract int getSourceId();
+
+    public void execute(WebDriver driver) {
+        List<Article> articles = new ArrayList<>();
+        Map<String, Category> urls = this.getUrls();
+        for (String url : urls.keySet()) {
+            driver.get(url);
+
+            // Scroll to bottom to make sure latest articles are loaded
+            PageUtils.scrollToBottom(driver);
+            WaitTime.Normal.execute();
+
+            Document doc = Jsoup.parse(driver.getPageSource());
+            List<Article> articlesNew = this.parseList(doc);
+            articlesNew.forEach(article -> article.setCategory(urls.get(url)));
+            articles.addAll(articlesNew);
+        }
+
+        for (Article article : articles) {
+            String logId = Common.toMD5(article.getUrl());
+            ActionLog log = dbManager.readById(logId, ActionLog.class);
+            if (log != null) {
+                continue;
+            }
+            try {
+                this.readArticle(driver, article);
+                this.saveArticle(article, driver);
+            } catch (PastDateException e) {
+                logger.error("Article publish date has past {} minutes: {}", MAX_PAST_MINUTES, article.getUrl());
+            } catch (BusinessException e) {
+                logger.error("Unable to read article {}", article.getUrl(), e);
+            }
+            dbManager.save(new ActionLog(logId), ActionLog.class);
+        }
+    }
 
     void saveArticle(Article article, WebDriver driver) {
         if (article.hasImages()) {
@@ -103,6 +142,7 @@ public abstract class Source {
             .data("ar_summary", article.getSummary())
             .data("ar_content", article.getContent())
             .data("tex", "")
+            .data("ar_cat[]", String.valueOf(article.getCategory().id))
             .data("ar_keyword", RandomStringUtils.randomNumeric(10))
             .data("ar_newskeyword", article.getTitle())
             .data("ar_youtube", "")
@@ -146,6 +186,15 @@ public abstract class Source {
         }
         throw new BusinessException(String.format("Unable to save the article: [%s]%s -> %s",
             article.getSource(), article.getTitle(), article.getUrl()));
+    }
+
+    void fetchContentImages(Article article, Element contentElm) {
+        Elements images = contentElm.select("img");
+        List<String> contentImages = new ArrayList<>();
+        for (Element image : images) {
+            contentImages.add(image.attr("src"));
+        }
+        article.setContentImages(contentImages);
     }
 
     private void cleanThirdPartyImages(Article article) {
@@ -240,7 +289,14 @@ public abstract class Source {
                 String body = conn.execute().body();
                 ImageUploadResult result = JSONObject.parseObject(body, ImageUploadResult.class);
                 if (!result.hasFiles()) {
-                    return null;
+                    logger.error("Files are not uploaded, retry in {} seconds: {}", WaitTime.Normal.val(), body);
+                    WaitTime.Normal.execute();
+
+                    if (j == Constants.MAX_REPEAT_TIMES - 1 &&
+                        UITools.confirmed("Files upload failed, retry uploading?")) {
+                        j = 0;
+                    }
+                    continue;
                 }
                 return result;
             } catch (IOException e) {
@@ -347,7 +403,19 @@ public abstract class Source {
     String cleanHtml(Element dom) {
         this.removeNeedlessHtmlTags(dom);
         this.removeImgTagAttrs(dom);
-        return StringUtils.trim(dom.html());
+        return this.removeHtmlComments(dom.html());
+    }
+
+    private String removeHtmlComments(String html) {
+        List<String> list = RegexUtils.getMatchedList(html, "<\\!--.*-->");
+        for (String str : list) {
+            html = StringUtils.trim(StringUtils.remove(html, str));
+        }
+        return html;
+    }
+
+    int calcMinutesAgo(Date date) {
+        return Minutes.minutesBetween(new DateTime(date), DateTime.now()).getMinutes();
     }
 
     private void removeNeedlessHtmlTags(Element dom) {
