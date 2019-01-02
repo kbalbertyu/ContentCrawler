@@ -19,7 +19,6 @@ import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.ParseException;
 import java.util.*;
 
 /**
@@ -27,7 +26,8 @@ import java.util.*;
  */
 public class Sina extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
+    private static final String DATE_REGEX = "\\d{1,2}:\\d{1,2}";
+    private static final String DATE_FORMAT = "HH:mm";
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -101,16 +101,8 @@ public class Sina extends Source {
                 throw new BusinessException("Unable to parse time text: " + timeText);
             }
         } else {
-            String time = RegexUtils.getMatched(timeText, "\\d{1,2}:\\d{1,2}");
-            if (StringUtils.isBlank(time)) {
-                throw new BusinessException("Unable to parse time text: " + timeText);
-            }
-            try {
-                Date date = DateUtils.parseDate(time, Locale.PRC, "HH:mm");
-                minutes = this.calcMinutesAgo(date);
-            } catch (ParseException e) {
-                throw new BusinessException(String.format("Unable to parse date: %s", time));
-            }
+            Date date = this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
+            minutes = this.calcMinutesAgo(date);
         }
 
         if (minutes > MAX_PAST_MINUTES) {

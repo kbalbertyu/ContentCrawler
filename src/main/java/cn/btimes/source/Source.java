@@ -18,6 +18,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -43,11 +44,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/24/2018 6:29 PM
@@ -195,6 +194,19 @@ public abstract class Source {
             contentImages.add(image.attr("src"));
         }
         article.setContentImages(contentImages);
+    }
+
+    Date parseDateText(String timeText, String regex, String dateFormat) {
+        try {
+            timeText = RegexUtils.getMatched(timeText, regex);
+            Date date = DateUtils.parseDate(timeText, Locale.PRC, dateFormat);
+            if (this.calcMinutesAgo(date) > MAX_PAST_MINUTES) {
+                throw new PastDateException();
+            }
+            return date;
+        } catch (ParseException e) {
+            throw new BusinessException(String.format("Unable to parse date: %s", timeText));
+        }
     }
 
     private void cleanThirdPartyImages(Article article) {

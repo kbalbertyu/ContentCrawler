@@ -5,10 +5,7 @@ import cn.btimes.model.BTExceptions.PastDateException;
 import cn.btimes.model.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
-import com.amzass.utils.common.Exceptions.BusinessException;
-import com.amzass.utils.common.RegexUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,13 +14,14 @@ import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.ParseException;
 import java.util.*;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-02 3:41 PM
  */
 public class NBD extends Source {
+    private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}";
+    private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private static final Map<String, Category> URLS = new HashMap<>();
@@ -85,16 +83,7 @@ public class NBD extends Source {
 
     @Override
     protected Date parseDateText(String timeText) {
-        try {
-            timeText = RegexUtils.getMatched(timeText, "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}");
-            Date date = DateUtils.parseDate(timeText, Locale.PRC, "yyyy-MM-dd HH:mm:ss");
-            if (this.calcMinutesAgo(date) > MAX_PAST_MINUTES) {
-                throw new PastDateException();
-            }
-            return date;
-        } catch (ParseException e) {
-            throw new BusinessException(String.format("Unable to parse date: %s", timeText));
-        }
+        return this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
     }
 
     @Override
