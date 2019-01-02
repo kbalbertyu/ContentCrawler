@@ -455,7 +455,7 @@ public abstract class Source {
 
         for (Element element : elements) {
             String tagName = element.tagName();
-            if (this.isLinkOrImageOrBreak(tagName)) {
+            if (this.isImageOrBreak(tagName)) {
                 continue;
             }
             if (!this.hasContent(element)) {
@@ -471,8 +471,11 @@ public abstract class Source {
                 }
             }
 
-            // Replace tag names to p
-            if (!StringUtils.equalsIgnoreCase(tagName, "p")) {
+            if (!StringUtils.equalsIgnoreCase(tagName, "a")) {
+                // Replace a tag name to span
+                element.tagName("span");
+            } else if (!StringUtils.equalsIgnoreCase(tagName, "p")) {
+                // Replace tag names to p
                 element.tagName("p");
             }
             this.removeNeedlessHtmlTags(element);
@@ -483,16 +486,16 @@ public abstract class Source {
         return StringUtils.isNotBlank(element.text()) || element.select("img").size() > 0;
     }
 
-    private boolean isLinkOrImageOrBreak(String tagName) {
+    private boolean isImageOrBreak(String tagName) {
         return StringUtils.equalsIgnoreCase(tagName, "img") ||
-            StringUtils.equalsIgnoreCase(tagName, "br") ||
-            StringUtils.equalsIgnoreCase(tagName, "a");
+            StringUtils.equalsIgnoreCase(tagName, "br");
     }
 
     private void removeImgTagAttrs(Element dom) {
         dom.select("img").removeAttr("width")
             .removeAttr("height")
             .removeAttr("class")
-            .removeAttr("style");
+            .removeAttr("style")
+            .remove("srcset");
     }
 }
