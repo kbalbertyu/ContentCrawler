@@ -438,7 +438,7 @@ public abstract class Source {
 
         for (Element element : elements) {
             String tagName = element.tagName();
-            if (this.isImageOrBreak(tagName)) {
+            if (this.isLinkOrImageOrBreak(tagName)) {
                 continue;
             }
             if (!this.hasContent(element)) {
@@ -466,9 +466,10 @@ public abstract class Source {
         return StringUtils.isNotBlank(element.text()) || element.select("img").size() > 0;
     }
 
-    private boolean isImageOrBreak(String tagName) {
+    private boolean isLinkOrImageOrBreak(String tagName) {
         return StringUtils.equalsIgnoreCase(tagName, "img") ||
-            StringUtils.equalsIgnoreCase(tagName, "br");
+            StringUtils.equalsIgnoreCase(tagName, "br") ||
+            StringUtils.equalsIgnoreCase(tagName, "a");
     }
 
     private void removeImgTagAttrs(Element dom) {
