@@ -25,6 +25,7 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(COM163.class));
         sources.add(ApplicationContext.getBean(HeXun.class));
         sources.add(ApplicationContext.getBean(LvJie.class));
+        sources.add(ApplicationContext.getBean(PinChain.class));
     }
     public void execute() {
         WebDriver driver = webDriverLauncher.start();
