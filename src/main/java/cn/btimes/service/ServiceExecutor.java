@@ -18,11 +18,12 @@ public class ServiceExecutor {
     private final static List<Source> sources = new ArrayList<>();
     @Inject private WebDriverLauncher webDriverLauncher;
     static {
-        sources.add(ApplicationContext.getBean(COM163.class));
-        sources.add(ApplicationContext.getBean(NBD.class));
-        sources.add(ApplicationContext.getBean(YiCai.class));
-        sources.add(ApplicationContext.getBean(ThePaper.class));
         sources.add(ApplicationContext.getBean(Sina.class));
+        sources.add(ApplicationContext.getBean(ThePaper.class));
+        sources.add(ApplicationContext.getBean(YiCai.class));
+        sources.add(ApplicationContext.getBean(NBD.class));
+        sources.add(ApplicationContext.getBean(COM163.class));
+        sources.add(ApplicationContext.getBean(HeXun.class));
     }
     public void execute() {
         WebDriver driver = webDriverLauncher.start();
