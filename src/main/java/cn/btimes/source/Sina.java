@@ -94,21 +94,19 @@ public class Sina extends Source {
             throw new PastDateException();
         }
 
-        int minutes;
         if (Tools.contains(timeText, "分钟")) {
-            minutes = NumberUtils.toInt(RegexUtils.getMatched(timeText, "\\d+"));
+            int minutes = NumberUtils.toInt(RegexUtils.getMatched(timeText, "\\d+"));
             if (minutes == 0) {
                 throw new BusinessException("Unable to parse time text: " + timeText);
             }
-        } else {
-            Date date = this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
-            minutes = this.calcMinutesAgo(date);
-        }
 
-        if (minutes > MAX_PAST_MINUTES) {
-            throw new PastDateException();
+            if (minutes > MAX_PAST_MINUTES) {
+                throw new PastDateException();
+            }
+            return DateUtils.addMinutes(new Date(), -1 * minutes);
+        } else {
+            return this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
         }
-        return DateUtils.addMinutes(new Date(), -1 * minutes);
     }
 
     @Override
