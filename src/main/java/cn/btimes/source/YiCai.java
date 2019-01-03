@@ -23,7 +23,6 @@ public class YiCai extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}";
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm";
-    private static final String BASE_URL = "https://www.yicai.com";
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -48,7 +47,7 @@ public class YiCai extends Source {
                 String timeText = HtmlParser.text(row, ".author > span");
                 article.setDate(this.parseDateText(timeText));
 
-                article.setUrl(BASE_URL + row.attr("href"));
+                article.setUrl(row.attr("href"));
                 Element titleElm = row.select("h2").get(0);
                 article.setTitle(titleElm.text());
 

@@ -22,7 +22,6 @@ public class EntGroup extends Source {
     private static final int MAX_PAST_DAYS = 0;
     private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}";
     private static final String DATE_FORMAT = "yyyy-MM-dd";
-    private static final String BASE_URL = "http://www.entgroup.cn";
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private static final Map<String, Category> URLS = new HashMap<>();
@@ -47,7 +46,7 @@ public class EntGroup extends Source {
                 article.setDate(this.parseDateText(timeText));
 
                 Element linkElm = row.select("h1 > a").get(0);
-                article.setUrl(BASE_URL + linkElm.attr("href"));
+                article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
                 article.setSummary(HtmlParser.text(doc, ".contbox > p"));

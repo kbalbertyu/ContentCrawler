@@ -28,7 +28,6 @@ import java.util.*;
  */
 public class ThePaper extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static final String BASE_URL = "https://www.thepaper.cn/";
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -65,7 +64,7 @@ public class ThePaper extends Source {
                 }
 
                 Element linkElm = row.select("h2 > a").get(0);
-                article.setUrl(BASE_URL + linkElm.attr("href"));
+                article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
                 article.setSummary(HtmlParser.text(row, "p"));

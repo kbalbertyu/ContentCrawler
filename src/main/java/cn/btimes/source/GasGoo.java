@@ -26,7 +26,6 @@ public class GasGoo extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}";
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    private static final String BASE_URL = "http://auto.gasgoo.com";
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -53,7 +52,7 @@ public class GasGoo extends Source {
                 article.setDate(this.parseDateText(timeText));
 
                 Element linkElm = row.select("h2 > a").get(0);
-                article.setUrl(BASE_URL + linkElm.attr("href"));
+                article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
                 row.select("a:contains(详细)").remove();

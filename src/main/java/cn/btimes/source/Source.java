@@ -102,7 +102,10 @@ public abstract class Source {
 
             Document doc = Jsoup.parse(driver.getPageSource());
             List<Article> articlesNew = this.parseList(doc);
-            articlesNew.forEach(article -> article.setCategory(urls.get(url)));
+            articlesNew.forEach(article -> {
+                article.setCategory(urls.get(url));
+                article.setUrl(Common.getAbsoluteUrl(article.getUrl(), url));
+            });
             articles.addAll(articlesNew);
         }
 
@@ -334,6 +337,7 @@ public abstract class Source {
 
         int i = 0;
         for (String imageUrl : article.getContentImages()) {
+            imageUrl = Common.getAbsoluteUrl(imageUrl, article.getUrl());
             String image = this.downloadFile(imageUrl, driver);
             File file = FileUtils.getFile(image);
             try {
@@ -397,7 +401,7 @@ public abstract class Source {
      * Download image from its url
      */
     private String downloadFile(String url, WebDriver driver) {
-        String fileName = this.extractFileNameFromUrl(url);
+        String fileName = Common.extractFileNameFromUrl(url);
         File file = new File(DOWNLOAD_PATH, fileName);
         if (!file.canWrite()) {
             file.setWritable(true);
@@ -430,12 +434,6 @@ public abstract class Source {
             IOUtils.closeQuietly(is);
             IOUtils.closeQuietly(resp);
         }
-    }
-
-    private String extractFileNameFromUrl(String url) {
-        String[] pathParts = StringUtils.split(url, "\\/");
-        String[] nameParts = StringUtils.split(pathParts[pathParts.length - 1], "?");
-        return nameParts[0];
     }
 
     private static List<String[]> readSources() {
