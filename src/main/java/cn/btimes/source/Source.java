@@ -144,7 +144,7 @@ public abstract class Source {
             .data("ar_copy_edited_finished", "")
             .data("use_article_all_table", "")
             .data("ar_title", article.getTitle())
-            .data("ar_mtitle", article.getTitle())
+            .data("ar_mtitle", "")
             .data("ar_summary", article.getSummary())
             .data("ar_content", article.getContent())
             .data("tex", "")
