@@ -145,11 +145,4 @@ public class ThePaper extends Source {
     protected int getSourceId() {
         return 12;
     }
-
-    public static void main(String[] args) {
-        String content = Tools.readFileToString(FileUtils.getFile("C:/Work/Tmp/content.txt"));
-        Document doc = Jsoup.parse(content);
-        Element contentElm = doc.select(".news_txt").first();
-        new ThePaper().cleanHtml(contentElm);
-    }
 }

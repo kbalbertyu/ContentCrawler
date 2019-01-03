@@ -128,11 +128,4 @@ public class GasGoo extends Source {
         }
         return html;
     }
-
-    public static void main(String[] args) {
-        String content = Tools.readFileToString(FileUtils.getFile("C:/Work/Tmp/content.txt"));
-        Document doc = Jsoup.parse(content);
-        Element contentElm = doc.select("#ArticleContent").first();
-        new GasGoo().cleanHtml(contentElm);
-    }
 }
