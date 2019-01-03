@@ -74,17 +74,7 @@ public class PinChain extends Source {
 
     @Override
     protected Date parseDateText(String timeText) {
-        try {
-            timeText = RegexUtils.getMatched(timeText, DATE_REGEX);
-            Date date = DateUtils.parseDate(timeText, Locale.PRC, DATE_FORMAT);
-
-            if (Days.daysBetween(new DateTime(date), DateTime.now()).getDays() > MAX_PAST_DAYS) {
-                throw new PastDateException();
-            }
-            return date;
-        } catch (ParseException e) {
-            throw new BusinessException(String.format("Unable to parse date: %s", timeText));
-        }
+        return this.parseDateTextWithDay(timeText, DATE_REGEX, DATE_FORMAT, MAX_PAST_DAYS);
     }
 
     @Override

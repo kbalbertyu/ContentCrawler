@@ -28,6 +28,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.BasicHttpContext;
 import org.joda.time.DateTime;
+import org.joda.time.Days;
 import org.joda.time.Minutes;
 import org.jsoup.Connection;
 import org.jsoup.Connection.Method;
@@ -218,6 +219,20 @@ public abstract class Source {
             }
 
             if (this.calcMinutesAgo(date) > MAX_PAST_MINUTES) {
+                throw new PastDateException();
+            }
+            return date;
+        } catch (ParseException e) {
+            throw new BusinessException(String.format("Unable to parse date: %s", timeText));
+        }
+    }
+
+    Date parseDateTextWithDay(String timeText, String regex, String dateFormat, int maxPastDays) {
+        try {
+            timeText = RegexUtils.getMatched(timeText, regex);
+            Date date = DateUtils.parseDate(timeText, Locale.PRC, dateFormat);
+
+            if (Days.daysBetween(new DateTime(date), DateTime.now()).getDays() > maxPastDays) {
                 throw new PastDateException();
             }
             return date;
