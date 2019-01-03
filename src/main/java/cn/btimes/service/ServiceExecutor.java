@@ -28,19 +28,16 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(PinChain.class));
         sources.add(ApplicationContext.getBean(GasGoo.class));
         sources.add(ApplicationContext.getBean(EntGroup.class));
+        sources.add(ApplicationContext.getBean(CCDY.class));
     }
     public void execute() {
         WebDriver driver = webDriverLauncher.start();
-        try {
-            for (Source source : sources) {
-                try {
-                    source.execute(driver);
-                } catch (Exception e) {
-                    logger.error("Error found in executing: " + this.getClass(), e);
-                }
+        for (Source source : sources) {
+            try {
+                source.execute(driver);
+            } catch (Exception e) {
+                logger.error("Error found in executing: " + this.getClass(), e);
             }
-        } finally {
-            driver.close();
         }
     }
 }
