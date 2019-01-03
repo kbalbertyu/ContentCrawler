@@ -15,6 +15,7 @@ public class ContentCrawler {
 
     public static void main(String[] args) {
         try {
+            ProcessCleaner.cleanWebDriver();
             LOGGER.info("Start crawling contents.");
             long totalStart = System.currentTimeMillis();
             ApplicationContext.getBean(ServiceExecutor.class).execute();
