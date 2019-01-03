@@ -246,13 +246,29 @@ public abstract class Source {
             return;
         }
         Document dom = Jsoup.parse(article.getContent());
+        boolean hasRemoval = false;
         for(Element image : dom.select("img")) {
             if (StringUtils.containsIgnoreCase(image.attr("src"), CDN_URL)) {
+                this.justifyImage(image);
                 continue;
             }
             image.remove();
+            hasRemoval =true;
+        }
+        if (hasRemoval) {
+            this.removeNeedlessHtmlTags(dom);
         }
         article.setContent(dom.select("body").html());
+    }
+
+    private void justifyImage(Element image) {
+        Element parent = image.parent();
+        if (!this.hasText(parent)) {
+            parent.tagName("p").attr("style", "text-align:center;");
+            return;
+        }
+        image.after("<p style=\"text-align:center;\"><img src=\"" + image.attr("src") + "\" /></p>");
+        image.remove();
     }
 
     private String determineSource(String source, int sourceId) {
@@ -440,8 +456,33 @@ public abstract class Source {
 
     String cleanHtml(Element dom) {
         this.removeNeedlessHtmlTags(dom);
+        // this.unwrapDeepLayeredHtmlTags(dom);
         this.removeImgTagAttrs(dom);
         return this.removeHtmlComments(dom.html());
+    }
+
+    private void unwrapDeepLayeredHtmlTags(Element dom) {
+        Elements elements = dom.children();
+        int size = elements.size();
+        if (size == 0) {
+            return;
+        }
+        for (Element row : elements) {
+            this.unwrapParent(row);
+        }
+    }
+
+    private void unwrapParent(Element element) {
+        Element parent = element.parent();
+        int size = parent.childNodeSize();
+        if (element.childNodeSize() == 0 && size == 1 &&
+            StringUtils.equals(parent.text().trim(), element.text().trim())) {
+            parent.after(element.outerHtml());
+            parent.remove();
+            this.unwrapDeepLayeredHtmlTags(parent);
+            return;
+        }
+        this.unwrapDeepLayeredHtmlTags(element);
     }
 
     private String removeHtmlComments(String html) {
@@ -480,27 +521,46 @@ public abstract class Source {
                 }
             }
 
-            if (this.isInlineTag(tagName)) {
-                // Replace a tag name to span
-                element.tagName("span");
-            } else if (this.isBlockTag(tagName)) {
-                // Replace tag names to p
-                element.tagName("p");
+            if (!this.isAllowedTag(tagName)) {
+                if (this.isBlockTag(tagName)) {
+                    // Replace tag names to p
+                    element.tagName("p");
+                } else {
+                    // Replace a tag name to span
+                    element.tagName("span");
+                }
             }
             this.removeNeedlessHtmlTags(element);
         }
+    }
+
+    private boolean isAllowedTag(String tagName) {
+        return StringUtils.equalsIgnoreCase(tagName, "table") ||
+            StringUtils.equalsIgnoreCase(tagName, "tr") ||
+            StringUtils.equalsIgnoreCase(tagName, "th") ||
+            StringUtils.equalsIgnoreCase(tagName, "tr") ||
+            StringUtils.equalsIgnoreCase(tagName, "td") ||
+            StringUtils.equalsIgnoreCase(tagName, "thead") ||
+            StringUtils.equalsIgnoreCase(tagName, "tfoot") ||
+            StringUtils.equalsIgnoreCase(tagName, "ul") ||
+            StringUtils.equalsIgnoreCase(tagName, "ol") ||
+            StringUtils.equalsIgnoreCase(tagName, "li") ||
+            StringUtils.equalsIgnoreCase(tagName, "dl") ||
+            StringUtils.equalsIgnoreCase(tagName, "dt") ||
+            StringUtils.equalsIgnoreCase(tagName, "dd");
     }
 
     private boolean isBlockTag(String tagName) {
         return Tools.containsAny(tagName, "div", "h2", "h3", "h4");
     }
 
-    private boolean isInlineTag(String tagName) {
-        return Tools.containsAny(tagName, "a", "label", "strong", "b", "i", "cite", "em", "font");
+    private boolean hasContent(Element element) {
+        return this.hasText(element) ||
+            element.select("img").size() > 0;
     }
 
-    private boolean hasContent(Element element) {
-        return StringUtils.isNotBlank(element.text()) || element.select("img").size() > 0;
+    private boolean hasText(Element element) {
+        return StringUtils.isNotBlank(StringUtils.removePattern(element.text(), "\\s*|\t|\r|\n"));
     }
 
     private boolean isImageOrBreak(String tagName) {
