@@ -496,6 +496,7 @@ public abstract class Source {
             .removeAttr("height")
             .removeAttr("class")
             .removeAttr("style")
-            .remove("srcset");
+            .removeAttr("srcset")
+            .removeAttr("origin");
     }
 }
