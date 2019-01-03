@@ -318,13 +318,7 @@ public abstract class Source {
                 String body = conn.execute().body();
                 ImageUploadResult result = JSONObject.parseObject(body, ImageUploadResult.class);
                 if (!result.hasFiles()) {
-                    logger.error("Files are not uploaded, retry in {} seconds: {}", WaitTime.Normal.val(), body);
-                    WaitTime.Normal.execute();
-
-                    if (j == Constants.MAX_REPEAT_TIMES - 1 &&
-                        UITools.confirmed("Files upload failed, retry uploading?")) {
-                        j = 0;
-                    }
+                    logger.error("Files are not uploaded, retry uploading: {}", body);
                     continue;
                 }
                 return result;
