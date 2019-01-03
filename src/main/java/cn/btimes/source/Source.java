@@ -471,15 +471,23 @@ public abstract class Source {
                 }
             }
 
-            if (!StringUtils.equalsIgnoreCase(tagName, "a")) {
+            if (this.isInlineTag(tagName)) {
                 // Replace a tag name to span
                 element.tagName("span");
-            } else if (!StringUtils.equalsIgnoreCase(tagName, "p")) {
+            } else if (this.isBlockTag(tagName)) {
                 // Replace tag names to p
                 element.tagName("p");
             }
             this.removeNeedlessHtmlTags(element);
         }
+    }
+
+    private boolean isBlockTag(String tagName) {
+        return Tools.containsAny(tagName, "div", "h2", "h3", "h4");
+    }
+
+    private boolean isInlineTag(String tagName) {
+        return Tools.containsAny(tagName, "a", "label", "strong", "b", "i", "cite", "em", "font");
     }
 
     private boolean hasContent(Element element) {
