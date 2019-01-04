@@ -496,6 +496,9 @@ public abstract class Source {
     }
 
     private void removeNeedlessHtmlTags(Element dom) {
+        if (dom == null) {
+            return;
+        }
         Elements elements = dom.children();
         if (elements.size() == 0) {
             return;
