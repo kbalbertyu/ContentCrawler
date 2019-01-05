@@ -8,7 +8,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.amzass.enums.common.DateFormat;
 import com.amzass.enums.common.Directory;
 import com.amzass.model.common.ActionLog;
-import com.amzass.ui.utils.UITools;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.*;
 import com.amzass.utils.common.Exceptions.BusinessException;
@@ -123,7 +122,7 @@ public abstract class Source {
             } catch (BusinessException e) {
                 logger.error("Unable to read article {}", article.getUrl(), e);
             } catch (Exception e) {
-                logger.error("Exception found for article: {} -> {}", article.getTitle(), article.getUrl());
+                logger.error("Exception found for article: {} -> {}", article.getTitle(), article.getUrl(), e);
                 continue;
             }
             dbManager.save(new ActionLog(logId), ActionLog.class);
