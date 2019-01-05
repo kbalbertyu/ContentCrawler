@@ -30,6 +30,7 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(EntGroup.class));
         sources.add(ApplicationContext.getBean(CCDY.class));
         sources.add(ApplicationContext.getBean(JieMian.class));
+        sources.add(ApplicationContext.getBean(QQ.class));
     }
     public void execute() {
         WebDriver driver = webDriverLauncher.start();
