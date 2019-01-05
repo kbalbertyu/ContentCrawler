@@ -535,7 +535,6 @@ public abstract class Source {
                     // Replace tag names to p
                     element.tagName("p");
                 } else {
-                    // Replace a tag name to span
                     element.tagName("span");
                 }
             }
@@ -544,7 +543,9 @@ public abstract class Source {
     }
 
     private boolean isAllowedTag(String tagName) {
-        return StringUtils.equalsIgnoreCase(tagName, "table") ||
+        return StringUtils.equalsIgnoreCase(tagName, "p") ||
+            StringUtils.equalsIgnoreCase(tagName, "span") ||
+            StringUtils.equalsIgnoreCase(tagName, "table") ||
             StringUtils.equalsIgnoreCase(tagName, "tr") ||
             StringUtils.equalsIgnoreCase(tagName, "th") ||
             StringUtils.equalsIgnoreCase(tagName, "tr") ||
@@ -560,7 +561,10 @@ public abstract class Source {
     }
 
     private boolean isBlockTag(String tagName) {
-        return Tools.containsAny(tagName, "div", "h2", "h3", "h4");
+        return StringUtils.equalsIgnoreCase(tagName, "div") ||
+            StringUtils.equalsIgnoreCase(tagName, "h2") ||
+            StringUtils.equalsIgnoreCase(tagName, "h3") ||
+            StringUtils.equalsIgnoreCase(tagName, "h4");
     }
 
     private boolean hasContent(Element element) {
