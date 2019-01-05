@@ -253,7 +253,7 @@ public abstract class Source {
         if (!article.hasImages()) {
             return;
         }
-        Document dom = Jsoup.parse(article.getContent());
+        Element dom = Jsoup.parse(article.getContent()).body();
         boolean hasRemoval = false;
         for(Element image : dom.select("img")) {
             if (StringUtils.containsIgnoreCase(image.attr("src"), CDN_URL)) {
@@ -317,8 +317,7 @@ public abstract class Source {
         int[] imageIds = new int[savedImages.size()];
         for (String contentImage : article.getContentImages()) {
             for (SavedImage savedImage : savedImages) {
-                int index = contentImage.length() - savedImage.getOriginalFile().length();
-                if (StringUtils.equalsIgnoreCase(contentImage.substring(index), savedImage.getOriginalFile())) {
+                if (StringUtils.contains(contentImage, savedImage.getOriginalFile())) {
                     String newImage = CDN_URL + DATA_IMAGES_FULL + savedImage.getPath();
                     content = StringUtils.replace(content, contentImage, newImage);
                 }
@@ -365,7 +364,7 @@ public abstract class Source {
                     continue;
                 }
                 return result;
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.error("Unable to upload files, retry in {} seconds:", WaitTime.Normal.val(),  e);
                 WaitTime.Normal.execute();
             }
@@ -436,7 +435,7 @@ public abstract class Source {
                     return path;
                 }
                 logger.error(String.format("Failed to execute %s file download request, status: %s.", fileName, status));
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 logger.error(String.format("Failed to download file of %s： %s", fileName, Tools.getExceptionMsg(ex)));
             } finally {
                 get.releaseConnection();
