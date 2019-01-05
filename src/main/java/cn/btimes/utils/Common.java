@@ -17,13 +17,18 @@ public class Common {
         return Math.abs(num1 - num2) < 0.001;
     }
 
+    private static final String DOUBLE_DASH = "//";
+
     public static String getAbsoluteUrl(String url, String pageUrl) {
         if (StringUtils.startsWith(StringUtils.lowerCase(url), Constants.HTTP)) {
             return url;
         }
 
         String[] parts = StringUtils.split(pageUrl, Constants.SLASH);
-        String baseUrl = parts[0] + "//" + parts[1];
+        if (StringUtils.startsWith(url, DOUBLE_DASH)) {
+            return parts[0] + url;
+        }
+        String baseUrl = parts[0] + DOUBLE_DASH + parts[1];
         String path;
         if (parts.length == 2) {
             path = "";
