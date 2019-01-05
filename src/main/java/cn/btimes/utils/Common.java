@@ -49,7 +49,7 @@ public class Common {
         } else if (StringUtils.startsWith(url, Constants.SLASH)) {
             url = baseUrl + url;
         } else {
-            url = baseUrl + path + url;
+            url = baseUrl + path + Constants.SLASH + url;
         }
         return url;
     }
