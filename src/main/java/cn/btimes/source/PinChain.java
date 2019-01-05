@@ -1,6 +1,7 @@
 package cn.btimes.source;
 
 import cn.btimes.model.Article;
+import cn.btimes.model.BTExceptions.PastDateException;
 import cn.btimes.model.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
@@ -10,6 +11,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -17,6 +20,7 @@ import java.util.*;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-03 6:38 AM
  */
 public class PinChain extends Source {
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final int MAX_PAST_DAYS = 0;
     private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}";
     private static final String DATE_FORMAT = "yyyy-MM-dd";
@@ -36,12 +40,17 @@ public class PinChain extends Source {
         List<Article> articles = new ArrayList<>();
         Elements list = doc.select("article.excerpt");
         for (Element row : list) {
-            Article article = new Article();
-            Element linkElm = row.select("h2 > a").get(0);
-            article.setUrl(linkElm.attr("href"));
-            article.setTitle(linkElm.text());
-            article.setSummary(HtmlParser.text(doc, "p.note"));
-            articles.add(article);
+            try {
+                Article article = new Article();
+                Element linkElm = row.select("h2 > a").get(0);
+                article.setUrl(linkElm.attr("href"));
+                article.setTitle(linkElm.text());
+                article.setSummary(HtmlParser.text(doc, "p.note"));
+                articles.add(article);
+            } catch (PastDateException e) {
+                logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
+                break;
+            }
         }
         return articles;
     }
