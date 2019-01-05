@@ -122,6 +122,9 @@ public abstract class Source {
                 logger.error("Article publish date has past {} minutes: {}", MAX_PAST_MINUTES, article.getUrl());
             } catch (BusinessException e) {
                 logger.error("Unable to read article {}", article.getUrl(), e);
+            } catch (Exception e) {
+                logger.error("Exception found for article: {} -> {}", article.getTitle(), article.getUrl());
+                continue;
             }
             dbManager.save(new ActionLog(logId), ActionLog.class);
         }
