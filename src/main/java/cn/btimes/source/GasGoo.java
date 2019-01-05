@@ -6,8 +6,6 @@ import cn.btimes.model.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.RegexUtils;
-import com.amzass.utils.common.Tools;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
