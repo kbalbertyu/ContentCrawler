@@ -475,8 +475,8 @@ public abstract class Source {
 
     private void unwrapParent(Element element) {
         Element parent = element.parent();
-        int size = parent.childNodeSize();
-        if (element.childNodeSize() == 0 && size == 1 &&
+        int size = parent.children().size();
+        if (element.children().size() == 0 && size == 1 &&
             StringUtils.equals(parent.text().trim(), element.text().trim())) {
             parent.after(element.outerHtml());
             parent.remove();
