@@ -130,6 +130,7 @@ public abstract class Source {
     }
 
     void saveArticle(Article article, WebDriver driver) {
+        article.checkContent();
         if (article.hasImages()) {
             ImageUploadResult result = this.uploadImages(article, driver);
             if (result != null) {
@@ -138,6 +139,8 @@ public abstract class Source {
             }
         }
         this.cleanThirdPartyImages(article);
+        article.checkContent();
+
         Connection conn = this.createWebConnection(ARTICLE_SAVE_URL, WebDriverLauncher.adminCookies)
             .data("getstring", "")
             .data("mb_no", "")

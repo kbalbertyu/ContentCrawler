@@ -1,5 +1,6 @@
 package cn.btimes.model;
 
+import com.amzass.utils.common.Exceptions.BusinessException;
 import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -30,5 +31,11 @@ public class Article {
 
     public boolean hasImageIds() {
         return ArrayUtils.isNotEmpty(imageIds);
+    }
+
+    public void checkContent() {
+        if (StringUtils.isBlank(content)) {
+            throw new BusinessException(String.format("Article content is blank: %s -> %s", title, url));
+        }
     }
 }
