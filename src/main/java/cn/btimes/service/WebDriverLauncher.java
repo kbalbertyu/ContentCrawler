@@ -9,6 +9,7 @@ import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.PageUtils;
 import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
@@ -25,6 +26,7 @@ import java.util.Set;
  */
 public class WebDriverLauncher {
     private static final String DOWNLOAD_PATH = System.getProperty("user.dir") + "/downloads";
+    private static final boolean USE_HEADLESS_DRIVER = StringUtils.isNotBlank(Tools.getCustomizingValue("USE_HEADLESS_DRIVER"));
     @Inject private WebDriverManager webDriverManager;
     public static Map<String, String> adminCookies;
 
@@ -45,6 +47,9 @@ public class WebDriverLauncher {
         chromePrefs.put("profile.default_content_settings.popups", 0);
         chromePrefs.put("download.default_directory", DOWNLOAD_PATH);
         ChromeOptions options = new ChromeOptions();
+        if (USE_HEADLESS_DRIVER) {
+            options.addArguments("--headless");
+        }
         options.setExperimentalOption("prefs", chromePrefs);
         DesiredCapabilities cap = DesiredCapabilities.chrome();
         cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
