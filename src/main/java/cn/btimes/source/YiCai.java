@@ -30,6 +30,7 @@ public class YiCai extends Source {
         URLS.put("https://www.yicai.com/news/quyu/", Category.ECONOMY);
         URLS.put("https://www.yicai.com/news/jinrong/", Category.FINANCE);
         URLS.put("https://www.yicai.com/news/gushi/", Category.FINANCE);
+        URLS.put("https://www.yicai.com/news/dafengwenhua/", Category.ENTERTAINMENT);
     }
 
     @Override
