@@ -267,10 +267,13 @@ public abstract class Source {
     private void justifyImage(Element image) {
         Element parent = image.parent();
         if (!this.hasText(parent)) {
-            parent.tagName("p").attr("style", "text-align:center;");
+            parent.tagName("div");
+            Set<String> classNames = new HashSet<>();
+            classNames.add("imageBox");
+            parent.classNames(classNames);
             return;
         }
-        image.after("<p style=\"text-align:center;\"><img src=\"" + image.attr("src") + "\" /></p>");
+        image.after("<div class=\"imageBox\"><img src=\"" + image.attr("src") + "\" /></div>");
         image.remove();
     }
 
@@ -570,7 +573,14 @@ public abstract class Source {
     }
 
     private void removeImgTagAttrs(Element dom) {
-        dom.select("img").removeAttr("width")
+        if (dom == null) {
+            return;
+        }
+        Elements images = dom.select("img");
+        if (images.size() == 0) {
+            return;
+        }
+        images.removeAttr("width")
             .removeAttr("height")
             .removeAttr("class")
             .removeAttr("style")
