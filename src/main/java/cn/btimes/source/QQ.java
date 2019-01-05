@@ -118,6 +118,6 @@ public class QQ extends Source {
 
     @Override
     protected int getSourceId() {
-        return 0;
+        return 809;
     }
 }
