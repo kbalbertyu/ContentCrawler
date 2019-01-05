@@ -421,27 +421,30 @@ public abstract class Source {
         BasicHttpContext localContext = new BasicHttpContext();
         localContext.setAttribute(HttpClientContext.COOKIE_STORE, PageUtils.getCookieStore(driver));
 
-        long start = System.currentTimeMillis();
-        CloseableHttpResponse resp = null;
-        InputStream is = null;
-        try {
-            resp = httpClient.execute(get, localContext);
-            int status = resp.getStatusLine().getStatusCode();
-            if (status == HttpStatus.SC_OK) {
-                is = resp.getEntity().getContent();
-                FileUtils.copyInputStreamToFile(is, file);
-                String path = file.getAbsolutePath();
-                logger.info("{} {} file downloaded, time costs {}. Size:{}, path:{}", fileName, Tools.formatCostTime(start), FileUtils.byteCountToDisplaySize(file.length()), path);
-                return path;
+        for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
+            long start = System.currentTimeMillis();
+            CloseableHttpResponse resp = null;
+            InputStream is = null;
+            try {
+                resp = httpClient.execute(get, localContext);
+                int status = resp.getStatusLine().getStatusCode();
+                if (status == HttpStatus.SC_OK) {
+                    is = resp.getEntity().getContent();
+                    FileUtils.copyInputStreamToFile(is, file);
+                    String path = file.getAbsolutePath();
+                    logger.info("{} {} file downloaded, time costs {}. Size:{}, path:{}", fileName, Tools.formatCostTime(start), FileUtils.byteCountToDisplaySize(file.length()), path);
+                    return path;
+                }
+                logger.error(String.format("Failed to execute %s file download request, status: %s.", fileName, status));
+            } catch (IOException ex) {
+                logger.error(String.format("Failed to download file of %s： %s", fileName, Tools.getExceptionMsg(ex)));
+            } finally {
+                get.releaseConnection();
+                IOUtils.closeQuietly(is);
+                IOUtils.closeQuietly(resp);
             }
-            throw new BusinessException(String.format("Failed to execute %s file download request. Status code: %s", fileName, status));
-        } catch (IOException ex) {
-            throw new BusinessException(String.format("Failed to download file of %s： %s", fileName, Tools.getExceptionMsg(ex)));
-        } finally {
-            get.releaseConnection();
-            IOUtils.closeQuietly(is);
-            IOUtils.closeQuietly(resp);
         }
+        throw new BusinessException(String.format("Failed to execute %s file download request after retried.", fileName));
     }
 
     private static List<String[]> readSources() {
