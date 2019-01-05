@@ -41,12 +41,12 @@ public class LUXE extends Source {
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String timeText = HtmlParser.text(doc, ".meta-footer");
+                String timeText = HtmlParser.text(row, ".meta-footer");
                 article.setDate(this.parseDateText(timeText));
                 Element linkElm = row.select("h2.title > a").get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
-                article.setSummary(HtmlParser.text(doc, "p.exceprt"));
+                article.setSummary(HtmlParser.text(row, "p.exceprt"));
                 articles.add(article);
             } catch (PastDateException e) {
                 logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);

@@ -45,7 +45,7 @@ public class PinChain extends Source {
                 Element linkElm = row.select("h2 > a").get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
-                article.setSummary(HtmlParser.text(doc, "p.note"));
+                article.setSummary(HtmlParser.text(row, "p.note"));
                 articles.add(article);
             } catch (PastDateException e) {
                 logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);

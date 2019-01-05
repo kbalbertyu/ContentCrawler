@@ -49,7 +49,7 @@ public class EntGroup extends Source {
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
-                article.setSummary(HtmlParser.text(doc, ".contbox > p"));
+                article.setSummary(HtmlParser.text(row, ".contbox > p"));
 
                 articles.add(article);
             } catch (PastDateException e) {
