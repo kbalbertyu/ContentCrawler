@@ -55,8 +55,8 @@ public class Common {
     }
 
     public static String extractFileNameFromUrl(String url) {
-        String[] pathParts = StringUtils.split(url, "\\/");
-        String[] nameParts = StringUtils.split(pathParts[pathParts.length - 1], "?");
-        return nameParts[0];
+        url = StringUtils.substringBefore(url, "?");
+        String[] pathParts = StringUtils.split(url, "/");
+        return pathParts[pathParts.length - 1];
     }
 }
