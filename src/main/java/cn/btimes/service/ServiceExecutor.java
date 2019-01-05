@@ -34,6 +34,7 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(LadyMax.class));
         sources.add(ApplicationContext.getBean(LUXE.class));
         sources.add(ApplicationContext.getBean(IYiOu.class));
+        sources.add(ApplicationContext.getBean(CTO51.class));
     }
     public void execute() {
         WebDriver driver = webDriverLauncher.start();
