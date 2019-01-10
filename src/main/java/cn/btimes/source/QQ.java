@@ -67,7 +67,7 @@ public class QQ extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select(".content-article .videoPlayer, .content-article .videoPlayerWrap, script, .video-title, .videoList, #Status").remove();
+        dom.select(".content-article .videoPlayer, .content-article .videoPlayerWrap, script, .video-title, .videoList, #Status, .article-status").remove();
         return super.cleanHtml(dom);
     }
 
