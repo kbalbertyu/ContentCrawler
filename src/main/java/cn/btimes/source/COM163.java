@@ -26,7 +26,7 @@ public class COM163 extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("http://tech.163.com/", Category.TECH);
+        URLS.put("http://tech.163.com/gd/", Category.TECH);
     }
 
     @Override
@@ -37,18 +37,20 @@ public class COM163 extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select("li.newsdata_item > .ndi_main > .news_article");
+        Elements list = doc.select("ul#news-flow-content > li");
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, "span.time");
-                if (Tools.containsAny(timeText, "小时", "天")) {
-                    throw new PastDateException();
-                }
+                String timeText = HtmlParser.text(row, ".sourceDate");
+                article.setDate(this.parseDateText(timeText));
 
                 Element linkElm = row.select("h3 > a").get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
+
+                Element summaryElm = row.select(".newsDigest").first();
+                summaryElm.select("a").remove();
+                article.setSummary(summaryElm.text());
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -70,9 +72,7 @@ public class COM163 extends Source {
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        String timeText = HtmlParser.text(doc, ".post_time_source");
-        article.setDate(this.parseDateText(timeText));
-
+        article.setTitle(this.parseTitle(doc));
         article.setSource(this.parseSource(doc));
 
         Element contentElm = doc.select("#endText").first();
@@ -97,7 +97,7 @@ public class COM163 extends Source {
 
     @Override
     protected String parseTitle(Document doc) {
-        return null;
+        return HtmlParser.text(doc, "#epContentLeft > h1");
     }
 
     @Override
@@ -117,7 +117,7 @@ public class COM163 extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select(".ep-source, [adtype], [class^=gg]").remove();
+        dom.select(".ep-source, [adtype], [class^=gg], .otitle").remove();
         return super.cleanHtml(dom);
     }
 }
