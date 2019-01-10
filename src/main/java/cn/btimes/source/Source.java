@@ -108,6 +108,7 @@ public abstract class Source {
             articles.addAll(articlesNew);
         }
 
+        logger.info("Found {} articles from list.", articles.size());
         for (Article article : articles) {
             String logId = Common.toMD5(article.getUrl());
             ActionLog log = dbManager.readById(logId, ActionLog.class);
@@ -345,7 +346,13 @@ public abstract class Source {
         int i = 0;
         for (String imageUrl : article.getContentImages()) {
             imageUrl = Common.getAbsoluteUrl(imageUrl, article.getUrl());
-            String image = this.downloadFile(imageUrl, driver);
+            String image;
+            try {
+                image = this.downloadFile(imageUrl, driver);
+            } catch (BusinessException e) {
+                logger.error("Unable to download image: {}", imageUrl);
+                continue;
+            }
             File file = FileUtils.getFile(image);
             try {
                 FileInputStream fs = new FileInputStream(file);
@@ -354,6 +361,10 @@ public abstract class Source {
             } catch (IOException e) {
                 logger.error("Unable to download file: {}", image, e);
             }
+        }
+        if (i == 0) {
+            logger.error("No files downloaded.");
+            return null;
         }
         for (int j = 0; j < Constants.MAX_REPEAT_TIMES; j++) {
             try {
