@@ -14,15 +14,12 @@ public class ContentCrawler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ContentCrawler.class);
 
     public static void main(String[] args) {
-        try {
-            ProcessCleaner.cleanWebDriver();
-            LOGGER.info("Start crawling contents.");
-            long totalStart = System.currentTimeMillis();
-            ApplicationContext.getBean(ServiceExecutor.class).execute();
-            LOGGER.info("Total execute time: {}", Tools.formatCostTime(totalStart));
-        } finally {
-            ProcessCleaner.cleanWebDriver();
-            System.exit(0);
-        }
+        ProcessCleaner.cleanWebDriver();
+        LOGGER.info("Start crawling contents.");
+        long totalStart = System.currentTimeMillis();
+        ApplicationContext.getBean(ServiceExecutor.class).execute();
+        LOGGER.info("Total execute time: {}", Tools.formatCostTime(totalStart));
+        ProcessCleaner.cleanWebDriver();
+        System.exit(0);
     }
 }
