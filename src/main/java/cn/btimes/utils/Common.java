@@ -1,8 +1,12 @@
 package cn.btimes.utils;
 
+import cn.btimes.model.ImageType;
 import com.amzass.utils.common.Constants;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import java.io.FileInputStream;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 9/5/2018 5:48 PM
@@ -58,5 +62,38 @@ public class Common {
         url = StringUtils.substringBefore(url, "?");
         String[] pathParts = StringUtils.split(url, "/");
         return pathParts[pathParts.length - 1];
+    }
+
+    public static String determineImageFileType (String file) throws IOException {
+        FileInputStream is = null;
+        try {
+            is = new FileInputStream(file);
+            byte[] b = new byte[3];
+            is.read(b, 0, b.length);
+            String hex = bytesToHexString(b).toUpperCase();
+            return ImageType.getTypeByHex(hex);
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static String bytesToHexString(byte[] src) {
+        StringBuilder stringBuilder = new StringBuilder();
+        if (src == null || src.length <= 0) {
+            return null;
+        }
+        for (byte aSrc : src) {
+            int v = aSrc & 0xFF;
+            String hv = Integer.toHexString(v);
+            if (hv.length() < 2) {
+                stringBuilder.append(0);
+            }
+            stringBuilder.append(hv);
+        }
+        return stringBuilder.toString();
     }
 }
