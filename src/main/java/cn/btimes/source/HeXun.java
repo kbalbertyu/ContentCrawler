@@ -72,10 +72,6 @@ public class HeXun extends Source {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
         PageUtils.scrollToBottom(driver);
-        /**
-         * @// TODO: 2019-01-11 Element not clickable
-         */
-        PageUtils.click(driver, By.className("showall_arrow"));
         Document doc = Jsoup.parse(driver.getPageSource());
 
         Element contentElm = doc.select(".art_contextBox").first();
