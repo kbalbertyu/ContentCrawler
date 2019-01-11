@@ -72,6 +72,9 @@ public class HeXun extends Source {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
         PageUtils.scrollToBottom(driver);
+        /**
+         * @// TODO: 2019-01-11 Element not clickable
+         */
         PageUtils.click(driver, By.className("showall_arrow"));
         Document doc = Jsoup.parse(driver.getPageSource());
 
@@ -117,7 +120,7 @@ public class HeXun extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select(":contains(责任编辑：)").remove();
+        dom.select(":contains(责任编辑：), a:contains(下载APP)").remove();
         return super.cleanHtml(dom);
     }
 }
