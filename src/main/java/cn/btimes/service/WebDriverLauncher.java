@@ -31,6 +31,14 @@ public class WebDriverLauncher {
     public static Map<String, String> adminCookies;
 
     public WebDriver start() {
+        return this.startDriver(true);
+    }
+
+    public WebDriver startWithoutLogin() {
+        return this.startDriver(false);
+    }
+
+    private WebDriver startDriver(boolean login) {
         ChromeDriverVersion chromeDriverVersion = Tools.defaultChromeDriver();
         if (chromeDriverVersion == null) {
             chromeDriverVersion = ChromeDriverVersion.values()[0];
@@ -38,7 +46,9 @@ public class WebDriverLauncher {
 
         DesiredCapabilities dCaps = this.prepareChromeCaps();
         WebDriver driver = webDriverManager.initCustomChromeDriver(chromeDriverVersion, Constants.DEFAULT_DRIVER_TIME_OUT, dCaps);
-        this.fetchAdminCookies(driver);
+        if (login && adminCookies == null) {
+            this.fetchAdminCookies(driver);
+        }
         return driver;
     }
 
