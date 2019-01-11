@@ -2,7 +2,9 @@ package cn.btimes.source;
 
 import cn.btimes.model.Article;
 import cn.btimes.model.Category;
+import cn.btimes.utils.PageUtils;
 import com.amzass.service.sellerhunt.HtmlParser;
+import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -10,6 +12,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,14 +70,20 @@ public class QQ extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select(".content-article .videoPlayer, .content-article .videoPlayerWrap, script, .video-title, .videoList, #Status, .article-status").remove();
+        dom.select(".content-article .content-article, script, #Status, .article-status, [class*=video]").remove();
         return super.cleanHtml(dom);
     }
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
         driver.get(article.getUrl());
-        WaitTime.Normal.execute();
+        PageUtils.removeElementByClass(driver, "recommend");
+        if (PageLoadHelper.present(driver, By.className("LazyLoad"), WaitTime.Normal)) {
+            PageUtils.loadLazyContent(driver);
+        } else {
+            PageUtils.scrollToBottom(driver);
+        }
+        WaitTime.Short.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
         String timeText = HtmlParser.text(doc, ".left-stick-wp > .year") + "/" +
             HtmlParser.text(doc, ".left-stick-wp > .md") + " " +
