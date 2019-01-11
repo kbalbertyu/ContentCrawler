@@ -113,6 +113,7 @@ public abstract class Source {
             String logId = Common.toMD5(article.getUrl());
             ActionLog log = dbManager.readById(logId, ActionLog.class);
             if (log != null) {
+                logger.info("Article saved already: {} -> {}", article.getTitle(), article.getUrl());
                 continue;
             }
             try {
@@ -136,6 +137,7 @@ public abstract class Source {
             ImageUploadResult result = this.uploadImages(article, driver);
             if (result != null) {
                 List<SavedImage> savedImages = this.saveImages(article, result);
+                this.deleteDownloadedImages(savedImages);
                 this.replaceImages(article, savedImages);
             }
         }
@@ -198,6 +200,12 @@ public abstract class Source {
         }
         throw new BusinessException(String.format("Unable to save the article: [%s]%s -> %s",
             article.getSource(), article.getTitle(), article.getUrl()));
+    }
+
+    private void deleteDownloadedImages(List<SavedImage> savedImages) {
+        for (SavedImage image : savedImages) {
+            FileUtils.deleteQuietly(FileUtils.getFile(image.getPath()));
+        }
     }
 
     void fetchContentImages(Article article, Element contentElm) {
@@ -317,10 +325,12 @@ public abstract class Source {
         String content = article.getContent();
         int[] imageIds = new int[savedImages.size()];
         for (String contentImage : article.getContentImages()) {
+            String hex = Common.toMD5(contentImage);
             for (SavedImage savedImage : savedImages) {
-                if (StringUtils.contains(contentImage, savedImage.getOriginalFile())) {
+                if (StringUtils.startsWith(savedImage.getOriginalFile(), hex)) {
                     String newImage = CDN_URL + DATA_IMAGES_FULL + savedImage.getPath();
                     content = StringUtils.replace(content, contentImage, newImage);
+                    break;
                 }
             }
         }
@@ -345,14 +355,14 @@ public abstract class Source {
 
         int i = 0;
         for (String imageUrl : article.getContentImages()) {
-            imageUrl = Common.getAbsoluteUrl(imageUrl, article.getUrl());
-            String image;
+            DownloadResult downloadResult;
             try {
-                image = this.downloadFile(imageUrl, driver);
+                downloadResult = this.downloadFile(imageUrl, driver);
             } catch (BusinessException e) {
                 logger.error("Unable to download image: {}", imageUrl);
                 continue;
             }
+            String image = downloadResult.getFullPath();
             File file = FileUtils.getFile(image);
             try {
                 FileInputStream fs = new FileInputStream(file);
@@ -418,12 +428,11 @@ public abstract class Source {
     /**
      * Download image from its url
      */
-    private String downloadFile(String url, WebDriver driver) {
+    private DownloadResult downloadFile(String url, WebDriver driver) {
+        String originalUrl = url;
+        url = Common.getAbsoluteUrl(url, driver.getCurrentUrl());
         String fileName = Common.extractFileNameFromUrl(url);
-        File file = new File(DOWNLOAD_PATH, fileName);
-        if (!file.canWrite()) {
-            file.setWritable(true);
-        }
+        File file = this.makeDownloadFile(fileName);
 
         String prefix = Tools.startWithAny(url, Constants.HTTP) ? StringUtils.EMPTY : Constants.HTTP + ":";
         HttpGet get = HttpUtils.prepareHttpGet(prefix + url);
@@ -442,8 +451,13 @@ public abstract class Source {
                     is = resp.getEntity().getContent();
                     FileUtils.copyInputStreamToFile(is, file);
                     String path = file.getAbsolutePath();
-                    logger.info("{} {} file downloaded, time costs {}. Size:{}, path:{}", fileName, Tools.formatCostTime(start), FileUtils.byteCountToDisplaySize(file.length()), path);
-                    return path;
+
+                    DownloadResult result = this.makeDownloadResult(originalUrl, path);
+                    logger.info("{} file downloaded, time costs {}. Size:{}, path:{}",
+                        result.getFileName(),
+                        Tools.formatCostTime(start),
+                        FileUtils.byteCountToDisplaySize(file.length()), result.getFullPath());
+                    return result;
                 }
                 logger.error(String.format("Failed to execute %s file download request, status: %s.", fileName, status));
             } catch (Exception ex) {
@@ -452,9 +466,36 @@ public abstract class Source {
                 get.releaseConnection();
                 IOUtils.closeQuietly(is);
                 IOUtils.closeQuietly(resp);
+                file.deleteOnExit();
             }
         }
         throw new BusinessException(String.format("Failed to execute %s file download request after retried.", fileName));
+    }
+
+    private File makeDownloadFile(String fileName) {
+        File file = new File(DOWNLOAD_PATH, fileName);
+        if (file.exists()) {
+            FileUtils.deleteQuietly(file);
+            file = new File(DOWNLOAD_PATH, fileName);
+        }
+        if (!file.canWrite()) {
+            file.setWritable(true);
+        }
+        return file;
+    }
+
+    /**
+     * Generate new name with MD5 to avoid duplicated image names in an article
+     */
+    private DownloadResult makeDownloadResult(String url, String path) throws IOException {
+        String ext = Common.determineImageFileType(path);
+        String fileNameNew = Common.toMD5(url) + "." + ext;
+
+        File fileNew = this.makeDownloadFile(fileNameNew);
+        FileUtils.moveFile(FileUtils.getFile(path), fileNew);
+        path = fileNew.getAbsolutePath();
+
+        return new DownloadResult(url, path, fileNameNew);
     }
 
     private static List<String[]> readSources() {
