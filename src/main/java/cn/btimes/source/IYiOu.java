@@ -6,6 +6,7 @@ import cn.btimes.model.Category;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
+import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.RegexUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -96,8 +97,20 @@ public class IYiOu extends Source {
             contentElm.prepend(thumbElm.outerHtml());
         }
 
+        this.convertImageToNoneHttps(contentElm);
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
+    }
+
+    private void convertImageToNoneHttps(Element contentElm) {
+        Elements images = contentElm.select("img");
+        for (Element image : images) {
+            String src = image.attr("src");
+            if (StringUtils.startsWith(src, Constants.HTTPS)) {
+                src = StringUtils.replace(src, Constants.HTTPS, Constants.HTTP);
+                image.attr("src", src);
+            }
+        }
     }
 
     @Override
