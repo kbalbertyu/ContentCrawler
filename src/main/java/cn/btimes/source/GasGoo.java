@@ -118,6 +118,9 @@ public class GasGoo extends Source {
 
     @Override
     String cleanHtml(Element dom) {
+        // Remove icon of viewing large image
+        dom.select("img[src*=ViewImg.gif]").remove();
+
         String html = super.cleanHtml(dom);
         List<String> list = RegexUtils.getMatchedList(html, "<\\!--[\\s\\S]*-->");
         for (String str : list) {
