@@ -5,11 +5,15 @@ import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Tools;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-11 5:35 AM
  */
 public class PageUtils extends com.amzass.utils.common.PageUtils {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PageUtils.class);
 
     public static void loadLazyContent(WebDriver driver) {
         scrollToBottom(driver);
@@ -26,9 +30,13 @@ public class PageUtils extends com.amzass.utils.common.PageUtils {
     }
 
     public static void removeElementByClass(WebDriver driver, String className) {
-        JavascriptExecutor jse = (JavascriptExecutor) driver;
-        jse.executeScript("var elem = document.getElementsByClassName('" + className + "')[0];"
-            + "elem.parentNode.removeChild(elem);");
+        try {
+            JavascriptExecutor jse = (JavascriptExecutor) driver;
+            jse.executeScript("var elem = document.getElementsByClassName('" + className + "')[0];"
+                + "elem.parentNode.removeChild(elem);");
+        } catch (WebDriverException e) {
+            LOGGER.error("Unable to remove element by class: {}", className);
+        }
     }
 
     private static long getPageHeight(WebDriver driver) {
