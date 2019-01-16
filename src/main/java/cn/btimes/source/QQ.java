@@ -1,6 +1,7 @@
 package cn.btimes.source;
 
 import cn.btimes.model.Article;
+import cn.btimes.model.BTExceptions.PastDateException;
 import cn.btimes.model.Category;
 import cn.btimes.utils.PageUtils;
 import com.amzass.service.sellerhunt.HtmlParser;
@@ -26,6 +27,7 @@ public class QQ extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final String DATE_REGEX = "\\d{4}/\\d{2}/\\d{2} \\d{1,2}:\\d{1,2}";
     private static final String DATE_FORMAT = "yyyy/MM/dd HH:mm";
+    private static final int MAX_PAST_MINUTES = 90;
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -54,7 +56,8 @@ public class QQ extends Source {
                 continue;
             }
             String timeText = HtmlParser.text(row, ".time");
-            if (StringUtils.contains(timeText, "小时")) {
+            if (StringUtils.contains(timeText, "小时") &&
+                !StringUtils.equals(timeText, "1小时前")) {
                 continue;
             }
             article.setTitle(title);
@@ -93,6 +96,13 @@ public class QQ extends Source {
         Element contentElm = doc.select(".content-article").first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
+    }
+
+    @Override
+    void checkDate(Date date) {
+        if (this.calcMinutesAgo(date) > MAX_PAST_MINUTES) {
+            throw new PastDateException();
+        }
     }
 
     @Override

@@ -235,12 +235,16 @@ public abstract class Source {
                 date = DateUtils.setDays(date, day);
             }
 
-            if (this.calcMinutesAgo(date) > MAX_PAST_MINUTES) {
-                throw new PastDateException();
-            }
+            this.checkDate(date);
             return date;
         } catch (ParseException e) {
             throw new BusinessException(String.format("Unable to parse date: %s", timeText));
+        }
+    }
+
+    void checkDate(Date date) {
+        if (this.calcMinutesAgo(date) > MAX_PAST_MINUTES) {
+            throw new PastDateException();
         }
     }
 
