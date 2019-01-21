@@ -39,14 +39,20 @@ public class JieMian extends ThePaper {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select(".news-list > .list-view > .news-view");
+        String cssQuery = ".news-list > .list-view > .news-view";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, ".date");
+                String dateTextCssQuery = ".date";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
 
-                Element linkElm = row.select("h3 > a").get(0);
+                String titleCssQuery = "h3 > a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element linkElm = row.select(titleCssQuery).get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
                 articles.add(article);
@@ -70,10 +76,14 @@ public class JieMian extends ThePaper {
         PageUtils.scrollToBottom(driver);
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        article.setSummary(HtmlParser.text(doc, ".article-header > p"));
+        String summaryCssQuery = ".article-header > p";
+        this.checkSummaryExistence(doc, summaryCssQuery);
+        article.setSummary(HtmlParser.text(doc, summaryCssQuery));
         article.setSource(this.parseSource(doc));
 
-        Element contentElm = doc.select(".article-main").first();
+        String cssQuery = ".article-main";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }
@@ -96,7 +106,9 @@ public class JieMian extends ThePaper {
     @Override
     protected String parseSource(Document doc) {
         String keyword = "来源：";
-        String source = HtmlParser.text(doc, ".article-info > span:contains(" + keyword + ")");
+        String cssQuery = ".article-info > span:contains(" + keyword + ")";
+        this.checkSourceExistence(doc, cssQuery);
+        String source = HtmlParser.text(doc, cssQuery);
         return StringUtils.trim(StringUtils.remove(source, keyword));
     }
 

@@ -5,7 +5,6 @@ import cn.btimes.model.BTExceptions.PastDateException;
 import cn.btimes.model.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
-import com.amzass.utils.common.Tools;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -37,18 +36,26 @@ public class COM163 extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select("ul#news-flow-content > li");
+        String cssQuery = "ul#news-flow-content > li";
+        Elements list = doc.select(cssQuery);
+        this.checkArticleListExistence(doc, cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, ".sourceDate");
+                String dateTextCssQuery = ".sourceDate";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
 
-                Element linkElm = row.select("h3 > a").get(0);
+                String titleCssQuery = "h3 > a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element linkElm = row.select(titleCssQuery).get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
-                Element summaryElm = row.select(".newsDigest").first();
+                String summaryCssQuery = ".newsDigest";
+                this.checkSummaryExistence(row, summaryCssQuery);
+                Element summaryElm = row.select(summaryCssQuery).first();
                 summaryElm.select("a").remove();
                 article.setSummary(summaryElm.text());
 
@@ -75,7 +82,9 @@ public class COM163 extends Source {
         article.setTitle(this.parseTitle(doc));
         article.setSource(this.parseSource(doc));
 
-        Element contentElm = doc.select("#endText").first();
+        String cssQuery = "#endText";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }
@@ -97,12 +106,16 @@ public class COM163 extends Source {
 
     @Override
     protected String parseTitle(Document doc) {
-        return HtmlParser.text(doc, "#epContentLeft > h1");
+        String cssQuery = "#epContentLeft > h1";
+        this.checkTitleExistence(doc, cssQuery);
+        return HtmlParser.text(doc, cssQuery);
     }
 
     @Override
     protected String parseSource(Document doc) {
-        return HtmlParser.text(doc, "#ne_article_source");
+        String cssQuery = "#ne_article_source";
+        this.checkSourceExistence(doc, cssQuery);
+        return HtmlParser.text(doc, cssQuery);
     }
 
     @Override

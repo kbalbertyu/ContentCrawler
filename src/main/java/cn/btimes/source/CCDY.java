@@ -36,19 +36,27 @@ public class CCDY extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select(".con > ul.pic1 > li");
+        String cssQuery = ".con > ul.pic1 > li";
+        Elements list = doc.select(cssQuery);
+        this.checkArticleListExistence(doc, cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, ".pl1");
+                String dateTextCssQuery = ".pl1";
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
+                this.checkDateTextExistence(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
 
-                Element titleElm = row.select("h3 > a").get(0);
+                String titleCssQuery = "h3 > a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element titleElm = row.select(titleCssQuery).get(0);
                 String url = titleElm.attr("href");
                 article.setUrl(url.substring(1));
                 article.setTitle(titleElm.text());
 
-                article.setSummary(HtmlParser.text(row, ".pl1 > p:eq(0)"));
+                String summaryCssQuery = ".pl1 > p:eq(0)";
+                this.checkSummaryExistence(row, summaryCssQuery);
+                article.setSummary(HtmlParser.text(row, summaryCssQuery));
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -76,7 +84,11 @@ public class CCDY extends Source {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
-        Element contentElm = doc.select(".TRS_Editor").first();
+
+        String cssQuery = ".TRS_Editor";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
+
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }

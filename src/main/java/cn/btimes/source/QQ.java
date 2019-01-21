@@ -3,6 +3,7 @@ package cn.btimes.source;
 import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
 import cn.btimes.model.Category;
+import cn.btimes.model.Messenger;
 import cn.btimes.utils.PageUtils;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper;
@@ -44,18 +45,24 @@ public class QQ extends Source {
     protected List<Article> parseList(Document doc) {
         String idPrefix = DateFormatUtils.format(new Date(), "yyyyMMdd");
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select("li[id^=" + idPrefix + "]");
+        String cssQuery = "li[id^=" + idPrefix + "]";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             Article article = new Article();
 
-            Element linkElm = row.select("h3 > a").get(0);
+            String titleCssQuery = "h3 > a";
+            this.checkTitleExistence(row, titleCssQuery);
+            Element linkElm = row.select(titleCssQuery).get(0);
             article.setUrl(linkElm.attr("href"));
             String title = linkElm.text();
             if (StringUtils.contains(title, "专题") || linkElm.children().size() > 0) {
                 logger.warn("Not an article link, just skip: {}", title);
                 continue;
             }
-            String timeText = HtmlParser.text(row, ".time");
+            String dateTextCssQuery = ".time";
+            this.checkDateTextExistence(row, dateTextCssQuery);
+            String timeText = HtmlParser.text(row, dateTextCssQuery);
             if (StringUtils.contains(timeText, "小时") &&
                 !StringUtils.equals(timeText, "1小时前")) {
                 continue;
@@ -88,12 +95,23 @@ public class QQ extends Source {
         }
         WaitTime.Short.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
-        String timeText = HtmlParser.text(doc, ".left-stick-wp > .year") + "/" +
-            HtmlParser.text(doc, ".left-stick-wp > .md") + " " +
-            HtmlParser.text(doc, ".left-stick-wp > .time");
+
+        String year = ".left-stick-wp > .year";
+        String monthDay = ".left-stick-wp > .md";
+        String time = ".left-stick-wp > .time";
+        if (!HtmlParser.allExist(doc, year, monthDay, time)) {
+            Messenger messenger = new Messenger(this.getClass().getName(),
+                String.format("%s not found with: %s, %s and %s", "Date text", year, monthDay, time));
+            this.messengers.add(messenger);
+        }
+        String timeText = HtmlParser.text(doc, year) + "/" +
+            HtmlParser.text(doc, monthDay) + " " +
+            HtmlParser.text(doc, time);
         article.setDate(this.parseDateText(timeText));
 
-        Element contentElm = doc.select(".content-article").first();
+        String cssQuery = ".content-article";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }

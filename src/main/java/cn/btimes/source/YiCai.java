@@ -41,18 +41,26 @@ public class YiCai extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select("#newslist > a.f-db");
+        String cssQuery = "#newslist > a.f-db";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, ".author > span");
+                String dateTextCssQuery = ".author > span";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
 
                 article.setUrl(row.attr("href"));
-                Element titleElm = row.select("h2").get(0);
+                String titleCssQuery = "h2";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element titleElm = row.select(titleCssQuery).get(0);
                 article.setTitle(titleElm.text());
 
-                article.setSummary(HtmlParser.text(row, "p:eq(0)"));
+                String summaryCssQuery = "p:eq(0)";
+                this.checkSummaryExistence(row, summaryCssQuery);
+                article.setSummary(HtmlParser.text(row, summaryCssQuery));
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -73,7 +81,9 @@ public class YiCai extends Source {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
-        Element contentElm = doc.select(".m-txt").first();
+        String cssQuery = ".m-txt";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }

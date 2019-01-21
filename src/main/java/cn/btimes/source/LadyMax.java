@@ -39,11 +39,15 @@ public class LadyMax extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select("#list > div.i");
+        String cssQuery = "#list > div.i";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                Element titleElm = row.select("a").get(1);
+                String titleCssQuery = "a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element titleElm = row.select(titleCssQuery).get(1);
                 article.setUrl(titleElm.attr("href"));
                 article.setTitle(titleElm.text());
 
@@ -80,13 +84,19 @@ public class LadyMax extends Source {
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        String timeText = HtmlParser.text(doc, ".newsview > .info");
+        String timeCssQuery = ".newsview > .info";
+        this.checkDateTextExistence(doc, timeCssQuery);
+        String timeText = HtmlParser.text(doc, timeCssQuery);
         article.setDate(this.parseDateText(timeText));
 
-        String title = HtmlParser.text(doc, ".newsview > .title > h1");
+        String titleCssQuery = ".newsview > .title > h1";
+        this.checkTitleExistence(doc, timeCssQuery);
+        String title = HtmlParser.text(doc, titleCssQuery);
         article.setTitle(StringUtils.substringBefore(title, "|"));
 
-        Element contentElm = doc.select(".newsview > .content").first();
+        String cssQuery = ".newsview > .content";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }

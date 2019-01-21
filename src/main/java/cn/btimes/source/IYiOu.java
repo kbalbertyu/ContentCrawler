@@ -42,7 +42,9 @@ public class IYiOu extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select("ul.newestArticleList > li.thinkTankTag");
+        String cssQuery = "ul.newestArticleList > li.thinkTankTag";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
@@ -51,7 +53,9 @@ public class IYiOu extends Source {
                     throw new PastDateException();
                 }
 
-                Element titleElm = row.select("h2").get(0);
+                String titleCssQuery = "h2";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element titleElm = row.select(titleCssQuery).get(0);
                 article.setUrl(titleElm.parent().attr("href"));
                 article.setTitle(titleElm.text());
 
@@ -81,15 +85,21 @@ public class IYiOu extends Source {
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        Element element = doc.select("script[type=application/ld+json]").get(0);
+        String dateTextCssQuery = "script[type=application/ld+json]";
+        this.checkDateTextExistence(doc, dateTextCssQuery);
+        Element element = doc.select(dateTextCssQuery).get(0);
         JSONObject obj = JSONObject.parseObject(element.html());
         article.setDate(this.parseDateText(String.valueOf(obj.get("pubDate"))));
 
-        Element summaryElm = doc.select("#post_brief").get(0);
+        String summaryCssQuery = "#post_brief";
+        this.checkSummaryExistence(doc, summaryCssQuery);
+        Element summaryElm = doc.select(summaryCssQuery).get(0);
         summaryElm.select("b").remove();
         article.setSummary(summaryElm.text());
 
-        Element contentElm = doc.select("#post_description").first();
+        String cssQuery = "#post_description";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         Elements thumbnailELms = doc.select("#post_thumbnail");
         if (thumbnailELms.size() > 0) {
             Element thumbElm = thumbnailELms.first();

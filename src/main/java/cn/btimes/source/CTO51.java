@@ -45,21 +45,29 @@ public class CTO51 extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select(".home-left-list > ul > li");
+        String cssQuery = ".home-left-list > ul > li";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 if (Tools.contains(row.attr("class"), "adv")) {
                     continue;
                 }
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, ".time > i");
+                String dateTextCssQuery = ".time > i";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
 
-                Element linkElm = row.select(".rinfo > a").get(0);
+                String titleCssQuery = ".rinfo > a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element linkElm = row.select(titleCssQuery).get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
-                article.setSummary(HtmlParser.text(row, ".rinfo > p"));
+                String summaryCssQuery = ".rinfo > p";
+                this.checkSummaryExistence(row, summaryCssQuery);
+                article.setSummary(HtmlParser.text(row, summaryCssQuery));
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -95,7 +103,9 @@ public class CTO51 extends Source {
 
         article.setSource(this.parseSource(doc));
 
-        Element contentElm = doc.select(".zwnr").first();
+        String cssQuery = ".zwnr";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }
@@ -122,7 +132,9 @@ public class CTO51 extends Source {
 
     @Override
     protected String parseSource(Document doc) {
-        String source = HtmlParser.text(doc, "dl > dt > span:contains(来源：)");
+        String cssQuery = "dl > dt > span:contains(来源：)";
+        this.checkSourceExistence(doc, cssQuery);
+        String source = HtmlParser.text(doc, cssQuery);
         return StringUtils.trim(StringUtils.substringAfter(source, "来源："));
     }
 

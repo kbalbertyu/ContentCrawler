@@ -42,19 +42,28 @@ public class GasGoo extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select(".listLeft > .content");
+        String cssQuery = ".listLeft > .content";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, ".cardTime");
+                String dateTextCssQuery = ".cardTime";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
 
-                Element linkElm = row.select("h2 > a").get(0);
+                String titleCssQuery = "h2 > a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element linkElm = row.select(titleCssQuery).get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
                 row.select("a:contains(详细)").remove();
-                article.setSummary(HtmlParser.text(row, "dl > dd > p"));
+
+                String summaryCssQuery = "dl > dd > p";
+                this.checkSummaryExistence(row, summaryCssQuery);
+                article.setSummary(HtmlParser.text(row, summaryCssQuery));
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -76,7 +85,9 @@ public class GasGoo extends Source {
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        Element contentElm = doc.select("#ArticleContent").first();
+        String cssQuery = "#ArticleContent";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }

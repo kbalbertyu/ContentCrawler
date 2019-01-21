@@ -40,14 +40,20 @@ public class NBD extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select("ul.m-columnnews-list > li");
+        String cssQuery = "ul.m-columnnews-list > li";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, ".f-source");
+                String dateTextCssQuery = ".f-source";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
 
-                Element linkElm = row.select("a.f-title").get(0);
+                String titleCssQuery = "a.f-title";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element linkElm = row.select(titleCssQuery).get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
@@ -71,12 +77,16 @@ public class NBD extends Source {
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        String summary = HtmlParser.text(doc, ".g-article-abstract > p");
+        String summaryCssQuery = ".g-article-abstract > p";
+        this.checkSummaryExistence(doc, summaryCssQuery);
+        String summary = HtmlParser.text(doc, summaryCssQuery);
         if (StringUtils.isNotBlank(summary)) {
             article.setSummary(summary);
         }
 
-        Element contentElm = doc.select(".g-articl-text").first();
+        String cssQuery = ".g-articl-text";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }

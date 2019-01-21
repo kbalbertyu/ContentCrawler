@@ -52,14 +52,20 @@ public class Sina extends Source {
                     continue;
                 }
 
-                String timeText = HtmlParser.text(row, ".feed-card-time");
+                String dateTextCssQuery = ".feed-card-time";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
 
-                Element linkElm = row.select("h2 > a").get(0);
+                String titleCssQuery = "h2 > a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element linkElm = row.select(titleCssQuery).get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
-                article.setSummary(HtmlParser.text(row, ".feed-card-txt-summary"));
+                String summaryCssQuery = ".feed-card-txt-summary";
+                this.checkSummaryExistence(row, summaryCssQuery);
+                article.setSummary(HtmlParser.text(row, summaryCssQuery));
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -80,7 +86,9 @@ public class Sina extends Source {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
-        Element contentElm = doc.select("#artibody").first();
+        String cssQuery = "#artibody";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }

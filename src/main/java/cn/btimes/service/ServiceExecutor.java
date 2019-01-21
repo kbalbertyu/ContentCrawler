@@ -1,5 +1,7 @@
 package cn.btimes.service;
 
+import cn.btimes.model.Messenger;
+import cn.btimes.model.Messengers;
 import cn.btimes.source.*;
 import com.amzass.service.common.ApplicationContext;
 import com.google.inject.Inject;
@@ -17,6 +19,9 @@ public class ServiceExecutor {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final static List<Source> sources = new ArrayList<>();
     @Inject private WebDriverLauncher webDriverLauncher;
+    @Inject private Messengers messengers;
+    @Inject private EmailSenderHelper emailSenderHelper;
+
     static {
         sources.add(ApplicationContext.getBean(Sina.class));
         sources.add(ApplicationContext.getBean(ThePaper.class));
@@ -42,8 +47,32 @@ public class ServiceExecutor {
             try {
                 source.execute(driver);
             } catch (Exception e) {
-                logger.error("Error found in executing: " + this.getClass(), e);
+                String message = String.format("Error found in executing: %s", this.getClass());
+                logger.error(message, e);
+                Messenger messenger = new Messenger(source.getClass().getName(), message);
+                this.messengers.add(messenger);
             }
         }
+        this.messengers.add(new Messenger("aaa", "bbb"));
+        if (this.messengers.isNotEmpty()) {
+            this.sendMessage(this.messengers);
+        }
+    }
+
+    private void sendMessage(Messengers messengers) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<table>");
+        for (Messenger messenger : messengers.getList()) {
+            sb.append("<tr>");
+            sb.append("<td>");
+            sb.append(messenger.getSource());
+            sb.append("</td>");
+            sb.append("<td>");
+            sb.append(messenger.getMessage());
+            sb.append("</td>");
+            sb.append("</tr>");
+        }
+        sb.append("</table>");
+        this.emailSenderHelper.send("ContentCrawler Error Messages", sb.toString(), "tansoyu@gmail.com");
     }
 }

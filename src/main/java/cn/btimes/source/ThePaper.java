@@ -44,7 +44,9 @@ public class ThePaper extends Source {
     protected List<Article> parseList(Document doc) {
         int i = 0;
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select(".newsbox .news_li");
+        String cssQuery = ".newsbox .news_li";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
@@ -52,7 +54,9 @@ public class ThePaper extends Source {
                     continue;
                 }
 
-                String timeText = HtmlParser.text(row, ".pdtt_trbs > span");
+                String dateTextCssQuery = ".pdtt_trbs > span";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 try {
                     article.setDate(this.parseDateText(timeText));
                 } catch (PastDateException e) {
@@ -62,11 +66,15 @@ public class ThePaper extends Source {
                     throw e;
                 }
 
-                Element linkElm = row.select("h2 > a").get(0);
+                String titleCssQuery = "h2 > a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element linkElm = row.select(titleCssQuery).get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
-                article.setSummary(HtmlParser.text(row, "p"));
+                String summaryCssQuery = "p";
+                this.checkSummaryExistence(row, summaryCssQuery);
+                article.setSummary(HtmlParser.text(row, summaryCssQuery));
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -108,7 +116,9 @@ public class ThePaper extends Source {
         article.setTitle(this.parseTitle(doc));
         article.setSource(this.parseSource(doc));
 
-        Element contentElm = doc.select(".news_txt").first();
+        String cssQuery = ".news_txt";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }
@@ -124,12 +134,16 @@ public class ThePaper extends Source {
 
     @Override
     protected String parseTitle(Document doc) {
-        return HtmlParser.text(doc, "h1.news_title");
+        String cssQuery = "h1.news_title";
+        this.checkTitleExistence(doc, cssQuery);
+        return HtmlParser.text(doc, cssQuery);
     }
 
     @Override
     protected String parseSource(Document doc) {
-        String sourceText = HtmlParser.text(doc, ".news_about > p > span:contains(来源)");
+        String cssQuery = ".news_about > p > span:contains(来源)";
+        this.checkSourceExistence(doc, cssQuery);
+        String sourceText = HtmlParser.text(doc, cssQuery);
         return StringUtils.trim(StringUtils.remove(sourceText, "来源："));
     }
 

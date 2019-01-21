@@ -35,18 +35,26 @@ public class LvJie extends ThePaper {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select("#data_list > .li");
+        String cssQuery = "#data_list > .li";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, ".time");
+                String dateTextCssQuery = ".time";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
 
-                Element linkElm = row.select(".Tlist > a").get(0);
+                String titleCssQuery = ".Tlist > a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element linkElm = row.select(titleCssQuery).get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
-                article.setSummary(HtmlParser.text(row, "p.listCont"));
+                String summaryCssQuery = "p.listCont";
+                this.checkSummaryExistence(row, summaryCssQuery);
+                article.setSummary(HtmlParser.text(row, summaryCssQuery));
                 articles.add(article);
             } catch (PastDateException e) {
                 logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
@@ -70,7 +78,9 @@ public class LvJie extends ThePaper {
 
         article.setSource(this.parseSource(doc));
 
-        Element contentElm = doc.select(".detailCont").first();
+        String cssQuery = ".detailCont";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }
@@ -92,7 +102,9 @@ public class LvJie extends ThePaper {
 
     @Override
     protected String parseSource(Document doc) {
-        return HtmlParser.text(doc, ".Wh > .baodao");
+        String cssQuery = ".Wh > .baodao";
+        this.checkSourceExistence(doc, cssQuery);
+        return HtmlParser.text(doc, cssQuery);
     }
 
     @Override

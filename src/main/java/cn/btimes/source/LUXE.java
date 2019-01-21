@@ -37,16 +37,26 @@ public class LUXE extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select("div[id^=post-]");
+        String cssQuery = "div[id^=post-]";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, ".meta-footer");
+                String dateTextCssQuery = ".meta-footer";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
-                Element linkElm = row.select("h2.title > a").get(0);
+
+                String titleCssQuery = "h2.title > a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element linkElm = row.select(titleCssQuery).get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
-                article.setSummary(HtmlParser.text(row, "p.exceprt"));
+
+                String summaryCssQuery = "p.exceprt";
+                this.checkSummaryExistence(doc, summaryCssQuery);
+                article.setSummary(HtmlParser.text(row, summaryCssQuery));
                 articles.add(article);
             } catch (PastDateException e) {
                 logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
@@ -73,7 +83,9 @@ public class LUXE extends Source {
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        Element contentElm = doc.select(".post-body").first();
+        String cssQuery = ".post-body";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }

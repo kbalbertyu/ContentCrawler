@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.amzass.enums.common.DateFormat;
 import com.amzass.enums.common.Directory;
 import com.amzass.model.common.ActionLog;
+import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.*;
 import com.amzass.utils.common.Exceptions.BusinessException;
@@ -66,6 +67,7 @@ public abstract class Source {
     static final int MAX_PAST_MINUTES = NumberUtils.toInt(Tools.getCustomizingValue("MAX_PAST_MINUTES"));
     private static final List<String[]> sources = readSources();
     @Inject private DBManager dbManager;
+    @Inject Messengers messengers;
 
     protected abstract Map<String, Category> getUrls();
 
@@ -122,9 +124,16 @@ public abstract class Source {
             } catch (PastDateException e) {
                 logger.error("Article publish date has past {} minutes: {}", MAX_PAST_MINUTES, article.getUrl());
             } catch (BusinessException e) {
-                logger.error("Unable to read article {}", article.getUrl(), e);
+                String message = String.format("Unable to read article %s", article.getUrl());
+                logger.error(message, e);
+                Messenger messenger = new Messenger(this.getClass().getName(), message + ": " + e.getMessage());
+                this.messengers.add(messenger);
             } catch (Exception e) {
-                logger.error("Exception found for article: {} -> {}", article.getTitle(), article.getUrl(), e);
+                String message = String.format("Exception found for article: %s -> %s", article.getTitle(), article.getUrl());
+                logger.error(message, e);
+
+                Messenger messenger = new Messenger(this.getClass().getName(), message + ": " + e.getMessage());
+                this.messengers.add(messenger);
                 continue;
             }
             dbManager.save(new ActionLog(logId), ActionLog.class);
@@ -191,16 +200,56 @@ public abstract class Source {
                     logger.info("Article saved: {} -> {}", article.getTitle(), articleId);
                     return;
                 } else {
-                    logger.error("Article saved failed: {}", article.getTitle());
+                    String message = String.format("Article saved failed: %s", article.getTitle());
+                    logger.error(message);
+                    Messenger messenger = new Messenger(this.getClass().getName(), message);
+                    this.messengers.add(messenger);
                 }
             } catch (IOException e) {
-                logger.error("Unable to save the article:", e);
+                String message = "Unable to save the article:";
+                logger.error(message, e);
+                Messenger messenger = new Messenger(this.getClass().getName(), message + e.getMessage());
+                this.messengers.add(messenger);
                 WaitTime.Normal.execute();
             }
         }
         throw new BusinessException(String.format("Unable to save the article: [%s]%s -> %s",
             article.getSource(), article.getTitle(), article.getUrl()));
     }
+
+    void checkArticleListExistence(Element doc, String cssQuery) {
+        this.checkElementExistence(doc, cssQuery, "Article list");
+    }
+
+    void checkArticleContentExistence(Element doc, String cssQuery) {
+        this.checkElementExistence(doc, cssQuery, "Article content");
+    }
+
+    void checkDateTextExistence(Element doc, String cssQuery) {
+        this.checkElementExistence(doc, cssQuery, "Date text");
+    }
+
+    void checkTitleExistence(Element doc, String cssQuery) {
+        this.checkElementExistence(doc, cssQuery, "Title");
+    }
+
+    void checkSummaryExistence(Element doc, String cssQuery) {
+        this.checkElementExistence(doc, cssQuery, "Summary");
+    }
+
+    void checkSourceExistence(Element doc, String cssQuery) {
+        this.checkElementExistence(doc, cssQuery, "Source");
+    }
+
+    private void checkElementExistence(Element doc, String cssQuery, String name) {
+        if (HtmlParser.anyExist(doc, cssQuery)) {
+            return;
+        }
+        Messenger messenger = new Messenger(this.getClass().getName(),
+            String.format("%s not found with: %s", name, cssQuery));
+        this.messengers.add(messenger);
+    }
+
 
     private void deleteDownloadedImages(List<SavedImage> savedImages) {
         for (SavedImage image : savedImages) {
@@ -363,7 +412,10 @@ public abstract class Source {
             try {
                 downloadResult = this.downloadFile(imageUrl, driver);
             } catch (BusinessException e) {
-                logger.error("Unable to download image: {}", imageUrl);
+                String message = String.format("Unable to download image: %s", imageUrl);
+                logger.error(message);
+                Messenger messenger = new Messenger(this.getClass().getName(), message + ": " + e.getMessage());
+                this.messengers.add(messenger);
                 continue;
             }
             String image = downloadResult.getFullPath();
@@ -373,27 +425,35 @@ public abstract class Source {
                 conn.data("files[" + i + "]", image, fs);
                 i++;
             } catch (IOException e) {
-                logger.error("Unable to download file: {}", image, e);
+                String message = String.format("Unable to download file: %s", image);
+                logger.error(message, e);
+                Messenger messenger = new Messenger(this.getClass().getName(), message + ": " + e.getMessage());
+                this.messengers.add(messenger);
             }
         }
         if (i == 0) {
             logger.error("No files downloaded.");
             return null;
         }
+        String message = null;
         for (int j = 0; j < Constants.MAX_REPEAT_TIMES; j++) {
             try {
                 String body = conn.execute().body();
                 ImageUploadResult result = JSONObject.parseObject(body, ImageUploadResult.class);
                 if (!result.hasFiles()) {
-                    logger.error("Files are not uploaded, retry uploading: {}", body);
+                    message = String.format("Files are not uploaded, retry uploading: %s", body);
+                    logger.error(message);
                     continue;
                 }
                 return result;
             } catch (Exception e) {
-                logger.error("Unable to upload files, retry in {} seconds:", WaitTime.Normal.val(),  e);
+                message = String.format("Unable to upload files, retry in {} seconds:", WaitTime.Normal.val());
+                logger.error(message,  e);
                 WaitTime.Normal.execute();
             }
         }
+        Messenger messenger = new Messenger(this.getClass().getName(), String.format("Unable to upload file: %s", message));
+        this.messengers.add(messenger);
         return null;
     }
 
@@ -422,7 +482,10 @@ public abstract class Source {
                 String body = conn.execute().body();
                 return JSONObject.parseArray(body, SavedImage.class);
             } catch (IOException e) {
-                logger.error("Unable to save the files, retry in {} seconds:", WaitTime.Normal.val(),  e);
+                String message = String.format("Unable to save the files, retry in %d seconds:", WaitTime.Normal.val());
+                logger.error(message,  e);
+                Messenger messenger = new Messenger(this.getClass().getName(), message + ": " + e.getMessage());
+                this.messengers.add(messenger);
                 WaitTime.Normal.execute();
             }
         }
@@ -463,9 +526,15 @@ public abstract class Source {
                         FileUtils.byteCountToDisplaySize(file.length()), result.getFullPath());
                     return result;
                 }
-                logger.error(String.format("Failed to execute %s file download request, status: %s.", fileName, status));
+                String message = String.format("Failed to execute %s file download request, status: %s.", fileName, status);
+                logger.error(message);
+                Messenger messenger = new Messenger(this.getClass().getName(), message);
+                this.messengers.add(messenger);
             } catch (Exception ex) {
-                logger.error(String.format("Failed to download file of %s： %s", fileName, Tools.getExceptionMsg(ex)));
+                String message = String.format("Failed to download file of %s： %s", fileName, Tools.getExceptionMsg(ex));
+                logger.error(message);
+                Messenger messenger = new Messenger(this.getClass().getName(), message);
+                this.messengers.add(messenger);
             } finally {
                 get.releaseConnection();
                 IOUtils.closeQuietly(is);

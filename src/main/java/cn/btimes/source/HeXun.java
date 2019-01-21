@@ -39,17 +39,23 @@ public class HeXun extends Source {
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        Elements list = doc.select("#temp01 > ul > li");
+        String cssQuery = "#temp01 > ul > li";
+        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = doc.select(cssQuery);
         for (Element row : list) {
             try {
                 if (StringUtils.isBlank(row.text())) {
                     continue;
                 }
                 Article article = new Article();
-                String timeText = HtmlParser.text(row, "span");
+                String dateTextCssQuery = "span";
+                this.checkDateTextExistence(row, dateTextCssQuery);
+                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 article.setDate(this.parseDateText(timeText));
 
-                Element linkElm = row.select("a").get(0);
+                String titleCssQuery = "a";
+                this.checkTitleExistence(row, titleCssQuery);
+                Element linkElm = row.select(titleCssQuery).get(0);
                 article.setUrl(linkElm.attr("href"));
                 article.setTitle(linkElm.text());
 
@@ -74,7 +80,9 @@ public class HeXun extends Source {
         PageUtils.scrollToBottom(driver);
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        Element contentElm = doc.select(".art_contextBox").first();
+        String cssQuery = ".art_contextBox";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }
