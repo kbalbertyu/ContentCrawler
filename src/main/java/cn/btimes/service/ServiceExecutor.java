@@ -40,8 +40,10 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(LUXE.class));
         sources.add(ApplicationContext.getBean(IYiOu.class));
         sources.add(ApplicationContext.getBean(CTO51.class));
+        sources.add(ApplicationContext.getBean(CNBeta.class));
     }
     public void execute() {
+        messengers.clear();
         WebDriver driver = webDriverLauncher.start();
         for (Source source : sources) {
             try {
@@ -53,7 +55,6 @@ public class ServiceExecutor {
                 this.messengers.add(messenger);
             }
         }
-        this.messengers.add(new Messenger("aaa", "bbb"));
         if (this.messengers.isNotEmpty()) {
             this.sendMessage(this.messengers);
         }

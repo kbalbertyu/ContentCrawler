@@ -111,6 +111,8 @@ public abstract class Source {
         }
 
         logger.info("Found {} articles from list.", articles.size());
+
+        int saved = 0;
         for (Article article : articles) {
             String logId = Common.toMD5(article.getUrl());
             ActionLog log = dbManager.readById(logId, ActionLog.class);
@@ -121,6 +123,7 @@ public abstract class Source {
             try {
                 this.readArticle(driver, article);
                 this.saveArticle(article, driver);
+                saved++;
             } catch (PastDateException e) {
                 logger.error("Article publish date has past {} minutes: {}", MAX_PAST_MINUTES, article.getUrl());
             } catch (BusinessException e) {
@@ -137,6 +140,12 @@ public abstract class Source {
                 continue;
             }
             dbManager.save(new ActionLog(logId), ActionLog.class);
+        }
+
+        if (articles.size() > 0) {
+            Messenger messenger = new Messenger(this.getClass().getName(),
+                String.format("%d of %d articles are saved.", saved, articles.size()));
+            this.messengers.add(messenger);
         }
     }
 
