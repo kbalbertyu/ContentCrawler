@@ -106,7 +106,7 @@ public class JieMian extends ThePaper {
     @Override
     protected String parseSource(Document doc) {
         String keyword = "来源：";
-        String cssQuery = ".article-info > span:contains(" + keyword + ")";
+        String cssQuery = ".article-source > p:contains(" + keyword + ")";
         this.checkSourceExistence(doc, cssQuery);
         String source = HtmlParser.text(doc, cssQuery);
         return StringUtils.trim(StringUtils.remove(source, keyword));
