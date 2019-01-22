@@ -41,6 +41,7 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(IYiOu.class));
         sources.add(ApplicationContext.getBean(CTO51.class));
         sources.add(ApplicationContext.getBean(CNBeta.class));
+        sources.add(ApplicationContext.getBean(CNR.class));
     }
     public void execute() {
         messengers.clear();
