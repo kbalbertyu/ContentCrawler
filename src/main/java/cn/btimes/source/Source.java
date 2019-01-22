@@ -535,7 +535,7 @@ public abstract class Source {
                         FileUtils.byteCountToDisplaySize(file.length()), result.getFullPath());
                     return result;
                 }
-                String message = String.format("Failed to execute %s file download request, status: %s.", fileName, status);
+                String message = String.format("Failed to execute file download request: fileName=%s, url=%s, status=%s.", fileName, originalUrl, status);
                 logger.error(message);
                 Messenger messenger = new Messenger(this.getClass().getName(), message);
                 this.messengers.add(messenger);
