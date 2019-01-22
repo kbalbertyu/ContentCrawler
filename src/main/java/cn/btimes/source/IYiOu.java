@@ -7,8 +7,12 @@ import com.alibaba.fastjson.JSONObject;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
+import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.RegexUtils;
+import com.amzass.utils.common.Tools;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -27,6 +31,7 @@ public class IYiOu extends Source {
     private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}";
     private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     private static final Map<String, Category> URLS = new HashMap<>();
+    private static final int MAX_PAST_MINUTES = 60;
 
     static {
         URLS.put("https://www.iyiou.com/AI/", Category.FUTURE_INDUSTRIES);
@@ -49,7 +54,8 @@ public class IYiOu extends Source {
             try {
                 Article article = new Article();
                 String timeText = HtmlParser.text(row, ".time");
-                if (StringUtils.contains(timeText, "小时") || RegexUtils.match(timeText, "\\d{4}-\\d{2}-\\d{2}")) {
+                if ((StringUtils.contains(timeText, "小时") && !StringUtils.equals(timeText, "1小时前")) ||
+                    RegexUtils.match(timeText, "\\d{4}-\\d{2}-\\d{2}")) {
                     throw new PastDateException();
                 }
 
@@ -87,9 +93,16 @@ public class IYiOu extends Source {
 
         String dateTextCssQuery = "script[type=application/ld+json]";
         this.checkDateTextExistence(doc, dateTextCssQuery);
-        Element element = doc.select(dateTextCssQuery).get(0);
-        JSONObject obj = JSONObject.parseObject(element.html());
-        article.setDate(this.parseDateText(String.valueOf(obj.get("pubDate"))));
+        Elements elements = doc.select(dateTextCssQuery);
+        if (elements.size() > 0) {
+            JSONObject obj = JSONObject.parseObject(elements.get(0).html());
+            article.setDate(this.parseDateText(String.valueOf(obj.get("pubDate"))));
+        } else {
+            dateTextCssQuery = "#post_date";
+            this.checkDateTextExistence(doc, dateTextCssQuery);
+            String dateText = HtmlParser.text(doc, dateTextCssQuery);
+            article.setDate(this.parseDateText(dateText));
+        }
 
         String summaryCssQuery = "#post_brief";
         this.checkSummaryExistence(doc, summaryCssQuery);
@@ -125,7 +138,28 @@ public class IYiOu extends Source {
 
     @Override
     protected Date parseDateText(String timeText) {
-        return this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
+        if (Tools.containsAny(timeText, "刚刚")) {
+            return new Date();
+        }
+        if (!Tools.containsAny(timeText, "分钟前", "小时前")) {
+            return this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
+        }
+        int minutes = NumberUtils.toInt(RegexUtils.getMatched(timeText, "\\d+"));
+        if (Tools.containsAny(timeText, "小时")) {
+            if (minutes != 1) {
+                throw new PastDateException();
+            }
+            minutes = 60;
+        } else if (!Tools.containsAny(timeText, "分钟")) {
+            if (minutes == 0) {
+                throw new BusinessException("Unable to parse time text: " + timeText);
+            }
+        }
+
+        if (minutes > MAX_PAST_MINUTES) {
+            throw new PastDateException();
+        }
+        return DateUtils.addMinutes(new Date(), -1 * minutes);
     }
 
     @Override
