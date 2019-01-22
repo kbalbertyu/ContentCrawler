@@ -58,10 +58,6 @@ public class YiCai extends Source {
                 Element titleElm = row.select(titleCssQuery).get(0);
                 article.setTitle(titleElm.text());
 
-                String summaryCssQuery = "p:eq(0)";
-                this.checkSummaryExistence(row, summaryCssQuery);
-                article.setSummary(HtmlParser.text(row, summaryCssQuery));
-
                 articles.add(article);
             } catch (PastDateException e) {
                 logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
@@ -81,6 +77,11 @@ public class YiCai extends Source {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
+
+        String summaryCssQuery = ".intro";
+        this.checkSummaryExistence(doc, summaryCssQuery);
+        article.setSummary(HtmlParser.text(doc, summaryCssQuery));
+
         String cssQuery = ".m-txt";
         this.checkArticleContentExistence(doc, cssQuery);
         Element contentElm = doc.select(cssQuery).first();
