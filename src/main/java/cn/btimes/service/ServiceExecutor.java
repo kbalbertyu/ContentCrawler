@@ -46,6 +46,7 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(CNR.class));
         sources.add(ApplicationContext.getBean(People.class));
         sources.add(ApplicationContext.getBean(IFeng.class));
+        sources.add(ApplicationContext.getBean(WallStreetCN.class));
     }
     public void execute() {
         messengers.clear();
