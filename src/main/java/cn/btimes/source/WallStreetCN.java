@@ -96,7 +96,7 @@ public class WallStreetCN extends Source {
 
         article.setSource(this.parseSource(doc));
 
-        String cssQuery = "article > .rich-text";
+        String cssQuery = "article .rich-text";
         this.checkArticleContentExistence(doc, cssQuery);
         Element contentElm = doc.select(cssQuery).first();
         article.setContent(this.cleanHtml(contentElm));
