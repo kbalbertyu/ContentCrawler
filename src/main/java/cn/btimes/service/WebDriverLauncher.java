@@ -25,7 +25,7 @@ import java.util.Set;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2018-12-29 2:37 PM
  */
 public class WebDriverLauncher {
-    private static final String DOWNLOAD_PATH = System.getProperty("user.dir") + "/downloads";
+    static final String DOWNLOAD_PATH = System.getProperty("user.dir") + "/downloads";
     private static final boolean USE_HEADLESS_DRIVER = StringUtils.isNotBlank(Tools.getCustomizingValue("USE_HEADLESS_DRIVER"));
     @Inject private WebDriverManager webDriverManager;
     public static Map<String, String> adminCookies;

@@ -5,10 +5,12 @@ import cn.btimes.model.Messengers;
 import cn.btimes.source.*;
 import com.amzass.service.common.ApplicationContext;
 import com.google.inject.Inject;
+import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,9 +45,11 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(CNBeta.class));
         sources.add(ApplicationContext.getBean(CNR.class));
         sources.add(ApplicationContext.getBean(People.class));
+        sources.add(ApplicationContext.getBean(IFeng.class));
     }
     public void execute() {
         messengers.clear();
+        this.deleteDownloadedFiles();
         WebDriver driver = webDriverLauncher.start();
         for (Source source : sources) {
             try {
@@ -60,6 +64,23 @@ public class ServiceExecutor {
         if (this.messengers.isNotEmpty()) {
             this.sendMessage(this.messengers);
         }
+    }
+
+    private void deleteDownloadedFiles() {
+        File root = FileUtils.getFile(WebDriverLauncher.DOWNLOAD_PATH);
+        if (!root.isDirectory()) {
+            logger.error("Download directory not exists: {}", WebDriverLauncher.DOWNLOAD_PATH);
+            return;
+        }
+        int i = 0, j = 0;
+        for (File file : root.listFiles()) {
+            if (FileUtils.deleteQuietly(file)) {
+                i++;
+                continue;
+            }
+            j++;
+        }
+        logger.info("Downloaded files deleted: success={}, fail={}", i, j);
     }
 
     private void sendMessage(Messengers messengers) {
