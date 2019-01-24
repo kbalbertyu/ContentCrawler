@@ -73,7 +73,10 @@ public class JieMian extends ThePaper {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select("#ad-content, p:contains(编辑：)").remove();
+        Elements elements = dom.select("#ad-content, p:contains(编辑：)");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 }

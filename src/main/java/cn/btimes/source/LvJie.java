@@ -63,7 +63,10 @@ public class LvJie extends ThePaper {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select("[class*=subject], [style*=italic], img[src*=static]").remove();
+        Elements elements = dom.select("[class*=subject], [style*=italic], img[src*=static]");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 }
