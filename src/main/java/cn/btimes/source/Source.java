@@ -56,7 +56,7 @@ import java.util.*;
 public abstract class Source {
     private static final String WITHOUT_YEAR = "1970";
     private static final String WITHOUT_MONTH_DAY = "01/01";
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(Source.class);
     private static final String DOWNLOAD_PATH = "downloads";
     public static final String ADMIN_URL = Tools.getCustomizingValue("ADMIN_URL");
     private static final String FILE_UPLOAD_URL = ADMIN_URL + "/plugin/jqueryfileupload/server/php/";
