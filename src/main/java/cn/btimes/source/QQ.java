@@ -2,6 +2,7 @@ package cn.btimes.source;
 
 import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
 import cn.btimes.model.Messenger;
 import cn.btimes.utils.PageUtils;
@@ -26,8 +27,6 @@ import java.util.*;
  */
 public class QQ extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static final String DATE_REGEX = "\\d{4}/\\d{2}/\\d{2} \\d{1,2}:\\d{1,2}";
-    private static final String DATE_FORMAT = "yyyy/MM/dd HH:mm";
     private static final int MAX_PAST_MINUTES = 90;
     private static final Map<String, Category> URLS = new HashMap<>();
 
@@ -42,24 +41,34 @@ public class QQ extends Source {
     }
 
     @Override
-    protected List<Article> parseList(Document doc) {
+    protected String getDateRegex() {
+        return "\\d{4}/\\d{2}/\\d{2} \\d{1,2}:\\d{1,2}";
+    }
+
+    @Override
+    protected String getDateFormat() {
+        return "yyyy/MM/dd HH:mm";
+    }
+
+    @Override
+    protected CSSQuery getCSSQuery() {
         String idPrefix = DateFormatUtils.format(new Date(), "yyyyMMdd");
+        return new CSSQuery("li[id^=" + idPrefix + "]", ".content-article",
+            "h3 > a", "", "", "");
+    }
+
+    @Override
+    protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        String cssQuery = "li[id^=" + idPrefix + "]";
-        this.checkArticleListExistence(doc, cssQuery);
-        Elements list = doc.select(cssQuery);
+        Elements list = this.readList(doc);
         for (Element row : list) {
             Article article = new Article();
 
-            String titleCssQuery = "h3 > a";
-            this.checkTitleExistence(row, titleCssQuery);
-            Element linkElm = row.select(titleCssQuery).get(0);
-            article.setUrl(linkElm.attr("href"));
-            String title = linkElm.text();
-            if (StringUtils.contains(title, "专题") || linkElm.children().size() > 0) {
-                logger.warn("Not an article link, just skip: {}", title);
+            this.parseTitle(row, article);
+            if (StringUtils.isBlank(article.getUrl())) {
                 continue;
             }
+
             String dateTextCssQuery = ".time";
             this.checkDateTextExistence(row, dateTextCssQuery);
             String timeText = HtmlParser.text(row, dateTextCssQuery);
@@ -67,15 +76,9 @@ public class QQ extends Source {
                 !StringUtils.equals(timeText, "1小时前")) {
                 continue;
             }
-            article.setTitle(title);
             articles.add(article);
         }
         return articles;
-    }
-
-    @Override
-    protected Boolean validateLink(String href) {
-        return null;
     }
 
     @Override
@@ -96,6 +99,19 @@ public class QQ extends Source {
         WaitTime.Short.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
+        this.parseDate(doc, article);
+        this.parseContent(doc, article);
+    }
+
+    @Override
+    void checkDate(Date date) {
+        if (this.calcMinutesAgo(date) > MAX_PAST_MINUTES) {
+            throw new PastDateException();
+        }
+    }
+
+    @Override
+    protected void parseDate(Element doc, Article article) {
         String year = ".left-stick-wp > .year";
         String monthDay = ".left-stick-wp > .md";
         String time = ".left-stick-wp > .time";
@@ -108,49 +124,20 @@ public class QQ extends Source {
             HtmlParser.text(doc, monthDay) + " " +
             HtmlParser.text(doc, time);
         article.setDate(this.parseDateText(timeText));
-
-        String cssQuery = ".content-article";
-        this.checkArticleContentExistence(doc, cssQuery);
-        Element contentElm = doc.select(cssQuery).first();
-        article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
     }
 
     @Override
-    void checkDate(Date date) {
-        if (this.calcMinutesAgo(date) > MAX_PAST_MINUTES) {
-            throw new PastDateException();
+    protected void parseTitle(Element doc, Article article) {
+        String titleCssQuery = this.getCSSQuery().getTitle();
+        this.checkTitleExistence(doc, titleCssQuery);
+        Element linkElm = doc.select(titleCssQuery).get(0);
+        String title = linkElm.text();
+        if (StringUtils.contains(title, "专题") || linkElm.children().size() > 0) {
+            logger.warn("Not an article link, just skip: {}", title);
+            return;
         }
-    }
-
-    @Override
-    protected Date parseDateText(String timeText) {
-        return this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
-    }
-
-    @Override
-    protected Date parseDate(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected void validateDate(Date date) {
-
-    }
-
-    @Override
-    protected String parseTitle(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected String parseSource(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected String parseContent(Document doc) {
-        return null;
+        article.setUrl(linkElm.attr("href"));
+        article.setTitle(title);
     }
 
     @Override

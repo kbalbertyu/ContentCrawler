@@ -2,9 +2,9 @@ package cn.btimes.source;
 
 import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
-import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.RegexUtils;
@@ -12,7 +12,6 @@ import com.amzass.utils.common.Tools;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -41,12 +40,26 @@ public class ThePaper extends Source {
     }
 
     @Override
+    protected String getDateRegex() {
+        return null;
+    }
+
+    @Override
+    protected String getDateFormat() {
+        return null;
+    }
+
+    @Override
+    protected CSSQuery getCSSQuery() {
+        return new CSSQuery(".newsbox .news_li", ".news_txt", "h2 > a", "p",
+            ".news_about > p > span:contains(来源)", ".pdtt_trbs > span");
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         int i = 0;
         List<Article> articles = new ArrayList<>();
-        String cssQuery = ".newsbox .news_li";
-        this.checkArticleListExistence(doc, cssQuery);
-        Elements list = doc.select(cssQuery);
+        Elements list = this.readList(doc);
         for (Element row : list) {
             try {
                 Article article = new Article();
@@ -54,11 +67,8 @@ public class ThePaper extends Source {
                     continue;
                 }
 
-                String dateTextCssQuery = ".pdtt_trbs > span";
-                this.checkDateTextExistence(row, dateTextCssQuery);
-                String timeText = HtmlParser.text(row, dateTextCssQuery);
                 try {
-                    article.setDate(this.parseDateText(timeText));
+                    this.parseDate(doc, article);
                 } catch (PastDateException e) {
                     if (i++ < Constants.MAX_REPEAT_TIMES) {
                         continue;
@@ -66,16 +76,8 @@ public class ThePaper extends Source {
                     throw e;
                 }
 
-                String titleCssQuery = "h2 > a";
-                this.checkTitleExistence(row, titleCssQuery);
-                Element linkElm = row.select(titleCssQuery).get(0);
-                article.setUrl(linkElm.attr("href"));
-                article.setTitle(linkElm.text());
-
-                String summaryCssQuery = "p";
-                this.checkSummaryExistence(row, summaryCssQuery);
-                article.setSummary(HtmlParser.text(row, summaryCssQuery));
-
+                super.parseTitle(row, article);
+                this.parseSummary(row, article);
                 articles.add(article);
             } catch (PastDateException e) {
                 logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
@@ -103,54 +105,20 @@ public class ThePaper extends Source {
     }
 
     @Override
-    protected Boolean validateLink(String href) {
-        return null;
-    }
-
-    @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        article.setTitle(this.parseTitle(doc));
-        article.setSource(this.parseSource(doc));
-
-        String cssQuery = ".news_txt";
-        this.checkArticleContentExistence(doc, cssQuery);
-        Element contentElm = doc.select(cssQuery).first();
-        article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
+        this.readTitleSourceContent(driver, article);
     }
 
     @Override
-    protected Date parseDate(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected void validateDate(Date date) {
-    }
-
-    @Override
-    protected String parseTitle(Document doc) {
+    protected void parseTitle(Element doc, Article article) {
         String cssQuery = "h1.news_title";
         this.checkTitleExistence(doc, cssQuery);
-        return HtmlParser.text(doc, cssQuery);
+        article.setTitle(HtmlParser.text(doc, cssQuery));
     }
 
     @Override
-    protected String parseSource(Document doc) {
-        String cssQuery = ".news_about > p > span:contains(来源)";
-        this.checkSourceExistence(doc, cssQuery);
-        String sourceText = HtmlParser.text(doc, cssQuery);
-        return StringUtils.trim(StringUtils.remove(sourceText, "来源："));
-    }
-
-    @Override
-    protected String parseContent(Document doc) {
-        // Not used here
-        return null;
+    String removeSourceNoise(String source) {
+        return StringUtils.trim(StringUtils.remove(source, "来源："));
     }
 
     @Override

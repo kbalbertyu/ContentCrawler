@@ -71,25 +71,127 @@ public abstract class Source {
 
     protected abstract Map<String, Category> getUrls();
 
-    protected abstract List<Article> parseList(Document doc);
+    protected abstract String getDateRegex();
 
-    protected abstract Boolean validateLink(String href);
+    protected abstract String getDateFormat();
+
+    protected abstract CSSQuery getCSSQuery();
+
+    protected abstract int getSourceId();
+
+    protected abstract List<Article> parseList(Document doc);
 
     protected abstract void readArticle(WebDriver driver, Article article);
 
-    protected abstract Date parseDateText(String timeText);
+    Elements readList(Document doc) {
+        String cssQuery = this.getCSSQuery().getList();
+        this.checkArticleListExistence(doc, cssQuery);
+        return doc.select(cssQuery);
+    }
 
-    protected abstract Date parseDate(Document doc);
+    void readContentSource(WebDriver driver, Article article) {
+        driver.get(article.getUrl());
+        WaitTime.Normal.execute();
+        Document doc = Jsoup.parse(driver.getPageSource());
 
-    protected abstract void validateDate(Date date);
+        this.parseSource(doc, article);
+        this.parseContent(doc, article);
+    }
 
-    protected abstract String parseTitle(Document doc);
+    void readSummaryContent(WebDriver driver, Article article) {
+        driver.get(article.getUrl());
+        WaitTime.Normal.execute();
+        Document doc = Jsoup.parse(driver.getPageSource());
 
-    protected abstract String parseSource(Document doc);
+        this.parseSummary(doc, article);
+        this.parseContent(doc, article);
+    }
 
-    protected abstract String parseContent(Document doc);
+    void readTitleSourceContent(WebDriver driver, Article article) {
+        driver.get(article.getUrl());
+        WaitTime.Normal.execute();
+        Document doc = Jsoup.parse(driver.getPageSource());
 
-    protected abstract int getSourceId();
+        this.parseTitle(doc, article);
+        this.parseSource(doc, article);
+        this.parseContent(doc, article);
+    }
+
+    void readDateContent(WebDriver driver, Article article) {
+        driver.get(article.getUrl());
+        WaitTime.Normal.execute();
+        Document doc = Jsoup.parse(driver.getPageSource());
+
+        this.parseDate(doc, article);
+        this.parseContent(doc, article);
+    }
+
+    void parseDateTitleSummaryList(List<Article> articles, Elements list) {
+        for (Element row : list) {
+            try {
+                Article article = new Article();
+                this.parseDate(row, article);
+                this.parseTitle(row, article);
+                this.parseSummary(row, article);
+
+                articles.add(article);
+            } catch (PastDateException e) {
+                logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
+                break;
+            }
+        }
+    }
+
+    void parseDateTitleList(List<Article> articles, Elements list) {
+        for (Element row : list) {
+            try {
+                Article article = new Article();
+                this.parseDate(row, article);
+                this.parseTitle(row, article);
+
+                articles.add(article);
+            } catch (PastDateException e) {
+                logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
+                break;
+            }
+        }
+    }
+
+    void parseTitle(Element doc, Article article) {
+        CSSQuery cssQuery = this.getCSSQuery();
+        this.checkTitleExistence(doc, cssQuery.getTitle());
+        Element linkElm = doc.select(cssQuery.getTitle()).get(0);
+        if (StringUtils.isBlank(article.getUrl())) {
+            article.setUrl(linkElm.attr("href"));
+        }
+        article.setTitle(linkElm.text());
+    }
+
+    void parseSource(Element doc, Article article) {
+        CSSQuery cssQuery = this.getCSSQuery();
+        this.checkSourceExistence(doc, cssQuery.getSource());
+        String source = HtmlParser.text(doc, cssQuery.getSource());
+        article.setSource(this.removeSourceNoise(source));
+    }
+
+    String removeSourceNoise(String source) {
+        return source;
+    }
+
+    void parseSummary(Element doc, Article article) {
+        CSSQuery cssQuery = this.getCSSQuery();
+        this.checkSummaryExistence(doc, cssQuery.getSummary());
+        String source = HtmlParser.text(doc, cssQuery.getSummary());
+        article.setSummary(source);
+    }
+
+    void parseContent(Document doc, Article article) {
+        CSSQuery cssQuery = this.getCSSQuery();
+        this.checkArticleContentExistence(doc, cssQuery.getContent());
+        Element contentElm = doc.select(cssQuery.getContent()).first();
+        article.setContent(this.cleanHtml(contentElm));
+        this.fetchContentImages(article, contentElm);
+    }
 
     public void execute(WebDriver driver) {
         List<Article> articles = new ArrayList<>();
@@ -149,7 +251,7 @@ public abstract class Source {
         }
     }
 
-    void saveArticle(Article article, WebDriver driver) {
+    private void saveArticle(Article article, WebDriver driver) {
         article.checkContent();
         if (article.hasImages()) {
             ImageUploadResult result = this.uploadImages(article, driver);
@@ -226,7 +328,7 @@ public abstract class Source {
             article.getSource(), article.getTitle(), article.getUrl()));
     }
 
-    void checkArticleListExistence(Element doc, String cssQuery) {
+    private void checkArticleListExistence(Element doc, String cssQuery) {
         this.checkElementExistence(doc, cssQuery, "Article list");
     }
 
@@ -242,11 +344,11 @@ public abstract class Source {
         this.checkElementExistence(doc, cssQuery, "Title");
     }
 
-    void checkSummaryExistence(Element doc, String cssQuery) {
+    private void checkSummaryExistence(Element doc, String cssQuery) {
         this.checkElementExistence(doc, cssQuery, "Summary");
     }
 
-    void checkSourceExistence(Element doc, String cssQuery) {
+    private void checkSourceExistence(Element doc, String cssQuery) {
         this.checkElementExistence(doc, cssQuery, "Source");
     }
 
@@ -275,7 +377,18 @@ public abstract class Source {
         article.setContentImages(contentImages);
     }
 
-    Date parseDateText(String timeText, String regex, String dateFormat) {
+    void parseDate(Element doc, Article article) {
+        CSSQuery cssQuery = this.getCSSQuery();
+        this.checkDateTextExistence(doc, cssQuery.getTime());
+        String timeText = HtmlParser.text(doc, cssQuery.getTime());
+        article.setDate(this.parseDateText(timeText));
+    }
+
+    Date parseDateText(String timeText) {
+        return this.parseDateText(timeText, this.getDateRegex(), this.getDateFormat());
+    }
+
+    private Date parseDateText(String timeText, String regex, String dateFormat) {
         try {
             timeText = RegexUtils.getMatched(timeText, regex);
             Date date = DateUtils.parseDate(timeText, Locale.PRC, dateFormat);
@@ -456,7 +569,7 @@ public abstract class Source {
                 }
                 return result;
             } catch (Exception e) {
-                message = String.format("Unable to upload files, retry in {} seconds:", WaitTime.Normal.val());
+                message = String.format("Unable to upload files, retry in %d seconds:", WaitTime.Normal.val());
                 logger.error(message,  e);
                 WaitTime.Normal.execute();
             }

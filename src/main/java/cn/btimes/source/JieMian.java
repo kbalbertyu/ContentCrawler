@@ -1,9 +1,8 @@
 package cn.btimes.source;
 
 import cn.btimes.model.Article;
-import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
-import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.PageUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -12,16 +11,16 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-04 7:10 AM
  */
 public class JieMian extends ThePaper {
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -37,36 +36,17 @@ public class JieMian extends ThePaper {
     }
 
     @Override
-    protected List<Article> parseList(Document doc) {
-        List<Article> articles = new ArrayList<>();
-        String cssQuery = ".news-list > .list-view > .news-view";
-        this.checkArticleListExistence(doc, cssQuery);
-        Elements list = doc.select(cssQuery);
-        for (Element row : list) {
-            try {
-                Article article = new Article();
-                String dateTextCssQuery = ".date";
-                this.checkDateTextExistence(row, dateTextCssQuery);
-                String timeText = HtmlParser.text(row, dateTextCssQuery);
-                article.setDate(this.parseDateText(timeText));
-
-                String titleCssQuery = "h3 > a";
-                this.checkTitleExistence(row, titleCssQuery);
-                Element linkElm = row.select(titleCssQuery).get(0);
-                article.setUrl(linkElm.attr("href"));
-                article.setTitle(linkElm.text());
-                articles.add(article);
-            } catch (PastDateException e) {
-                logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
-                break;
-            }
-        }
-        return articles;
+    protected CSSQuery getCSSQuery() {
+        return new CSSQuery(".news-list > .list-view > .news-view", ".article-main", "h3 > a",
+            ".article-header > p", ".article-source > p:contains(来源：)", ".date");
     }
 
     @Override
-    protected Boolean validateLink(String href) {
-        return null;
+    protected List<Article> parseList(Document doc) {
+        List<Article> articles = new ArrayList<>();
+        Elements list = this.readList(doc);
+        this.parseDateTitleList(articles, list);
+        return articles;
     }
 
     @Override
@@ -76,45 +56,14 @@ public class JieMian extends ThePaper {
         PageUtils.scrollToBottom(driver);
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        String summaryCssQuery = ".article-header > p";
-        this.checkSummaryExistence(doc, summaryCssQuery);
-        article.setSummary(HtmlParser.text(doc, summaryCssQuery));
-        article.setSource(this.parseSource(doc));
-
-        String cssQuery = ".article-main";
-        this.checkArticleContentExistence(doc, cssQuery);
-        Element contentElm = doc.select(cssQuery).first();
-        article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
+        this.parseSummary(doc, article);
+        this.parseSource(doc, article);
+        this.parseContent(doc, article);
     }
 
     @Override
-    protected Date parseDate(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected void validateDate(Date date) {
-
-    }
-
-    @Override
-    protected String parseTitle(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected String parseSource(Document doc) {
-        String keyword = "来源：";
-        String cssQuery = ".article-source > p:contains(" + keyword + ")";
-        this.checkSourceExistence(doc, cssQuery);
-        String source = HtmlParser.text(doc, cssQuery);
-        return StringUtils.trim(StringUtils.remove(source, keyword));
-    }
-
-    @Override
-    protected String parseContent(Document doc) {
-        return null;
+    String removeSourceNoise(String source) {
+        return StringUtils.trim(StringUtils.remove(source, "来源："));
     }
 
     @Override

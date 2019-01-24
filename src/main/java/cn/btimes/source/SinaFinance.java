@@ -3,10 +3,8 @@ package cn.btimes.source;
 import cn.btimes.model.Article;
 import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
-import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.WebDriver;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,13 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-23 3:29 PM
+ * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-23 4:03 PM
  */
-public class CSCOMCN extends Source {
+public class SinaFinance extends Sina {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("http://cs.com.cn/tzjj/jjdt/", Category.FINANCE);
+        URLS.put("http://finance.sina.com.cn/roll/index.d.html?cid=56907&page=1", Category.FINANCE);
     }
 
     @Override
@@ -30,17 +28,18 @@ public class CSCOMCN extends Source {
 
     @Override
     protected String getDateRegex() {
-        return "\\d{2}-\\d{2}-\\d{2} \\d{2}:\\d{2}";
+        return "\\d{2}月\\d{2}日 \\d{2}:\\d{2}";
     }
 
     @Override
     protected String getDateFormat() {
-        return "yy-MM-dd HH:mm";
+        return "MM'月'dd'日' HH:mm";
     }
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return new CSSQuery("ul.list-lm > li", ".article-t", "a", "", ".info > p > em:contains(来源：)", "span");
+        return new CSSQuery("ul.list_009 > li", "#artibody", "a",
+            ".feed-card-txt-summary", ".date-source > a.source", "span");
     }
 
     @Override
@@ -52,17 +51,7 @@ public class CSCOMCN extends Source {
     }
 
     @Override
-    protected void readArticle(WebDriver driver, Article article) {
-        this.readContentSource(driver, article);
-    }
-
-    @Override
-    String removeSourceNoise(String source) {
-        return StringUtils.substringAfter(source, "来源：");
-    }
-
-    @Override
     protected int getSourceId() {
-        return 297;
+        return 101;
     }
 }

@@ -4,13 +4,11 @@ import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
 import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
-import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
@@ -19,15 +17,14 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-05 4:41 PM
+ * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-16 5:13 PM
  */
-public class LadyMax extends Source {
-    private static final String TO_DELETE_SEPARATOR = "###TO-DELETE###";
+public class EEO extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("http://www.ladymax.cn/", Category.LIFESTYLE);
+        URLS.put("http://www.eeo.com.cn/yule/tiyu/", Category.SPORTS);
     }
 
     @Override
@@ -37,27 +34,34 @@ public class LadyMax extends Source {
 
     @Override
     protected String getDateRegex() {
-        return "\\d{4}年\\d{2}月\\d{2}日 \\d{2}:\\d{2}";
+        return "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}";
     }
 
     @Override
     protected String getDateFormat() {
-        return "yyyy年MM月dd日 HH:mm";
+        return "yyyy-MM-dd HH:mm:ss";
     }
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return new CSSQuery("#list > div.i", ".newsview > .content", "a", "", "", ".newsview > .info");
+        String urlKeyword = DateFormatUtils.format(new Date(), "yyyy/MMdd");
+        return new CSSQuery("ul#lyp_article > li > a[href*=" + urlKeyword + "]",
+            ".content-article", "div > span > a", "div > p",
+            "", ".xd-b-b > p > span");
     }
 
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
-        for (Element row : list) {
+        for (Element imgLinkElm : list) {
             try {
                 Article article = new Article();
-                super.parseTitle(row, article);
+
+                Element row = imgLinkElm.parent();
+                this.parseTitle(row, article);
+                this.parseSummary(row, article);
+
                 articles.add(article);
             } catch (PastDateException e) {
                 logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
@@ -69,38 +73,36 @@ public class LadyMax extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        for (Node node : dom.childNodes()) {
-            if (StringUtils.contains(node.outerHtml(), "文章来源")) {
-                node.before(TO_DELETE_SEPARATOR);
-                break;
-            }
-        }
-        dom.select("script, [class^=ads]").remove();
-        String html = super.cleanHtml(dom);
-        return StringUtils.removePattern(html, TO_DELETE_SEPARATOR + "[\\s\\S]*");
+        dom.select(".xd-xd-xd-rwm, .xd_zuozheinfo").remove();
+        return super.cleanHtml(dom);
     }
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
         driver.get(article.getUrl());
-        WaitTime.Normal.execute();
+        WaitTime.Short.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
         this.parseDate(doc, article);
-        this.parseTitle(doc, article);
         this.parseContent(doc, article);
     }
 
     @Override
-    protected void parseTitle(Element doc, Article article) {
-        String titleCssQuery = ".newsview > .title > h1";
-        this.checkTitleExistence(doc, titleCssQuery);
-        String title = HtmlParser.text(doc, titleCssQuery);
-        article.setTitle(StringUtils.substringBefore(title, "|"));
+    protected void parseContent(Document doc, Article article) {
+        Element imageElm = doc.select(".xd-xd-xd-newsimg").first();
+
+        String contentCSSQuery = this.getCSSQuery().getContent();
+        this.checkArticleContentExistence(doc, contentCSSQuery);
+        Element contentElm = doc.select(contentCSSQuery).first();
+        if (imageElm != null) {
+            contentElm.prepend(imageElm.outerHtml());
+        }
+        article.setContent(this.cleanHtml(contentElm));
+        this.fetchContentImages(article, contentElm);
     }
 
     @Override
     protected int getSourceId() {
-        return 933;
+        return 0;
     }
 }

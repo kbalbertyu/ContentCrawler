@@ -2,12 +2,10 @@ package cn.btimes.source;
 
 import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
-import com.amzass.service.sellerhunt.HtmlParser;
-import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Tools;
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -16,14 +14,15 @@ import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-06 12:05 AM
  */
 public class CTO51 extends Source {
-    private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}";
-    private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     private static final String TO_DELETE_SEPARATOR = "###TO-DELETE###";
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -43,31 +42,34 @@ public class CTO51 extends Source {
     }
 
     @Override
+    protected String getDateRegex() {
+        return "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}";
+    }
+
+    @Override
+    protected String getDateFormat() {
+        return "yyyy-MM-dd HH:mm:ss";
+    }
+
+    @Override
+    protected CSSQuery getCSSQuery() {
+        return new CSSQuery(".home-left-list > ul > li", ".zwnr", ".rinfo > a",
+            ".rinfo > p", "dl > dt > span:contains(来源：)", ".time > i");
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        String cssQuery = ".home-left-list > ul > li";
-        this.checkArticleListExistence(doc, cssQuery);
-        Elements list = doc.select(cssQuery);
+        Elements list = this.readList(doc);
         for (Element row : list) {
             try {
                 if (Tools.contains(row.attr("class"), "adv")) {
                     continue;
                 }
                 Article article = new Article();
-                String dateTextCssQuery = ".time > i";
-                this.checkDateTextExistence(row, dateTextCssQuery);
-                String timeText = HtmlParser.text(row, dateTextCssQuery);
-                article.setDate(this.parseDateText(timeText));
-
-                String titleCssQuery = ".rinfo > a";
-                this.checkTitleExistence(row, titleCssQuery);
-                Element linkElm = row.select(titleCssQuery).get(0);
-                article.setUrl(linkElm.attr("href"));
-                article.setTitle(linkElm.text());
-
-                String summaryCssQuery = ".rinfo > p";
-                this.checkSummaryExistence(row, summaryCssQuery);
-                article.setSummary(HtmlParser.text(row, summaryCssQuery));
+                this.parseDate(row, article);
+                this.parseTitle(row, article);
+                this.parseSummary(row, article);
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -76,11 +78,6 @@ public class CTO51 extends Source {
             }
         }
         return articles;
-    }
-
-    @Override
-    protected Boolean validateLink(String href) {
-        return null;
     }
 
     @Override
@@ -97,50 +94,12 @@ public class CTO51 extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        article.setSource(this.parseSource(doc));
-
-        String cssQuery = ".zwnr";
-        this.checkArticleContentExistence(doc, cssQuery);
-        Element contentElm = doc.select(cssQuery).first();
-        article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
+        this.readContentSource(driver, article);
     }
 
     @Override
-    protected Date parseDateText(String timeText) {
-        return this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
-    }
-
-    @Override
-    protected Date parseDate(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected void validateDate(Date date) {
-
-    }
-
-    @Override
-    protected String parseTitle(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected String parseSource(Document doc) {
-        String cssQuery = "dl > dt > span:contains(来源：)";
-        this.checkSourceExistence(doc, cssQuery);
-        String source = HtmlParser.text(doc, cssQuery);
+    String removeSourceNoise(String source) {
         return StringUtils.trim(StringUtils.substringAfter(source, "来源："));
-    }
-
-    @Override
-    protected String parseContent(Document doc) {
-        return null;
     }
 
     @Override

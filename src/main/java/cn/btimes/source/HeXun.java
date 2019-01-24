@@ -2,8 +2,8 @@ package cn.btimes.source;
 
 import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
-import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.PageUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -11,20 +11,20 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-03 4:38 AM
  */
 public class HeXun extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static final String DATE_REGEX = "\\d{2}/\\d{2} \\d{2}:\\d{2}";
-    private static final String DATE_FORMAT = "MM/dd HH:mm";
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -37,27 +37,33 @@ public class HeXun extends Source {
     }
 
     @Override
+    protected String getDateRegex() {
+        return "\\d{2}/\\d{2} \\d{2}:\\d{2}";
+    }
+
+    @Override
+    protected String getDateFormat() {
+        return "MM/dd HH:mm";
+    }
+
+    @Override
+    protected CSSQuery getCSSQuery() {
+        return new CSSQuery("#temp01 > ul > li", ".art_contextBox", "a", "",
+            "span", "");
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        String cssQuery = "#temp01 > ul > li";
-        this.checkArticleListExistence(doc, cssQuery);
-        Elements list = doc.select(cssQuery);
+        Elements list = this.readList(doc);
         for (Element row : list) {
             try {
                 if (StringUtils.isBlank(row.text())) {
                     continue;
                 }
                 Article article = new Article();
-                String dateTextCssQuery = "span";
-                this.checkDateTextExistence(row, dateTextCssQuery);
-                String timeText = HtmlParser.text(row, dateTextCssQuery);
-                article.setDate(this.parseDateText(timeText));
-
-                String titleCssQuery = "a";
-                this.checkTitleExistence(row, titleCssQuery);
-                Element linkElm = row.select(titleCssQuery).get(0);
-                article.setUrl(linkElm.attr("href"));
-                article.setTitle(linkElm.text());
+                this.parseDate(row, article);
+                this.parseTitle(row, article);
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -69,52 +75,12 @@ public class HeXun extends Source {
     }
 
     @Override
-    protected Boolean validateLink(String href) {
-        return null;
-    }
-
-    @Override
     protected void readArticle(WebDriver driver, Article article) {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
         PageUtils.scrollToBottom(driver);
         Document doc = Jsoup.parse(driver.getPageSource());
-
-        String cssQuery = ".art_contextBox";
-        this.checkArticleContentExistence(doc, cssQuery);
-        Element contentElm = doc.select(cssQuery).first();
-        article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
-    }
-
-    @Override
-    protected Date parseDateText(String timeText) {
-        return this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
-    }
-
-    @Override
-    protected Date parseDate(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected void validateDate(Date date) {
-
-    }
-
-    @Override
-    protected String parseTitle(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected String parseSource(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected String parseContent(Document doc) {
-        return null;
+        this.parseContent(doc, article);
     }
 
     @Override

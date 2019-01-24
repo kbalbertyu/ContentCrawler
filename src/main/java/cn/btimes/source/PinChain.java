@@ -2,11 +2,9 @@ package cn.btimes.source;
 
 import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
-import com.amzass.service.sellerhunt.HtmlParser;
-import com.amzass.utils.PageLoadHelper.WaitTime;
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -22,8 +20,6 @@ import java.util.*;
 public class PinChain extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final int MAX_PAST_DAYS = 0;
-    private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}";
-    private static final String DATE_FORMAT = "yyyy-MM-dd";
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -36,23 +32,29 @@ public class PinChain extends Source {
     }
 
     @Override
+    protected String getDateRegex() {
+        return "\\d{4}-\\d{2}-\\d{2}";
+    }
+
+    @Override
+    protected String getDateFormat() {
+        return "yyyy-MM-dd";
+    }
+
+    @Override
+    protected CSSQuery getCSSQuery() {
+        return new CSSQuery("article.excerpt", "article.article-content", "h2 > a", "p.note", "", "time.muted");
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        String cssQuery = "article.excerpt";
-        this.checkArticleListExistence(doc, cssQuery);
-        Elements list = doc.select(cssQuery);
+        Elements list = this.readList(doc);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String titleCssQuery = "h2 > a";
-                this.checkTitleExistence(row, titleCssQuery);
-                Element linkElm = row.select(titleCssQuery).get(0);
-                article.setUrl(linkElm.attr("href"));
-                article.setTitle(linkElm.text());
-
-                String summaryCssQuery = "p.note";
-                this.checkSummaryExistence(row, summaryCssQuery);
-                article.setSummary(HtmlParser.text(row, summaryCssQuery));
+                this.parseTitle(row, article);
+                this.parseSummary(row, article);
                 articles.add(article);
             } catch (PastDateException e) {
                 logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
@@ -63,56 +65,13 @@ public class PinChain extends Source {
     }
 
     @Override
-    protected Boolean validateLink(String href) {
-        return null;
-    }
-
-    @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        String dateTextCssQuery = "time.muted";
-        this.checkDateTextExistence(doc, dateTextCssQuery);
-        String timeText = HtmlParser.text(doc, dateTextCssQuery);
-        article.setDate(this.parseDateText(timeText));
-
-        String cssQuery = "article.article-content";
-        this.checkArticleContentExistence(doc, cssQuery);
-        Element contentElm = doc.select(cssQuery).first();
-        article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
+        this.readDateContent(driver, article);
     }
 
     @Override
     protected Date parseDateText(String timeText) {
-        return this.parseDateTextWithDay(timeText, DATE_REGEX, DATE_FORMAT, MAX_PAST_DAYS);
-    }
-
-    @Override
-    protected Date parseDate(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected void validateDate(Date date) {
-
-    }
-
-    @Override
-    protected String parseTitle(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected String parseSource(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected String parseContent(Document doc) {
-        return null;
+        return this.parseDateTextWithDay(timeText, this.getDateRegex(), this.getDateFormat(), MAX_PAST_DAYS);
     }
 
     @Override

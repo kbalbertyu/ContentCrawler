@@ -2,6 +2,7 @@ package cn.btimes.source;
 
 import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.service.sellerhunt.HtmlParser;
@@ -28,8 +29,6 @@ import java.util.*;
  */
 public class IYiOu extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}";
-    private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     private static final Map<String, Category> URLS = new HashMap<>();
     private static final int MAX_PAST_MINUTES = 60;
 
@@ -45,11 +44,25 @@ public class IYiOu extends Source {
     }
 
     @Override
+    protected String getDateRegex() {
+        return "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}";
+    }
+
+    @Override
+    protected String getDateFormat() {
+        return "yyyy-MM-dd'T'HH:mm:ss";
+    }
+
+    @Override
+    protected CSSQuery getCSSQuery() {
+        return new CSSQuery("ul.newestArticleList > li.thinkTankTag", "",
+            "h2", "#post_brief", "", "");
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        String cssQuery = "ul.newestArticleList > li.thinkTankTag";
-        this.checkArticleListExistence(doc, cssQuery);
-        Elements list = doc.select(cssQuery);
+        Elements list = this.readList(doc);
         for (Element row : list) {
             try {
                 Article article = new Article();
@@ -59,12 +72,7 @@ public class IYiOu extends Source {
                     throw new PastDateException();
                 }
 
-                String titleCssQuery = "h2";
-                this.checkTitleExistence(row, titleCssQuery);
-                Element titleElm = row.select(titleCssQuery).get(0);
-                article.setUrl(titleElm.parent().attr("href"));
-                article.setTitle(titleElm.text());
-
+                this.parseTitle(row, article);
                 articles.add(article);
             } catch (PastDateException e) {
                 logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
@@ -72,11 +80,6 @@ public class IYiOu extends Source {
             }
         }
         return articles;
-    }
-
-    @Override
-    protected Boolean validateLink(String href) {
-        return null;
     }
 
     @Override
@@ -91,38 +94,9 @@ public class IYiOu extends Source {
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        String dateTextCssQuery = "script[type=application/ld+json]";
-        this.checkDateTextExistence(doc, dateTextCssQuery);
-        Elements elements = doc.select(dateTextCssQuery);
-        if (elements.size() > 0) {
-            JSONObject obj = JSONObject.parseObject(elements.get(0).html());
-            article.setDate(this.parseDateText(String.valueOf(obj.get("pubDate"))));
-        } else {
-            dateTextCssQuery = "#post_date";
-            this.checkDateTextExistence(doc, dateTextCssQuery);
-            String dateText = HtmlParser.text(doc, dateTextCssQuery);
-            article.setDate(this.parseDateText(dateText));
-        }
-
-        String summaryCssQuery = "#post_brief";
-        this.checkSummaryExistence(doc, summaryCssQuery);
-        Element summaryElm = doc.select(summaryCssQuery).get(0);
-        summaryElm.select("b").remove();
-        article.setSummary(summaryElm.text());
-
-        String cssQuery = "#post_description";
-        this.checkArticleContentExistence(doc, cssQuery);
-        Element contentElm = doc.select(cssQuery).first();
-        Elements thumbnailELms = doc.select("#post_thumbnail");
-        if (thumbnailELms.size() > 0) {
-            Element thumbElm = thumbnailELms.first();
-            thumbElm.select(".post_copyright").remove();
-            contentElm.prepend(thumbElm.outerHtml());
-        }
-
-        this.convertImageToNoneHttps(contentElm);
-        article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
+        this.parseDate(doc, article);
+        this.parseSummary(doc, article);
+        this.parseContent(doc, article);
     }
 
     private void convertImageToNoneHttps(Element contentElm) {
@@ -142,7 +116,7 @@ public class IYiOu extends Source {
             return new Date();
         }
         if (!Tools.containsAny(timeText, "分钟前", "小时前")) {
-            return this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
+            return super.parseDateText(timeText);
         }
         int minutes = NumberUtils.toInt(RegexUtils.getMatched(timeText, "\\d+"));
         if (Tools.containsAny(timeText, "小时")) {
@@ -163,28 +137,43 @@ public class IYiOu extends Source {
     }
 
     @Override
-    protected Date parseDate(Document doc) {
-        return null;
+    protected void parseDate(Element doc, Article article) {
+        String dateTextCssQuery = "script[type=application/ld+json]";
+        this.checkDateTextExistence(doc, dateTextCssQuery);
+        Elements elements = doc.select(dateTextCssQuery);
+        if (elements.size() > 0) {
+            JSONObject obj = JSONObject.parseObject(elements.get(0).html());
+            article.setDate(this.parseDateText(String.valueOf(obj.get("pubDate"))));
+        } else {
+            dateTextCssQuery = "#post_date";
+            this.checkDateTextExistence(doc, dateTextCssQuery);
+            String dateText = HtmlParser.text(doc, dateTextCssQuery);
+            article.setDate(this.parseDateText(dateText));
+        }
     }
 
     @Override
-    protected void validateDate(Date date) {
-
+    protected void parseSummary(Element doc, Article article) {
+        String summaryCssQuery = this.getCSSQuery().getSummary();
+        doc.select(summaryCssQuery).get(0).select("b").remove();
+        super.parseSummary(doc, article);
     }
 
     @Override
-    protected String parseTitle(Document doc) {
-        return null;
-    }
+    protected void parseContent(Document doc, Article article) {
+        String cssQuery = "#post_description";
+        this.checkArticleContentExistence(doc, cssQuery);
+        Element contentElm = doc.select(cssQuery).first();
+        Elements thumbnailELms = doc.select("#post_thumbnail");
+        if (thumbnailELms.size() > 0) {
+            Element thumbElm = thumbnailELms.first();
+            thumbElm.select(".post_copyright").remove();
+            contentElm.prepend(thumbElm.outerHtml());
+        }
 
-    @Override
-    protected String parseSource(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected String parseContent(Document doc) {
-        return null;
+        this.convertImageToNoneHttps(contentElm);
+        article.setContent(this.cleanHtml(contentElm));
+        this.fetchContentImages(article, contentElm);
     }
 
     @Override

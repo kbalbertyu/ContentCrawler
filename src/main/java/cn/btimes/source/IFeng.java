@@ -2,6 +2,7 @@ package cn.btimes.source;
 
 import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
@@ -21,8 +22,6 @@ import java.util.*;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-22 9:17 PM
  */
 public class IFeng extends Source {
-    private static final String DATE_REGEX = "\\d{4}年\\d{2}月\\d{2}日 \\d{2}:\\d{2}";
-    private static final String DATE_FORMAT = "yyyy'年'MM'月'dd'日' HH:mm";
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private static final Map<String, Category> URLS = new HashMap<>();
@@ -37,11 +36,25 @@ public class IFeng extends Source {
     }
 
     @Override
+    protected String getDateRegex() {
+        return "\\d{4}年\\d{2}月\\d{2}日 \\d{2}:\\d{2}";
+    }
+
+    @Override
+    protected String getDateFormat() {
+        return "yyyy'年'MM'月'dd'日' HH:mm";
+    }
+
+    @Override
+    protected CSSQuery getCSSQuery() {
+        return new CSSQuery(".ni_list > a", "div.article", "dd.tt", "dd.height-50",
+            ".title > .pr > span:contains(来源：)", ".title > .marb-5 > span");
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        String cssQuery = ".ni_list > a";
-        this.checkArticleListExistence(doc, cssQuery);
-        Elements list = doc.select(cssQuery);
+        Elements list = this.readList(doc);
         for (Element row : list) {
             try {
                 Article article = new Article();
@@ -53,14 +66,8 @@ public class IFeng extends Source {
                 }
 
                 article.setUrl(row.attr("href"));
-                String titleCssQuery = "dd.tt";
-                this.checkTitleExistence(row, titleCssQuery);
-                Element linkElm = row.select(titleCssQuery).get(0);
-                article.setTitle(linkElm.text());
-
-                String summaryCssQuery = "dd.height-50";
-                this.checkSummaryExistence(row, summaryCssQuery);
-                article.setSummary(HtmlParser.text(row, summaryCssQuery));
+                this.parseTitle(row, article);
+                this.parseSummary(row, article);
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -72,59 +79,19 @@ public class IFeng extends Source {
     }
 
     @Override
-    protected Boolean validateLink(String href) {
-        return null;
-    }
-
-    @Override
     protected void readArticle(WebDriver driver, Article article) {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        String dateTextCssQuery = ".title > .marb-5 > span";
-        this.checkDateTextExistence(doc, dateTextCssQuery);
-        String timeText = HtmlParser.text(doc, dateTextCssQuery);
-        article.setDate(this.parseDateText(timeText));
-
-        article.setSource(this.parseSource(doc));
-
-        String cssQuery = "div.article";
-        this.checkArticleContentExistence(doc, cssQuery);
-        Element contentElm = doc.select(cssQuery).first();
-        article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
+        this.parseDate(doc, article);
+        this.parseSource(doc, article);
+        this.parseContent(doc, article);
     }
 
     @Override
-    protected Date parseDateText(String timeText) {
-        return this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
-    }
-
-    @Override
-    protected Date parseDate(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected void validateDate(Date date) {
-
-    }
-
-    @Override
-    protected String parseTitle(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected String parseSource(Document doc) {
-        String source = HtmlParser.text(doc, ".title > .pr > span:contains(来源：)");
+    String removeSourceNoise(String source) {
         return StringUtils.substringAfter(source, "来源：");
-    }
-
-    @Override
-    protected String parseContent(Document doc) {
-        return null;
     }
 
     @Override

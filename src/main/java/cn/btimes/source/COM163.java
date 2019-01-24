@@ -2,10 +2,9 @@ package cn.btimes.source;
 
 import cn.btimes.model.Article;
 import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
-import com.amzass.utils.PageLoadHelper.WaitTime;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -13,15 +12,16 @@ import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-02 4:47 PM
  */
 public class COM163 extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}";
-    private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -34,30 +34,32 @@ public class COM163 extends Source {
     }
 
     @Override
+    protected String getDateRegex() {
+        return "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}";
+    }
+
+    @Override
+    protected String getDateFormat() {
+        return "yyyy-MM-dd HH:mm:ss";
+    }
+
+    @Override
+    protected CSSQuery getCSSQuery() {
+        return new CSSQuery("ul#news-flow-content > li", "#endText", "h3 > a", ".newsDigest", "#ne_article_source", ".sourceDate");
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
-        String cssQuery = "ul#news-flow-content > li";
-        Elements list = doc.select(cssQuery);
-        this.checkArticleListExistence(doc, cssQuery);
+        Elements list = this.readList(doc);
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String dateTextCssQuery = ".sourceDate";
-                this.checkDateTextExistence(row, dateTextCssQuery);
-                String timeText = HtmlParser.text(row, dateTextCssQuery);
-                article.setDate(this.parseDateText(timeText));
-
-                String titleCssQuery = "h3 > a";
-                this.checkTitleExistence(row, titleCssQuery);
-                Element linkElm = row.select(titleCssQuery).get(0);
-                article.setUrl(linkElm.attr("href"));
-                article.setTitle(linkElm.text());
-
-                String summaryCssQuery = ".newsDigest";
-                this.checkSummaryExistence(row, summaryCssQuery);
-                Element summaryElm = row.select(summaryCssQuery).first();
-                summaryElm.select("a").remove();
-                article.setSummary(summaryElm.text());
+                this.parseDate(row, article);
+                super.parseTitle(row, article);
+                String summaryCssQuery = this.getCSSQuery().getSummary();
+                row.select(summaryCssQuery).select("a").remove();
+                this.parseSummary(row, article);
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -69,58 +71,15 @@ public class COM163 extends Source {
     }
 
     @Override
-    protected Boolean validateLink(String href) {
-        return null;
-    }
-
-    @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        article.setTitle(this.parseTitle(doc));
-        article.setSource(this.parseSource(doc));
-
-        String cssQuery = "#endText";
-        this.checkArticleContentExistence(doc, cssQuery);
-        Element contentElm = doc.select(cssQuery).first();
-        article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
+        this.readTitleSourceContent(driver, article);
     }
 
     @Override
-    protected Date parseDateText(String timeText) {
-        return this.parseDateText(timeText, DATE_REGEX, DATE_FORMAT);
-    }
-
-    @Override
-    protected Date parseDate(Document doc) {
-        return null;
-    }
-
-    @Override
-    protected void validateDate(Date date) {
-
-    }
-
-    @Override
-    protected String parseTitle(Document doc) {
+    protected void parseTitle(Element doc, Article article) {
         String cssQuery = "#epContentLeft > h1";
         this.checkTitleExistence(doc, cssQuery);
-        return HtmlParser.text(doc, cssQuery);
-    }
-
-    @Override
-    protected String parseSource(Document doc) {
-        String cssQuery = "#ne_article_source";
-        this.checkSourceExistence(doc, cssQuery);
-        return HtmlParser.text(doc, cssQuery);
-    }
-
-    @Override
-    protected String parseContent(Document doc) {
-        return null;
+        article.setTitle(HtmlParser.text(doc, cssQuery));
     }
 
     @Override
