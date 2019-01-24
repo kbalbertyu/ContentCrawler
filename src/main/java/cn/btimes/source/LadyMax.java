@@ -75,7 +75,10 @@ public class LadyMax extends Source {
                 break;
             }
         }
-        dom.select("script, [class^=ads]").remove();
+        Elements elements = dom.select("script, [class^=ads]");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         String html = super.cleanHtml(dom);
         return StringUtils.removePattern(html, TO_DELETE_SEPARATOR + "[\\s\\S]*");
     }

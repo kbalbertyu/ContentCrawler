@@ -84,7 +84,10 @@ public class YiCai extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select("h3.f-tar").remove();
+        Elements elements = dom.select("h3.f-tar");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 }

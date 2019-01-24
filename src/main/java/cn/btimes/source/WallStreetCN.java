@@ -80,7 +80,10 @@ public class WallStreetCN extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select("p:contains(本文来自), a[href*=membership], img.wscnph").remove();
+        Elements elements = dom.select("p:contains(本文来自), a[href*=membership], img.wscnph");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 

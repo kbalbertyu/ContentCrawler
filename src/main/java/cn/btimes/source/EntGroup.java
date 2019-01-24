@@ -72,7 +72,10 @@ public class EntGroup extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select("h1, .biaoqian, .zhaiyao, .writer, [id*=baidu_bookmark]").remove();
+        Elements elements = dom.select("h1, .biaoqian, .zhaiyao, .writer, [id*=baidu_bookmark]");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 }

@@ -57,7 +57,10 @@ public class CCDY extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select("style, p:contains(中国文化传媒网融媒体记者)").remove();
+        Elements elements = dom.select("style, p:contains(中国文化传媒网融媒体记者)");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 

@@ -90,7 +90,10 @@ public class HeXun extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select(":contains(责任编辑：), a:contains(下载APP)").remove();
+        Elements elements = dom.select(":contains(责任编辑：), a:contains(下载APP)");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 }

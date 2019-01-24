@@ -73,7 +73,10 @@ public class EEO extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select(".xd-xd-xd-rwm, .xd_zuozheinfo").remove();
+        Elements elements = dom.select(".xd-xd-xd-rwm, .xd_zuozheinfo");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 

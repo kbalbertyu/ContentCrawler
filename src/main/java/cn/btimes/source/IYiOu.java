@@ -95,7 +95,10 @@ public class IYiOu extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select("#machineContainer, .copyrightState, p:contains(本文来源)").remove();
+        Elements elements = dom.select("#machineContainer, .copyrightState, p:contains(本文来源)");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 

@@ -89,7 +89,10 @@ public class COM163 extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select(".ep-source, [adtype], [class^=gg], .otitle").remove();
+        Elements elements = dom.select(".ep-source, [adtype], [class^=gg], .otitle");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 }

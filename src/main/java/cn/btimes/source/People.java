@@ -77,7 +77,10 @@ public class People extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select(".edit").remove();
+        Elements elements = dom.select(".edit");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 

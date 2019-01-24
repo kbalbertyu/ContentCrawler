@@ -54,7 +54,10 @@ public class LUXE extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select("p:contains(来源：), a[href^=http://luxe.co/post], p:contains(详见：), p:contains(责任编辑：), em").remove();
+        Elements elements = dom.select("p:contains(来源：), a[href^=http://luxe.co/post], p:contains(详见：), p:contains(责任编辑：), em");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 

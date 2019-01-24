@@ -81,7 +81,10 @@ public class PinChain extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select("p:contains(转载请注明：)").remove();
+        Elements elements = dom.select("p:contains(转载请注明：)");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         String content = super.cleanHtml(dom);
         content = StringUtils.remove(content, "【品橙旅游】");
         content = StringUtils.remove(content, "品橙旅游");

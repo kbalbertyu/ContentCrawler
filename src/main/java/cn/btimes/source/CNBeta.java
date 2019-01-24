@@ -73,7 +73,10 @@ public class CNBeta extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select("#cbhahaha, [class^=otherContent], ins, #CbADsArticle, iframe").remove();
+        Elements elements = dom.select("#cbhahaha, [class^=otherContent], ins, #CbADsArticle, iframe");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 

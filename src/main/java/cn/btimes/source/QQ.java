@@ -83,7 +83,10 @@ public class QQ extends Source {
 
     @Override
     String cleanHtml(Element dom) {
-        dom.select(".content-article .content-article, script, #Status, .article-status, [class*=video]").remove();
+        Elements elements = dom.select(".content-article .content-article, script, #Status, .article-status, [class*=video]");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
         return super.cleanHtml(dom);
     }
 
