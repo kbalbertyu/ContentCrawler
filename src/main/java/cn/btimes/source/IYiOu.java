@@ -13,6 +13,7 @@ import com.amzass.utils.common.RegexUtils;
 import com.amzass.utils.common.Tools;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -60,15 +61,25 @@ public class IYiOu extends Source {
     }
 
     @Override
+    void parseTitle(Element doc, Article article) {
+        super.parseTitle(doc, article);
+        Elements linkElms = doc.select(this.getCSSQuery().getTitle());
+        if (linkElms.size() > 0) {
+            article.setUrl(linkElms.get(0).parent().attr("href"));
+        }
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
+        String today = DateFormatUtils.format(new Date(), "yyyy-MM-dd");
         for (Element row : list) {
             try {
                 Article article = new Article();
                 String timeText = HtmlParser.text(row, ".time");
                 if ((StringUtils.contains(timeText, "小时") && !StringUtils.equals(timeText, "1小时前")) ||
-                    RegexUtils.match(timeText, "\\d{4}-\\d{2}-\\d{2}")) {
+                    (RegexUtils.match(timeText, "\\d{4}-\\d{2}-\\d{2}") && !StringUtils.contains(timeText, today))) {
                     throw new PastDateException();
                 }
 
