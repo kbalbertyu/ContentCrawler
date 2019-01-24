@@ -5,6 +5,7 @@ import cn.btimes.model.BTExceptions.PastDateException;
 import cn.btimes.model.CSSQuery;
 import cn.btimes.model.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
+import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.RegexUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
@@ -25,6 +26,7 @@ import java.util.Map;
 public class WallStreetCN extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
+    private static final String DOMAIN = "wallstreetcn.com";
 
     static {
         URLS.put("https://wallstreetcn.com/news/shares", Category.FINANCE);
@@ -89,6 +91,9 @@ public class WallStreetCN extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
+        if (!StringUtils.containsIgnoreCase(article.getUrl(), DOMAIN)) {
+            throw new BusinessException(String.format("Article url is from other source: %s", article.getUrl()));
+        }
         this.readDateContent(driver, article);
     }
 
