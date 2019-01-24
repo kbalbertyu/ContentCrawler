@@ -49,7 +49,7 @@ public class HeXun extends Source {
     @Override
     protected CSSQuery getCSSQuery() {
         return new CSSQuery("#temp01 > ul > li", ".art_contextBox", "a", "",
-            "span", "");
+            "", "span");
     }
 
     @Override
