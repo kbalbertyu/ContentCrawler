@@ -384,6 +384,23 @@ public abstract class Source {
         article.setDate(this.parseDateText(timeText));
     }
 
+    Date parseDescribableDateText(String timeText) {
+        if (Tools.containsAny(timeText, "刚刚")) {
+            return new Date();
+        }
+        if (!Tools.containsAny(timeText, "分钟")) {
+            throw new PastDateException();
+        }
+        int minutes = NumberUtils.toInt(RegexUtils.getMatched(timeText, "\\d+"));
+        if (minutes == 0) {
+            throw new BusinessException("Unable to parse time text: " + timeText);
+        }
+        if (minutes > MAX_PAST_MINUTES) {
+            throw new PastDateException();
+        }
+        return DateUtils.addMinutes(new Date(), -1 * minutes);
+    }
+
     Date parseDateText(String timeText) {
         return this.parseDateText(timeText, this.getDateRegex(), this.getDateFormat());
     }

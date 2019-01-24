@@ -12,15 +12,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-04 7:10 AM
  */
-public class JieMian extends ThePaper {
+public class JieMian extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -36,6 +33,16 @@ public class JieMian extends ThePaper {
     }
 
     @Override
+    protected String getDateRegex() {
+        return null;
+    }
+
+    @Override
+    protected String getDateFormat() {
+        return null;
+    }
+
+    @Override
     protected CSSQuery getCSSQuery() {
         return new CSSQuery(".news-list > .list-view > .news-view", ".article-main", "h3 > a",
             ".article-header > p", ".article-source > p:contains(来源：)", ".date");
@@ -47,6 +54,11 @@ public class JieMian extends ThePaper {
         Elements list = this.readList(doc);
         this.parseDateTitleList(articles, list);
         return articles;
+    }
+
+    @Override
+    Date parseDateText(String timeText) {
+        return this.parseDescribableDateText(timeText);
     }
 
     @Override
