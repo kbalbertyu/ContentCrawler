@@ -132,7 +132,7 @@ public class QQ extends Source {
         this.checkTitleExistence(doc, titleCssQuery);
         Element linkElm = doc.select(titleCssQuery).get(0);
         String title = linkElm.text();
-        if (StringUtils.contains(title, "专题") || linkElm.children().size() > 0) {
+        if (StringUtils.contains(title, "专题")) {
             logger.warn("Not an article link, just skip: {}", title);
             return;
         }
