@@ -3,15 +3,24 @@ package cn.btimes.service;
 import cn.btimes.model.Messenger;
 import cn.btimes.model.Messengers;
 import cn.btimes.source.*;
+import cn.btimes.utils.Common;
+import com.alibaba.fastjson.JSONObject;
+import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
 import com.google.inject.Inject;
+import com.kber.commons.DBManager;
+import com.mailman.model.common.WebApiResult;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -23,6 +32,8 @@ public class ServiceExecutor {
     @Inject private WebDriverLauncher webDriverLauncher;
     @Inject private Messengers messengers;
     @Inject private EmailSenderHelper emailSenderHelper;
+    @Inject private ApiRequest apiRequest;
+    @Inject private DBManager dbManager;
 
     static {
         sources.add(ApplicationContext.getBean(Sina.class));
@@ -52,7 +63,9 @@ public class ServiceExecutor {
     }
     public void execute() {
         messengers.clear();
+        this.deleteOldArticleLogs();
         this.deleteDownloadedFiles();
+        this.syncSavedArticles();
         WebDriver driver = webDriverLauncher.start();
         for (Source source : sources) {
             try {
@@ -66,6 +79,39 @@ public class ServiceExecutor {
         }
         if (this.messengers.isNotEmpty()) {
             this.sendMessage(this.messengers);
+        }
+    }
+
+    private void deleteOldArticleLogs() {
+        Date date = new Date();
+        date = DateUtils.addDays(date, -2);
+        String dateString = DateFormatUtils.format(date, "yyyy-MM-dd HH:mm:ss");
+        String sql = String.format("DELETE FROM action_log WHERE lasttime < '%s'", dateString);
+        dbManager.execute(sql);
+    }
+
+    /**
+     * Read article original links from website via API,
+     * save to DB in action_log table if not exists.
+     */
+    private void syncSavedArticles() {
+        WebApiResult result = apiRequest.get("/article/fetchCrawledLinks");
+        if (StringUtils.equals(result.getCode(), "0")) {
+            logger.error("Unable to fetch articles: {}", result.getMessage());
+            return;
+        }
+        List<String> links = JSONObject.parseArray(result.getData(), String.class);
+        if (links.size() == 0) {
+            logger.warn("No articles fetched.");
+            return;
+        }
+        for (String link : links) {
+            String logId = Common.toMD5(link);
+            ActionLog log = dbManager.readById(logId, ActionLog.class);
+            if (log != null) {
+                continue;
+            }
+            dbManager.save(new ActionLog(logId), ActionLog.class);
         }
     }
 
