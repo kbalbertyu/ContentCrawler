@@ -95,7 +95,6 @@ public class ServiceExecutor {
         }
         this.sendMessage(this.messengers);
         dbManager.save(new ActionLog(logId), ActionLog.class);
-        return;
     }
 
     private void statistic() {
