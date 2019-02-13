@@ -63,7 +63,6 @@ public class ServiceExecutor {
     }
     public void execute() {
         messengers.clear();
-        this.deleteOldArticleLogs();
         this.deleteDownloadedFiles();
         this.syncSavedArticles();
         WebDriver driver = webDriverLauncher.start();
@@ -78,13 +77,25 @@ public class ServiceExecutor {
             }
         }
         if (this.messengers.isNotEmpty()) {
+            Date date = new Date();
+            String hour = DateFormatUtils.format(date, "HH");
+            if (!StringUtils.equals(hour, "12")) {
+                return;
+            }
+            String logId = "Send_Message_" + DateFormatUtils.format(date, "yyyy-MM-dd");
+            ActionLog log = dbManager.readById(logId, ActionLog.class);
+            if (log != null) {
+                return;
+            }
             this.sendMessage(this.messengers);
+            dbManager.save(new ActionLog(logId), ActionLog.class);
         }
     }
 
+    @Deprecated
     private void deleteOldArticleLogs() {
         Date date = new Date();
-        date = DateUtils.addDays(date, -2);
+        date = DateUtils.addDays(date, -3);
         String dateString = DateFormatUtils.format(date, "yyyy-MM-dd HH:mm:ss");
         String sql = String.format("DELETE FROM action_log WHERE lasttime < '%s'", dateString);
         dbManager.execute(sql);
