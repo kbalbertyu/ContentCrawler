@@ -21,6 +21,10 @@ public class Common {
         return Math.abs(num1 - num2) < 0.001;
     }
 
+    public static String percentage(float val) {
+        return Constants.DOUBLE_FORMAT.format(val) + Constants.PERCENTAGE;
+    }
+
     private static final String DOUBLE_DASH = "//";
 
     public static String getAbsoluteUrl(String url, String pageUrl) {
@@ -95,5 +99,10 @@ public class Common {
             stringBuilder.append(hv);
         }
         return stringBuilder.toString();
+    }
+
+    public static String getDomain(String url) {
+        String[] parts = StringUtils.split(url, "/");
+        return parts[1];
     }
 }

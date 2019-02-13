@@ -77,19 +77,39 @@ public class ServiceExecutor {
             }
         }
         if (this.messengers.isNotEmpty()) {
-            Date date = new Date();
-            String hour = DateFormatUtils.format(date, "HH");
-            if (!StringUtils.equals(hour, "12")) {
-                return;
-            }
-            String logId = "Send_Message_" + DateFormatUtils.format(date, "yyyy-MM-dd");
-            ActionLog log = dbManager.readById(logId, ActionLog.class);
-            if (log != null) {
-                return;
-            }
-            this.sendMessage(this.messengers);
-            dbManager.save(new ActionLog(logId), ActionLog.class);
+            this.sendErrorMessage();
         }
+        this.statistic();
+    }
+
+    private void sendErrorMessage() {
+        Date date = new Date();
+        String hour = DateFormatUtils.format(date, "HH");
+        if (!StringUtils.equals(hour, "12")) {
+            return;
+        }
+        String logId = "Send_Message_" + DateFormatUtils.format(date, "yyyy-MM-dd");
+        ActionLog log = dbManager.readById(logId, ActionLog.class);
+        if (log != null) {
+            return;
+        }
+        this.sendMessage(this.messengers);
+        dbManager.save(new ActionLog(logId), ActionLog.class);
+        return;
+    }
+
+    private void statistic() {
+        Date date = new Date();
+        String hour = DateFormatUtils.format(date, "E");
+        if (!StringUtils.equalsIgnoreCase(hour, "Fri")) {
+            return;
+        }
+        String logId = "Send_Message_" + DateFormatUtils.format(date, "yyyy-w-E");
+        ActionLog log = dbManager.readById(logId, ActionLog.class);
+        if (log != null) {
+            return;
+        }
+        ApplicationContext.getBean(Statistics.class).execute();
     }
 
     @Deprecated
