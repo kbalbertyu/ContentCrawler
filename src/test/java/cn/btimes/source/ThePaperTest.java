@@ -1,7 +1,7 @@
 package cn.btimes.source;
 
-import cn.btimes.model.Article;
-import cn.btimes.model.ImageUploadResult;
+import cn.btimes.model.common.Article;
+import cn.btimes.model.common.ImageUploadResult;
 import cn.btimes.service.WebDriverLauncher;
 import com.google.inject.Inject;
 import com.kber.test.BaseTest;

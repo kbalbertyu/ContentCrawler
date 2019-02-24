@@ -1,6 +1,10 @@
 package cn.btimes.service;
 
-import cn.btimes.model.*;
+import cn.btimes.model.common.ArticleData;
+import cn.btimes.model.common.ArticleSource;
+import cn.btimes.model.common.Category;
+import cn.btimes.model.stat.Count;
+import cn.btimes.model.stat.Stat;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.google.inject.Inject;

@@ -1,5 +1,6 @@
-package cn.btimes.model;
+package cn.btimes.model.stat;
 
+import cn.btimes.model.common.Category;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 

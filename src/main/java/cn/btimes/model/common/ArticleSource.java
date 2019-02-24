@@ -1,4 +1,4 @@
-package cn.btimes.model;
+package cn.btimes.model.common;
 
 import cn.btimes.utils.Common;
 import org.apache.commons.lang3.StringUtils;

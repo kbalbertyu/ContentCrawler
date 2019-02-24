@@ -1,7 +1,7 @@
 package cn.btimes.source;
 
-import cn.btimes.model.*;
-import cn.btimes.model.BTExceptions.PastDateException;
+import cn.btimes.model.common.*;
+import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.service.WebDriverLauncher;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSONObject;
@@ -127,6 +127,7 @@ public abstract class Source {
     }
 
     void parseDateTitleSummaryList(List<Article> articles, Elements list) {
+        int i = 0;
         for (Element row : list) {
             try {
                 Article article = new Article();
@@ -136,13 +137,17 @@ public abstract class Source {
 
                 articles.add(article);
             } catch (PastDateException e) {
-                logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
+                if (i++ < Constants.MAX_REPEAT_TIMES) {
+                    continue;
+                }
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
                 break;
             }
         }
     }
 
     void parseDateTitleList(List<Article> articles, Elements list) {
+        int i = 0;
         for (Element row : list) {
             try {
                 Article article = new Article();
@@ -151,7 +156,10 @@ public abstract class Source {
 
                 articles.add(article);
             } catch (PastDateException e) {
-                logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
+                if (i++ < Constants.MAX_REPEAT_TIMES) {
+                    continue;
+                }
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
                 break;
             }
         }
@@ -204,12 +212,16 @@ public abstract class Source {
             WaitTime.Normal.execute();
 
             Document doc = Jsoup.parse(driver.getPageSource());
-            List<Article> articlesNew = this.parseList(doc);
-            articlesNew.forEach(article -> {
-                article.setCategory(urls.get(url));
-                article.setUrl(Common.getAbsoluteUrl(article.getUrl(), url));
-            });
-            articles.addAll(articlesNew);
+            try {
+                List<Article> articlesNew = this.parseList(doc);
+                articlesNew.forEach(article -> {
+                    article.setCategory(urls.get(url));
+                    article.setUrl(Common.getAbsoluteUrl(article.getUrl(), url));
+                });
+                articles.addAll(articlesNew);
+            } catch (BusinessException e) {
+                logger.error("Error found in parsing list, skip current list: ", e);
+            }
         }
 
         logger.info("Found {} articles from list.", articles.size());
@@ -227,7 +239,7 @@ public abstract class Source {
                 this.saveArticle(article, driver);
                 saved++;
             } catch (PastDateException e) {
-                logger.error("Article publish date has past {} minutes: {}", MAX_PAST_MINUTES, article.getUrl());
+                logger.error("Article publish date has past {} minutes: {}", MAX_PAST_MINUTES, article.getUrl(), e);
             } catch (BusinessException e) {
                 String message = String.format("Unable to read article %s", article.getUrl());
                 logger.error(message, e);
@@ -389,14 +401,14 @@ public abstract class Source {
             return new Date();
         }
         if (!Tools.containsAny(timeText, "分钟")) {
-            throw new PastDateException();
+            throw new PastDateException("Time without minutes: " + timeText);
         }
         int minutes = NumberUtils.toInt(RegexUtils.getMatched(timeText, "\\d+"));
         if (minutes == 0) {
             throw new BusinessException("Unable to parse time text: " + timeText);
         }
         if (minutes > MAX_PAST_MINUTES) {
-            throw new PastDateException();
+            throw new PastDateException("Time has past limit: " + timeText);
         }
         return DateUtils.addMinutes(new Date(), -1 * minutes);
     }
@@ -406,9 +418,9 @@ public abstract class Source {
     }
 
     private Date parseDateText(String timeText, String regex, String dateFormat) {
+        String timeTextClean = RegexUtils.getMatched(timeText, regex);
         try {
-            timeText = RegexUtils.getMatched(timeText, regex);
-            Date date = DateUtils.parseDate(timeText, Locale.PRC, dateFormat);
+            Date date = DateUtils.parseDate(timeTextClean, Locale.PRC, dateFormat);
 
             // If dateFormat without year, set as current year
             if (DateFormat.YEAR.format(date).equals(WITHOUT_YEAR)) {
@@ -426,7 +438,9 @@ public abstract class Source {
             this.checkDate(date);
             return date;
         } catch (ParseException e) {
-            throw new BusinessException(String.format("Unable to parse date: %s", timeText));
+            throw new BusinessException(String.format("Unable to parse date: %s -> %s", timeText, timeTextClean));
+        } catch (PastDateException e) {
+            throw new PastDateException(String.format("Time has past limit: %s -> %s.", timeText, timeTextClean));
         }
     }
 
@@ -456,13 +470,13 @@ public abstract class Source {
         }
         Element dom = Jsoup.parse(article.getContent()).body();
         boolean hasRemoval = false;
-        for(Element image : dom.select("img")) {
+        for (Element image : dom.select("img")) {
             if (StringUtils.containsIgnoreCase(image.attr("src"), CDN_URL)) {
                 this.justifyImage(image);
                 continue;
             }
             image.remove();
-            hasRemoval =true;
+            hasRemoval = true;
         }
         if (hasRemoval) {
             this.removeNeedlessHtmlTags(dom);
@@ -587,7 +601,7 @@ public abstract class Source {
                 return result;
             } catch (Exception e) {
                 message = String.format("Unable to upload files, retry in %d seconds:", WaitTime.Normal.val());
-                logger.error(message,  e);
+                logger.error(message, e);
                 WaitTime.Normal.execute();
             }
         }
@@ -622,7 +636,7 @@ public abstract class Source {
                 return JSONObject.parseArray(body, SavedImage.class);
             } catch (IOException e) {
                 String message = String.format("Unable to save the files, retry in %d seconds:", WaitTime.Normal.val());
-                logger.error(message,  e);
+                logger.error(message, e);
                 Messenger messenger = new Messenger(this.getClass().getName(), message + ": " + e.getMessage());
                 this.messengers.add(messenger);
                 WaitTime.Normal.execute();

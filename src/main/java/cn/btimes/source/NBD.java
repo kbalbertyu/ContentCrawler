@@ -1,8 +1,8 @@
 package cn.btimes.source;
 
-import cn.btimes.model.Article;
-import cn.btimes.model.CSSQuery;
-import cn.btimes.model.Category;
+import cn.btimes.model.common.Article;
+import cn.btimes.model.common.CSSQuery;
+import cn.btimes.model.common.Category;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;

@@ -1,6 +1,6 @@
 package cn.btimes.utils;
 
-import cn.btimes.model.ImageType;
+import cn.btimes.model.common.ImageType;
 import com.amzass.utils.common.Constants;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;

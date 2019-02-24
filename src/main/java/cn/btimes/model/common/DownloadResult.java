@@ -1,4 +1,4 @@
-package cn.btimes.model;
+package cn.btimes.model.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

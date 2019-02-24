@@ -1,6 +1,6 @@
 package cn.btimes.source;
 
-import cn.btimes.model.Article;
+import cn.btimes.model.common.Article;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.google.inject.Inject;
 import org.testng.annotations.Test;

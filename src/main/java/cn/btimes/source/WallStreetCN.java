@@ -1,10 +1,11 @@
 package cn.btimes.source;
 
-import cn.btimes.model.Article;
-import cn.btimes.model.BTExceptions.PastDateException;
-import cn.btimes.model.CSSQuery;
-import cn.btimes.model.Category;
+import cn.btimes.model.common.Article;
+import cn.btimes.model.common.BTExceptions.PastDateException;
+import cn.btimes.model.common.CSSQuery;
+import cn.btimes.model.common.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
+import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.RegexUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -58,6 +59,7 @@ public class WallStreetCN extends Source {
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
+        int i = 0;
         for (Element row : list) {
             try {
                 Article article = new Article();
@@ -66,14 +68,17 @@ public class WallStreetCN extends Source {
                 String timeText = HtmlParser.text(row, dateTextCssQuery);
                 if ((StringUtils.contains(timeText, "小时") && !StringUtils.equals(timeText, "1小时前")) ||
                     RegexUtils.match(timeText, "\\d{4}-\\d{2}-\\d{2}")) {
-                    throw new PastDateException();
+                    throw new PastDateException("Time past limit: " + timeText);
                 }
                 this.parseTitle(row, article);
                 this.parseSummary(row, article);
 
                 articles.add(article);
             } catch (PastDateException e) {
-                logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
+                if (i++ < Constants.MAX_REPEAT_TIMES) {
+                    continue;
+                }
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
                 break;
             }
         }

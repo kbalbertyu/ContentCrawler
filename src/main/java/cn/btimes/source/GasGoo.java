@@ -1,10 +1,11 @@
 package cn.btimes.source;
 
-import cn.btimes.model.Article;
-import cn.btimes.model.BTExceptions.PastDateException;
-import cn.btimes.model.CSSQuery;
-import cn.btimes.model.Category;
+import cn.btimes.model.common.Article;
+import cn.btimes.model.common.BTExceptions.PastDateException;
+import cn.btimes.model.common.CSSQuery;
+import cn.btimes.model.common.Category;
 import com.amzass.utils.PageLoadHelper.WaitTime;
+import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.RegexUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -60,6 +61,7 @@ public class GasGoo extends Source {
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
+        int i = 0;
         for (Element row : list) {
             try {
                 Article article = new Article();
@@ -70,7 +72,10 @@ public class GasGoo extends Source {
 
                 articles.add(article);
             } catch (PastDateException e) {
-                logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
+                if (i++ < Constants.MAX_REPEAT_TIMES) {
+                    continue;
+                }
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
                 break;
             }
         }

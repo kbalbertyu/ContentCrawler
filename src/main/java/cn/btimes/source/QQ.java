@@ -1,10 +1,10 @@
 package cn.btimes.source;
 
-import cn.btimes.model.Article;
-import cn.btimes.model.BTExceptions.PastDateException;
-import cn.btimes.model.CSSQuery;
-import cn.btimes.model.Category;
-import cn.btimes.model.Messenger;
+import cn.btimes.model.common.Article;
+import cn.btimes.model.common.BTExceptions.PastDateException;
+import cn.btimes.model.common.CSSQuery;
+import cn.btimes.model.common.Category;
+import cn.btimes.model.common.Messenger;
 import cn.btimes.utils.PageUtils;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper;

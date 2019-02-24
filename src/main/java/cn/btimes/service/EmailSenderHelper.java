@@ -1,6 +1,6 @@
 package cn.btimes.service;
 
-import cn.btimes.model.SMTPContext;
+import cn.btimes.model.common.SMTPContext;
 import com.amazonaws.services.simpleemail.model.Destination;
 import com.amzass.enums.common.ConfigEnums.AccountType;
 import com.amzass.model.common.Account;

@@ -1,7 +1,7 @@
 package cn.btimes.service;
 
-import cn.btimes.model.Messenger;
-import cn.btimes.model.Messengers;
+import cn.btimes.model.common.Messenger;
+import cn.btimes.model.common.Messengers;
 import cn.btimes.source.*;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSONObject;
@@ -62,6 +62,7 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(SinaFinance.class));
     }
     public void execute() {
+        this.statistic();
         messengers.clear();
         this.deleteDownloadedFiles();
         this.syncSavedArticles();
@@ -79,7 +80,6 @@ public class ServiceExecutor {
         if (this.messengers.isNotEmpty()) {
             this.sendErrorMessage();
         }
-        this.statistic();
     }
 
     private void sendErrorMessage() {

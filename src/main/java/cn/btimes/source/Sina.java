@@ -1,10 +1,11 @@
 package cn.btimes.source;
 
-import cn.btimes.model.Article;
-import cn.btimes.model.BTExceptions.PastDateException;
-import cn.btimes.model.CSSQuery;
-import cn.btimes.model.Category;
+import cn.btimes.model.common.Article;
+import cn.btimes.model.common.BTExceptions.PastDateException;
+import cn.btimes.model.common.CSSQuery;
+import cn.btimes.model.common.Category;
 import com.amzass.utils.PageLoadHelper.WaitTime;
+import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.RegexUtils;
 import com.amzass.utils.common.Tools;
@@ -58,6 +59,7 @@ public class Sina extends Source {
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
+        int i = 0;
         for (Element row : list) {
             try {
                 Article article = new Article();
@@ -71,7 +73,10 @@ public class Sina extends Source {
 
                 articles.add(article);
             } catch (PastDateException e) {
-                logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
+                if (i++ < Constants.MAX_REPEAT_TIMES) {
+                    continue;
+                }
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
                 break;
             }
         }
@@ -92,7 +97,7 @@ public class Sina extends Source {
             return new Date();
         }
         if (!Tools.containsAny(timeText, "分钟", "今天")) {
-            throw new PastDateException();
+            throw new PastDateException("Time not contains minutes or today: " + timeText);
         }
 
         if (Tools.contains(timeText, "分钟")) {
@@ -102,7 +107,7 @@ public class Sina extends Source {
             }
 
             if (minutes > MAX_PAST_MINUTES) {
-                throw new PastDateException();
+                throw new PastDateException("Time past limit: " + timeText);
             }
             return DateUtils.addMinutes(new Date(), -1 * minutes);
         } else {

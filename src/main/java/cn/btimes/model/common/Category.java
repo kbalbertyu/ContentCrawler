@@ -1,4 +1,4 @@
-package cn.btimes.model;
+package cn.btimes.model.common;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-01 9:14 PM

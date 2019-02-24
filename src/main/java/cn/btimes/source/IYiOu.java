@@ -1,9 +1,9 @@
 package cn.btimes.source;
 
-import cn.btimes.model.Article;
-import cn.btimes.model.BTExceptions.PastDateException;
-import cn.btimes.model.CSSQuery;
-import cn.btimes.model.Category;
+import cn.btimes.model.common.Article;
+import cn.btimes.model.common.BTExceptions.PastDateException;
+import cn.btimes.model.common.CSSQuery;
+import cn.btimes.model.common.Category;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
@@ -74,19 +74,23 @@ public class IYiOu extends Source {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
         String today = DateFormatUtils.format(new Date(), "yyyy-MM-dd");
+        int i = 0;
         for (Element row : list) {
             try {
                 Article article = new Article();
                 String timeText = HtmlParser.text(row, ".time");
                 if ((StringUtils.contains(timeText, "小时") && !StringUtils.equals(timeText, "1小时前")) ||
                     (RegexUtils.match(timeText, "\\d{4}-\\d{2}-\\d{2}") && !StringUtils.contains(timeText, today))) {
-                    throw new PastDateException();
+                    throw new PastDateException("Time past limit: " + timeText);
                 }
 
                 this.parseTitle(row, article);
                 articles.add(article);
             } catch (PastDateException e) {
-                logger.warn("Article that past {} minutes detected, complete the list fetching.", MAX_PAST_MINUTES);
+                if (i++ < Constants.MAX_REPEAT_TIMES) {
+                    continue;
+                }
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
                 break;
             }
         }
@@ -135,7 +139,7 @@ public class IYiOu extends Source {
         int minutes = NumberUtils.toInt(RegexUtils.getMatched(timeText, "\\d+"));
         if (Tools.containsAny(timeText, "小时")) {
             if (minutes != 1) {
-                throw new PastDateException();
+                throw new PastDateException("Time past 1 hour: " + timeText);
             }
             minutes = 60;
         } else if (!Tools.containsAny(timeText, "分钟")) {
@@ -145,7 +149,7 @@ public class IYiOu extends Source {
         }
 
         if (minutes > MAX_PAST_MINUTES) {
-            throw new PastDateException();
+            throw new PastDateException("Time past limit: " + timeText);
         }
         return DateUtils.addMinutes(new Date(), -1 * minutes);
     }
