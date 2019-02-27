@@ -19,7 +19,7 @@ import java.io.IOException;
  */
 public class ApiRequest extends WebApiRequest {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebApiRequest.class);
-    private static final String WEB_API_ENDPOINT = "http://www.businesstimes.cn/api";
+    private static final String WEB_API_ENDPOINT = "https://www.businesstimes.cn/api";
 
     public WebApiResult get(String path) {
         return this.send(path, Method.GET, "");
@@ -37,6 +37,7 @@ public class ApiRequest extends WebApiRequest {
         for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
             try {
                 String result = Jsoup.connect(getFullUrl(path)).ignoreContentType(true)
+                    .validateTLSCertificates(false)
                     .data("data", dataText)
                     .method(method).timeout(WaitTime.SuperLong.valInMS()).maxBodySize(0).execute().body();
                 WebApiResult resultObj = JSON.parseObject(result, WebApiResult.class);

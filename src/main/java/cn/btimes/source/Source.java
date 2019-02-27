@@ -513,6 +513,7 @@ public abstract class Source {
      */
     private Connection createWebConnection(String url, Map<String, String> cookies) {
         Connection conn = Jsoup.connect(url)
+            .validateTLSCertificates(false)
             .userAgent("Mozilla")
             .method(Method.POST)
             .data("maxFileNum", "50")
