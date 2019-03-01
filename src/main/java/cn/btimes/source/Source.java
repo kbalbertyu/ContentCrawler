@@ -384,7 +384,11 @@ public abstract class Source {
         Elements images = contentElm.select("img");
         List<String> contentImages = new ArrayList<>();
         for (Element image : images) {
-            contentImages.add(image.attr("src"));
+            String src = image.attr("src");
+            if (StringUtils.containsIgnoreCase(src, "data:image") || StringUtils.containsIgnoreCase(src, "base64")) {
+                continue;
+            }
+            contentImages.add(src);
         }
         article.setContentImages(contentImages);
     }
