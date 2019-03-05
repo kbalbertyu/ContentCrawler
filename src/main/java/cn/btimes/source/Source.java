@@ -214,6 +214,11 @@ public abstract class Source {
             Document doc = Jsoup.parse(driver.getPageSource());
             try {
                 List<Article> articlesNew = this.parseList(doc);
+                if (articlesNew.size() == 0) {
+                    String fileName = this.getClass().getSimpleName() + System.currentTimeMillis();
+                    logger.warn(fileName + ": " + url);
+                    PageUtils.savePage4ErrorHandling(driver, fileName, "parseList");
+                }
                 articlesNew.forEach(article -> {
                     article.setCategory(urls.get(url));
                     article.setUrl(Common.getAbsoluteUrl(article.getUrl(), url));
@@ -225,6 +230,9 @@ public abstract class Source {
         }
 
         logger.info("Found {} articles from list.", articles.size());
+        if (articles.size() == 0) {
+            PageUtils.savePage4ErrorHandling(driver, this.getClass().getSimpleName() + System.currentTimeMillis(), "All");
+        }
 
         int saved = 0;
         for (Article article : articles) {

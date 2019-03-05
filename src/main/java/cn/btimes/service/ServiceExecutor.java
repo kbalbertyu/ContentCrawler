@@ -4,6 +4,7 @@ import cn.btimes.model.common.Messenger;
 import cn.btimes.model.common.Messengers;
 import cn.btimes.source.*;
 import cn.btimes.utils.Common;
+import cn.btimes.utils.PageUtils;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
@@ -75,6 +76,7 @@ public class ServiceExecutor {
                 logger.error(message, e);
                 Messenger messenger = new Messenger(source.getClass().getName(), message);
                 this.messengers.add(messenger);
+                PageUtils.savePage4ErrorHandling(driver, String.valueOf(System.currentTimeMillis()), "execute");
             }
         }
         if (this.messengers.isNotEmpty()) {
