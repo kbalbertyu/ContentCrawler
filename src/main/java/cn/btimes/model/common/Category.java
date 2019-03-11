@@ -17,7 +17,7 @@ public enum Category {
     TRAVEL(65, "旅游"),
     FUTURE_INDUSTRIES(68, "未来产业"),
     /**  For Kpopstarz.cn **/
-    General(18, "商讯"),
+    General(118, "商讯"),
     /** Undetermined category **/
     BLANK(0, "");
 
