@@ -18,7 +18,7 @@ public class BasePageTest extends BaseTest {
     @Inject private WebDriverLauncher webDriverLauncher;
 
     @BeforeSuite public void prepare() throws IOException {
-        driver = webDriverLauncher.startWithoutLogin();
+        //driver = webDriverLauncher.startWithoutLogin();
     }
 
     @AfterSuite

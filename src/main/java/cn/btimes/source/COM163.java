@@ -68,7 +68,7 @@ public class COM163 extends Source {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
                     continue;
                 }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
                 break;
             }
         }
@@ -81,7 +81,7 @@ public class COM163 extends Source {
     }
 
     @Override
-    protected void parseTitle(Element doc, Article article) {
+    public void parseTitle(Element doc, Article article) {
         String cssQuery = "#epContentLeft > h1";
         this.checkTitleExistence(doc, cssQuery);
         article.setTitle(HtmlParser.text(doc, cssQuery));
@@ -93,7 +93,7 @@ public class COM163 extends Source {
     }
 
     @Override
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         Elements elements = dom.select(".ep-source, [adtype], [class^=gg], .otitle");
         if (elements.size() > 0) {
             elements.remove();

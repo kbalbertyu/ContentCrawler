@@ -75,7 +75,7 @@ public class GasGoo extends Source {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
                     continue;
                 }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
                 break;
             }
         }
@@ -96,7 +96,7 @@ public class GasGoo extends Source {
     }
 
     @Override
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         // Remove icon of viewing large image
         Elements elements = dom.select("img[src*=ViewImg.gif]");
         if (elements.size() > 0) {

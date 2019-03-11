@@ -1,26 +1,28 @@
-package cn.btimes.source;
+package cn.kpopstarz.source;
 
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import com.amzass.utils.PageLoadHelper.WaitTime;
-import com.amzass.utils.common.PageUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-03 6:03 AM
+ * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-11 4:59 AM
  */
-public class LvJie extends Source {
+public class ReBo extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("http://www.lvjie.com.cn/destination/", Category.TRAVEL);
+        URLS.put("https://www.y3600.co/news/", Category.General);
     }
 
     @Override
@@ -30,18 +32,23 @@ public class LvJie extends Source {
 
     @Override
     protected String getDateRegex() {
-        return null;
+        return "\\d{2}-\\d{2} \\d{2}:\\d{2}";
     }
 
     @Override
     protected String getDateFormat() {
-        return null;
+        return "MM-dd HH:mm";
     }
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return new CSSQuery("#data_list > .li", ".detailCont", ".Tlist > a", "p.listCont",
-            ".Wh > .baodao", ".time");
+        return new CSSQuery("#list > div.wdls", "#article", "ul.a3 > ol > a", "ul.a3 > li",
+            "", "ul.a3 > em");
+    }
+
+    @Override
+    protected int getSourceId() {
+        return 10;
     }
 
     @Override
@@ -53,32 +60,19 @@ public class LvJie extends Source {
     }
 
     @Override
-    Date parseDateText(String timeText) {
-        return this.parseDescribableDateText(timeText);
+    protected String cleanHtml(Element dom) {
+        Elements elements = dom.select("script, .editor, [class^=focus_], [class^=pages]");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
+        return super.cleanHtml(dom);
     }
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
-        PageUtils.scrollToBottom(driver);
         Document doc = Jsoup.parse(driver.getPageSource());
-
-        this.parseSource(doc, article);
         this.parseContent(doc, article);
-    }
-
-    @Override
-    protected int getSourceId() {
-        return 939;
-    }
-
-    @Override
-    protected String cleanHtml(Element dom) {
-        Elements elements = dom.select("[class*=subject], [style*=italic], img[src*=static]");
-        if (elements.size() > 0) {
-            elements.remove();
-        }
-        return super.cleanHtml(dom);
     }
 }

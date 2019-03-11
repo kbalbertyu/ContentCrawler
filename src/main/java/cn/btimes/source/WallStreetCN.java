@@ -78,7 +78,7 @@ public class WallStreetCN extends Source {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
                     continue;
                 }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
                 break;
             }
         }
@@ -86,7 +86,7 @@ public class WallStreetCN extends Source {
     }
 
     @Override
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         Elements elements = dom.select("p:contains(本文来自), a[href*=membership], img.wscnph");
         if (elements.size() > 0) {
             elements.remove();

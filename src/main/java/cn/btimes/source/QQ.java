@@ -82,7 +82,7 @@ public class QQ extends Source {
     }
 
     @Override
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         Elements elements = dom.select(".content-article .content-article, script, #Status, .article-status, [class*=video]");
         if (elements.size() > 0) {
             elements.remove();
@@ -130,7 +130,7 @@ public class QQ extends Source {
     }
 
     @Override
-    protected void parseTitle(Element doc, Article article) {
+    public void parseTitle(Element doc, Article article) {
         String titleCssQuery = this.getCSSQuery().getTitle();
         this.checkTitleExistence(doc, titleCssQuery);
         Element linkElm = doc.select(titleCssQuery).get(0);

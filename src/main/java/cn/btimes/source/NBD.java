@@ -66,7 +66,7 @@ public class NBD extends Source {
     }
 
     @Override
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         Elements elements = dom.select("p:contains(每经记者), p:contains(每经编辑)");
         if (elements.size() > 0) {
             elements.remove();

@@ -78,7 +78,7 @@ public class CTO51 extends Source {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
                     continue;
                 }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
                 break;
             }
         }
@@ -86,7 +86,7 @@ public class CTO51 extends Source {
     }
 
     @Override
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         for (Node node : dom.childNodes()) {
             if (Tools.containsAny(node.outerHtml(), "责任编辑：", "编辑推荐")) {
                 node.before(TO_DELETE_SEPARATOR);

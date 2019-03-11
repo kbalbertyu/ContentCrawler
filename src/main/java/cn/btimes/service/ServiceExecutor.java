@@ -1,5 +1,6 @@
 package cn.btimes.service;
 
+import cn.btimes.model.common.Config;
 import cn.btimes.model.common.Messenger;
 import cn.btimes.model.common.Messengers;
 import cn.btimes.source.*;
@@ -29,14 +30,15 @@ import java.util.List;
  */
 public class ServiceExecutor {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private final static List<Source> sources = new ArrayList<>();
+
     @Inject private WebDriverLauncher webDriverLauncher;
     @Inject private Messengers messengers;
     @Inject private EmailSenderHelper emailSenderHelper;
     @Inject private ApiRequest apiRequest;
     @Inject private DBManager dbManager;
 
-    static {
+    protected List<Source> getSources() {
+        List<Source> sources = new ArrayList<>();
         sources.add(ApplicationContext.getBean(Sina.class));
         sources.add(ApplicationContext.getBean(ThePaper.class));
         sources.add(ApplicationContext.getBean(YiCai.class));
@@ -61,16 +63,18 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(WallStreetCN.class));
         sources.add(ApplicationContext.getBean(CSCOMCN.class));
         sources.add(ApplicationContext.getBean(SinaFinance.class));
+        return sources;
     }
-    public void execute() {
+
+    public void execute(Config config) {
         this.statistic();
         messengers.clear();
         this.deleteDownloadedFiles();
         this.syncSavedArticles();
-        WebDriver driver = webDriverLauncher.start();
-        for (Source source : sources) {
+        WebDriver driver = webDriverLauncher.start(config);
+        for (Source source : this.getSources()) {
             try {
-                source.execute(driver);
+                source.execute(driver, config);
             } catch (Exception e) {
                 String message = String.format("Error found in executing: %s", this.getClass());
                 logger.error(message, e);
@@ -99,7 +103,7 @@ public class ServiceExecutor {
         dbManager.save(new ActionLog(logId), ActionLog.class);
     }
 
-    private void statistic() {
+    protected void statistic() {
         Date date = new Date();
         String hour = DateFormatUtils.format(date, "E");
         if (!StringUtils.equalsIgnoreCase(hour, "Fri")) {
@@ -126,7 +130,7 @@ public class ServiceExecutor {
      * Read article original links from website via API,
      * save to DB in action_log table if not exists.
      */
-    private void syncSavedArticles() {
+    protected void syncSavedArticles() {
         WebApiResult result = apiRequest.get("/article/fetchCrawledLinks");
         if (StringUtils.equals(result.getCode(), "0")) {
             logger.error("Unable to fetch articles: {}", result.getMessage());

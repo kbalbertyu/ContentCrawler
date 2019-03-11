@@ -61,7 +61,7 @@ public class IYiOu extends Source {
     }
 
     @Override
-    void parseTitle(Element doc, Article article) {
+    public void parseTitle(Element doc, Article article) {
         super.parseTitle(doc, article);
         Elements linkElms = doc.select(this.getCSSQuery().getTitle());
         if (linkElms.size() > 0) {
@@ -98,7 +98,7 @@ public class IYiOu extends Source {
     }
 
     @Override
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         Elements elements = dom.select("#machineContainer, .copyrightState, p:contains(本文来源)");
         if (elements.size() > 0) {
             elements.remove();

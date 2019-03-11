@@ -1,6 +1,7 @@
 package cn.btimes.service;
 
-import cn.btimes.source.Source;
+import cn.btimes.model.common.Config;
+import cn.btimes.ui.ContentCrawler.Application;
 import com.amzass.enums.common.ConfigEnums.ChromeDriverVersion;
 import com.amzass.service.common.WebDriverManager;
 import com.amzass.utils.PageLoadHelper;
@@ -28,17 +29,17 @@ public class WebDriverLauncher {
     static final String DOWNLOAD_PATH = System.getProperty("user.dir") + "/downloads";
     private static final boolean USE_HEADLESS_DRIVER = StringUtils.isNotBlank(Tools.getCustomizingValue("USE_HEADLESS_DRIVER"));
     @Inject private WebDriverManager webDriverManager;
-    public static Map<String, String> adminCookies;
+    public static Map<Application, Map<String, String>> adminCookies;
 
-    public WebDriver start() {
-        return this.startDriver(true);
+    public WebDriver start(Config config) {
+        return this.startDriver(config, true);
     }
 
-    public WebDriver startWithoutLogin() {
-        return this.startDriver(false);
+    public WebDriver startWithoutLogin(Config config) {
+        return this.startDriver(config, false);
     }
 
-    private WebDriver startDriver(boolean login) {
+    private WebDriver startDriver(Config config, boolean login) {
         ChromeDriverVersion chromeDriverVersion = Tools.defaultChromeDriver();
         if (chromeDriverVersion == null) {
             chromeDriverVersion = ChromeDriverVersion.values()[0];
@@ -46,8 +47,8 @@ public class WebDriverLauncher {
 
         DesiredCapabilities dCaps = this.prepareChromeCaps();
         WebDriver driver = webDriverManager.initCustomChromeDriver(chromeDriverVersion, Constants.DEFAULT_DRIVER_TIME_OUT, dCaps);
-        if (login && adminCookies == null) {
-            this.fetchAdminCookies(driver);
+        if (login && (adminCookies == null || adminCookies.getOrDefault(config.getApplication(), null) == null)) {
+            this.fetchAdminCookies(driver, config);
         }
         return driver;
     }
@@ -67,20 +68,20 @@ public class WebDriverLauncher {
         return cap;
     }
 
-    private void fetchAdminCookies(WebDriver driver) {
-        driver.get(Source.ADMIN_URL);
-        String email = Tools.getCustomizingValue("ADMIN_EMAIL");
-        String password = Tools.getCustomizingValue("ADMIN_PASSWORD");
+    private void fetchAdminCookies(WebDriver driver, Config config) {
+        driver.get(config.getAdminUrl());
         PageLoadHelper.visible(driver, By.id("mb_email"), WaitTime.Normal);
-        PageUtils.setValue(driver, By.id("mb_email"), email);
-        PageUtils.setValue(driver, By.id("login_mb_password"), password);
+        PageUtils.setValue(driver, By.id("mb_email"), config.getAdminEmail());
+        PageUtils.setValue(driver, By.id("login_mb_password"), config.getAdminPassword());
         PageUtils.click(driver, By.cssSelector("button[type=submit]"));
         WaitTime.Normal.execute();
         Set<Cookie> cookieSet = driver.manage().getCookies();
 
         adminCookies = new HashMap<>();
+        Map<String, String> adminCookie = new HashMap<>();
         for (Cookie cookie : cookieSet) {
-            adminCookies.put(cookie.getName(), cookie.getValue());
+            adminCookie.put(cookie.getName(), cookie.getValue());
         }
+        adminCookies.put(config.getApplication(), adminCookie);
     }
 }

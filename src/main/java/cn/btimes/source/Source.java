@@ -58,16 +58,11 @@ public abstract class Source {
     private static final String WITHOUT_MONTH_DAY = "01/01";
     private final Logger logger = LoggerFactory.getLogger(Source.class);
     private static final String DOWNLOAD_PATH = "downloads";
-    public static final String ADMIN_URL = Tools.getCustomizingValue("ADMIN_URL");
-    private static final String FILE_UPLOAD_URL = ADMIN_URL + "/plugin/jqueryfileupload/server/php/";
-    private static final String FILE_SAVE_URL = ADMIN_URL + "/pages/media/plugin/image_upload_multi_update.php";
-    private static final String ARTICLE_SAVE_URL = ADMIN_URL + "/pages/publish/publish/update.php";
-    private static final String CDN_URL = Tools.getCustomizingValue("CDN_URL");
-    private static final String DATA_IMAGES_FULL = "/data/images/full/";
-    static final int MAX_PAST_MINUTES = NumberUtils.toInt(Tools.getCustomizingValue("MAX_PAST_MINUTES"));
     private static final List<String[]> sources = readSources();
     @Inject private DBManager dbManager;
     @Inject Messengers messengers;
+    private Map<String, String> adminCookie;
+    protected Config config;
 
     protected abstract Map<String, Category> getUrls();
 
@@ -83,7 +78,7 @@ public abstract class Source {
 
     protected abstract void readArticle(WebDriver driver, Article article);
 
-    Elements readList(Document doc) {
+    protected Elements readList(Document doc) {
         String cssQuery = this.getCSSQuery().getList();
         this.checkArticleListExistence(doc, cssQuery);
         return doc.select(cssQuery);
@@ -126,7 +121,7 @@ public abstract class Source {
         this.parseContent(doc, article);
     }
 
-    void parseDateTitleSummaryList(List<Article> articles, Elements list) {
+    protected void parseDateTitleSummaryList(List<Article> articles, Elements list) {
         int i = 0;
         for (Element row : list) {
             try {
@@ -140,7 +135,8 @@ public abstract class Source {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
                     continue;
                 }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ",
+                    config.getMaxPastMinutes(), e);
                 break;
             }
         }
@@ -159,13 +155,14 @@ public abstract class Source {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
                     continue;
                 }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ",
+                    config.getMaxPastMinutes(), e);
                 break;
             }
         }
     }
 
-    void parseTitle(Element doc, Article article) {
+    public void parseTitle(Element doc, Article article) {
         CSSQuery cssQuery = this.getCSSQuery();
         this.checkTitleExistence(doc, cssQuery.getTitle());
         Element linkElm = doc.select(cssQuery.getTitle()).get(0);
@@ -193,7 +190,7 @@ public abstract class Source {
         article.setSummary(source);
     }
 
-    void parseContent(Document doc, Article article) {
+    protected void parseContent(Document doc, Article article) {
         CSSQuery cssQuery = this.getCSSQuery();
         this.checkArticleContentExistence(doc, cssQuery.getContent());
         Element contentElm = doc.select(cssQuery.getContent()).first();
@@ -201,7 +198,13 @@ public abstract class Source {
         this.fetchContentImages(article, contentElm);
     }
 
-    public void execute(WebDriver driver) {
+    private void initContext(Config config) {
+        this.adminCookie = WebDriverLauncher.adminCookies.get(config.getApplication());
+        this.config = config;
+    }
+
+    public void execute(WebDriver driver, Config config) {
+        this.initContext(config);
         List<Article> articles = new ArrayList<>();
         Map<String, Category> urls = this.getUrls();
         for (String url : urls.keySet()) {
@@ -247,7 +250,8 @@ public abstract class Source {
                 this.saveArticle(article, driver);
                 saved++;
             } catch (PastDateException e) {
-                logger.error("Article publish date has past {} minutes: {}", MAX_PAST_MINUTES, article.getUrl(), e);
+                logger.error("Article publish date has past {} minutes: {}",
+                    config.getMaxPastMinutes(), article.getUrl(), e);
             } catch (BusinessException e) {
                 String message = String.format("Unable to read article %s", article.getUrl());
                 logger.error(message, e);
@@ -284,7 +288,7 @@ public abstract class Source {
         this.cleanThirdPartyImages(article);
         article.checkContent();
 
-        Connection conn = this.createWebConnection(ARTICLE_SAVE_URL, WebDriverLauncher.adminCookies)
+        Connection conn = this.createWebConnection(config.getArticleSaveUrl(), adminCookie)
             .data("getstring", "")
             .data("mb_no", "")
             .data("ar_status", "1")
@@ -401,7 +405,7 @@ public abstract class Source {
         article.setContentImages(contentImages);
     }
 
-    void parseDate(Element doc, Article article) {
+    protected void parseDate(Element doc, Article article) {
         CSSQuery cssQuery = this.getCSSQuery();
         this.checkDateTextExistence(doc, cssQuery.getTime());
         String timeText = HtmlParser.text(doc, cssQuery.getTime());
@@ -419,7 +423,7 @@ public abstract class Source {
         if (minutes == 0) {
             throw new BusinessException("Unable to parse time text: " + timeText);
         }
-        if (minutes > MAX_PAST_MINUTES) {
+        if (minutes > config.getMaxPastMinutes()) {
             throw new PastDateException("Time has past limit: " + timeText);
         }
         return DateUtils.addMinutes(new Date(), -1 * minutes);
@@ -457,7 +461,7 @@ public abstract class Source {
     }
 
     void checkDate(Date date) {
-        if (this.calcMinutesAgo(date) > MAX_PAST_MINUTES) {
+        if (this.calcMinutesAgo(date) > config.getMaxPastMinutes()) {
             throw new PastDateException();
         }
     }
@@ -483,7 +487,7 @@ public abstract class Source {
         Element dom = Jsoup.parse(article.getContent()).body();
         boolean hasRemoval = false;
         for (Element image : dom.select("img")) {
-            if (StringUtils.containsIgnoreCase(image.attr("src"), CDN_URL)) {
+            if (StringUtils.containsIgnoreCase(image.attr("src"), config.getCdnUrl())) {
                 this.justifyImage(image);
                 continue;
             }
@@ -524,7 +528,7 @@ public abstract class Source {
      * Create web connection to admin site
      */
     private Connection createWebConnection(String url, Map<String, String> cookies) {
-        Connection conn = Jsoup.connect(url)
+        Connection conn = Jsoup.connect(config.getAdminUrl() + url)
             .validateTLSCertificates(false)
             .userAgent("Mozilla")
             .method(Method.POST)
@@ -547,7 +551,7 @@ public abstract class Source {
             String hex = Common.toMD5(contentImage);
             for (SavedImage savedImage : savedImages) {
                 if (StringUtils.startsWith(savedImage.getOriginalFile(), hex)) {
-                    String newImage = CDN_URL + DATA_IMAGES_FULL + savedImage.getPath();
+                    String newImage = config.getCdnUrl() + config.getDataImagesFull() + savedImage.getPath();
                     content = StringUtils.replace(content, contentImage, newImage);
                     break;
                 }
@@ -570,7 +574,7 @@ public abstract class Source {
         if (!article.hasImages()) {
             return null;
         }
-        Connection conn = this.createWebConnection(FILE_UPLOAD_URL, null);
+        Connection conn = this.createWebConnection(config.getFileUploadUrl(), null);
 
         int i = 0;
         for (String imageUrl : article.getContentImages()) {
@@ -627,7 +631,7 @@ public abstract class Source {
      * Save uploaded images to DB, and move out of the temp directory
      */
     private List<SavedImage> saveImages(Article article, ImageUploadResult result) {
-        Connection conn = this.createWebConnection(FILE_SAVE_URL, WebDriverLauncher.adminCookies);
+        Connection conn = this.createWebConnection(config.getFileSaveUrl(), adminCookie);
 
         int i = 0;
         for (UploadedImage imageFile : result.getFiles()) {
@@ -753,7 +757,7 @@ public abstract class Source {
         return sources;
     }
 
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         this.removeNeedlessHtmlTags(dom);
         // this.unwrapDeepLayeredHtmlTags(dom);
         this.removeImgTagAttrs(dom);

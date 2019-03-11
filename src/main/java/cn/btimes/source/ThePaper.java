@@ -75,7 +75,7 @@ public class ThePaper extends Source {
                 this.parseSummary(row, article);
                 articles.add(article);
             } catch (PastDateException e) {
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
                 break;
             }
         }
@@ -92,7 +92,7 @@ public class ThePaper extends Source {
     }
 
     @Override
-    protected void parseTitle(Element doc, Article article) {
+    public void parseTitle(Element doc, Article article) {
         String cssQuery = "h1.news_title";
         this.checkTitleExistence(doc, cssQuery);
         article.setTitle(HtmlParser.text(doc, cssQuery));

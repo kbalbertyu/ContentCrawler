@@ -76,7 +76,7 @@ public class Sina extends Source {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
                     continue;
                 }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
                 break;
             }
         }
@@ -106,7 +106,7 @@ public class Sina extends Source {
                 throw new BusinessException("Unable to parse time text: " + timeText);
             }
 
-            if (minutes > MAX_PAST_MINUTES) {
+            if (minutes > config.getMaxPastMinutes()) {
                 throw new PastDateException("Time past limit: " + timeText);
             }
             return DateUtils.addMinutes(new Date(), -1 * minutes);
@@ -125,7 +125,7 @@ public class Sina extends Source {
      * 删除“本报讯”段落或关键词
      */
     @Override
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         Elements elements = dom.select("[id^=ad], [class^=survey], [id^=quote_], script, .article-editor, p:contains(本文来自于), p:contains(原题为), p:contains(责任编辑), span[style*=KaiTi_GB2312], p:contains(来源：), p:contains(免责声明：)");
         if (elements.size() > 0) {
             elements.remove();

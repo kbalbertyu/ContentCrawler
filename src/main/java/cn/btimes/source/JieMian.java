@@ -84,7 +84,7 @@ public class JieMian extends Source {
     }
 
     @Override
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         Elements elements = dom.select("#ad-content, p:contains(编辑：)");
         if (elements.size() > 0) {
             elements.remove();

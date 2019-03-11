@@ -65,7 +65,7 @@ public class LadyMax extends Source {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
                     continue;
                 }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
                 break;
             }
         }
@@ -73,7 +73,7 @@ public class LadyMax extends Source {
     }
 
     @Override
-    String cleanHtml(Element dom) {
+    protected String cleanHtml(Element dom) {
         for (Node node : dom.childNodes()) {
             if (StringUtils.contains(node.outerHtml(), "文章来源")) {
                 node.before(TO_DELETE_SEPARATOR);
@@ -100,7 +100,7 @@ public class LadyMax extends Source {
     }
 
     @Override
-    protected void parseTitle(Element doc, Article article) {
+    public void parseTitle(Element doc, Article article) {
         String titleCssQuery = ".newsview > .title > h1";
         this.checkTitleExistence(doc, titleCssQuery);
         String title = HtmlParser.text(doc, titleCssQuery);
