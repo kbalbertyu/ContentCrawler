@@ -112,7 +112,7 @@ public abstract class Source {
         this.parseContent(doc, article);
     }
 
-    void readDateContent(WebDriver driver, Article article) {
+    protected void readDateContent(WebDriver driver, Article article) {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
@@ -364,7 +364,7 @@ public abstract class Source {
         this.checkElementExistence(doc, cssQuery, "Date text");
     }
 
-    void checkTitleExistence(Element doc, String cssQuery) {
+    protected void checkTitleExistence(Element doc, String cssQuery) {
         this.checkElementExistence(doc, cssQuery, "Title");
     }
 
@@ -429,7 +429,7 @@ public abstract class Source {
         return DateUtils.addMinutes(new Date(), -1 * minutes);
     }
 
-    Date parseDateText(String timeText) {
+    protected Date parseDateText(String timeText) {
         return this.parseDateText(timeText, this.getDateRegex(), this.getDateFormat());
     }
 

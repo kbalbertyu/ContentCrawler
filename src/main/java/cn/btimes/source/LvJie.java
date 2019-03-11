@@ -53,7 +53,7 @@ public class LvJie extends Source {
     }
 
     @Override
-    Date parseDateText(String timeText) {
+    protected Date parseDateText(String timeText) {
         return this.parseDescribableDateText(timeText);
     }
 
