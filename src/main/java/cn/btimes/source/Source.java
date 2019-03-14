@@ -240,7 +240,12 @@ public abstract class Source {
         int saved = 0;
         for (Article article : articles) {
             String logId = Common.toMD5(article.getUrl());
+            String logIdTitle = Common.toMD5(this.getClass() + article.getTitle());
             ActionLog log = dbManager.readById(logId, ActionLog.class);
+
+            if (log == null) {
+                log = dbManager.readById(logIdTitle, ActionLog.class);
+            }
             if (log != null) {
                 logger.info("Article saved already: {} -> {}", article.getTitle(), article.getUrl());
                 continue;
@@ -266,6 +271,7 @@ public abstract class Source {
                 continue;
             }
             dbManager.save(new ActionLog(logId), ActionLog.class);
+            dbManager.save(new ActionLog(logIdTitle), ActionLog.class);
         }
 
         if (articles.size() > 0) {
