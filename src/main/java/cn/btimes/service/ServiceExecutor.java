@@ -7,6 +7,7 @@ import cn.btimes.source.*;
 import cn.btimes.utils.Common;
 import cn.btimes.utils.PageUtils;
 import com.alibaba.fastjson.JSONObject;
+import com.amzass.enums.common.Country;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
 import com.google.inject.Inject;
@@ -105,11 +106,11 @@ public class ServiceExecutor {
 
     protected void statistic() {
         Date date = new Date();
-        String hour = DateFormatUtils.format(date, "E");
+        String hour = DateFormatUtils.format(date, "E", Country.US.locale());
         if (!StringUtils.equalsIgnoreCase(hour, "Fri")) {
             return;
         }
-        String logId = "Send_Message_" + DateFormatUtils.format(date, "yyyy-w-E");
+        String logId = "Send_Message_" + DateFormatUtils.format(date, "yyyy-w-E", Country.US.locale());
         ActionLog log = dbManager.readById(logId, ActionLog.class);
         if (log != null) {
             return;
@@ -151,7 +152,21 @@ public class ServiceExecutor {
         }
     }
 
+    /**
+     * Delete downloaded files once every Monday
+     */
     private void deleteDownloadedFiles() {
+        Date date = new Date();
+        String hour = DateFormatUtils.format(date, "E", Country.US.locale());
+        if (!StringUtils.equalsIgnoreCase(hour, "Mon")) {
+            return;
+        }
+        String logId = "Delete_Downloaded_" + DateFormatUtils.format(date, "yyyy-w-E", Country.US.locale());
+        ActionLog log = dbManager.readById(logId, ActionLog.class);
+        if (log != null) {
+            return;
+        }
+
         File root = FileUtils.getFile(WebDriverLauncher.DOWNLOAD_PATH);
         if (!root.isDirectory()) {
             logger.error("Download directory not exists: {}", WebDriverLauncher.DOWNLOAD_PATH);

@@ -29,6 +29,9 @@ public class ContentCrawler {
         }
 
         private static Application determineApplication(String name) {
+            if (StringUtils.isBlank(name)) {
+                return BTimes;
+            }
             for (Application application : Application.values()) {
                 if (StringUtils.equalsIgnoreCase(application.name(), name)) {
                     return application;
@@ -53,7 +56,8 @@ public class ContentCrawler {
         ProcessCleaner.cleanWebDriver();
         LOGGER.info("Start crawling contents.");
         long totalStart = System.currentTimeMillis();
-        Application application = Application.determineApplication(args[0]);
+        String appName = args.length > 0 ? args[0] : null;
+        Application application = Application.determineApplication(appName);
 
         LOGGER.info("Running application: {}", application.name());
         Config config = loadApplicationConfig(application);
