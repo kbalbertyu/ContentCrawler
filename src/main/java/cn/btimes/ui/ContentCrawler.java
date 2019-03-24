@@ -61,7 +61,11 @@ public class ContentCrawler {
 
         LOGGER.info("Running application: {}", application.name());
         Config config = loadApplicationConfig(application);
-        application.executor.execute(config);
+        try {
+            application.executor.execute(config);
+        } catch (Exception e) {
+            LOGGER.error("Unknown error found: ", e);
+        }
         LOGGER.info("Total execute time: {}", Tools.formatCostTime(totalStart));
         ProcessCleaner.cleanWebDriver();
         System.exit(0);
