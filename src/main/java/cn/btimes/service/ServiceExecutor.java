@@ -68,8 +68,9 @@ public class ServiceExecutor {
     }
 
     public void execute(Config config) {
-        this.statistic();
         messengers.clear();
+        this.statistic();
+        this.deleteOldArticleLogs();
         this.deleteDownloadedFiles();
         this.syncSavedArticles();
         WebDriver driver = webDriverLauncher.start(config);
@@ -110,21 +111,28 @@ public class ServiceExecutor {
         if (!StringUtils.equalsIgnoreCase(hour, "Fri")) {
             return;
         }
-        String logId = "Send_Message_" + DateFormatUtils.format(date, "yyyy-w-E", Country.US.locale());
+        String logId = "Send_Message_" + DateFormatUtils.format(date, "yyyy-MM-dd", Country.US.locale());
         ActionLog log = dbManager.readById(logId, ActionLog.class);
         if (log != null) {
             return;
         }
         ApplicationContext.getBean(Statistics.class).execute();
+        dbManager.save(new ActionLog(logId), ActionLog.class);
     }
 
-    @Deprecated
     private void deleteOldArticleLogs() {
         Date date = new Date();
-        date = DateUtils.addDays(date, -3);
+
+        String logId = "Delete_Logs_" + DateFormatUtils.format(date, "yyyy-MM", Country.US.locale());
+        ActionLog log = dbManager.readById(logId, ActionLog.class);
+        if (log != null) {
+            return;
+        }
+        date = DateUtils.addDays(date, -30);
         String dateString = DateFormatUtils.format(date, "yyyy-MM-dd HH:mm:ss");
         String sql = String.format("DELETE FROM action_log WHERE lasttime < '%s'", dateString);
         dbManager.execute(sql);
+        dbManager.save(new ActionLog(logId), ActionLog.class);
     }
 
     /**
@@ -161,26 +169,30 @@ public class ServiceExecutor {
         if (!StringUtils.equalsIgnoreCase(hour, "Mon")) {
             return;
         }
-        String logId = "Delete_Downloaded_" + DateFormatUtils.format(date, "yyyy-w-E", Country.US.locale());
+        String logId = "Delete_Downloaded_" + DateFormatUtils.format(date, "yyyy-MM-dd", Country.US.locale());
         ActionLog log = dbManager.readById(logId, ActionLog.class);
         if (log != null) {
             return;
         }
 
-        File root = FileUtils.getFile(WebDriverLauncher.DOWNLOAD_PATH);
-        if (!root.isDirectory()) {
-            logger.error("Download directory not exists: {}", WebDriverLauncher.DOWNLOAD_PATH);
-            return;
-        }
-        int i = 0, j = 0;
-        for (File file : root.listFiles()) {
-            if (FileUtils.deleteQuietly(file)) {
-                i++;
-                continue;
+        String[] rootPaths = new String[] {WebDriverLauncher.DOWNLOAD_PATH, System.getProperty("user.dir") + "/html"};
+        for (String rootPath : rootPaths) {
+            File root = FileUtils.getFile(rootPath);
+            if (!root.isDirectory()) {
+                logger.error("Download directory not exists: {}", rootPath);
+                return;
             }
-            j++;
+            int i = 0, j = 0;
+            for (File file : root.listFiles()) {
+                if (FileUtils.deleteQuietly(file)) {
+                    i++;
+                    continue;
+                }
+                j++;
+            }
+            logger.info("Downloaded files deleted: success={}, fail={}", i, j);
         }
-        logger.info("Downloaded files deleted: success={}, fail={}", i, j);
+        dbManager.save(new ActionLog(logId), ActionLog.class);
     }
 
     private void sendMessage(Messengers messengers) {
