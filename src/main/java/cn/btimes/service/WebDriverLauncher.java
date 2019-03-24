@@ -3,7 +3,6 @@ package cn.btimes.service;
 import cn.btimes.model.common.Config;
 import cn.btimes.ui.ContentCrawler.Application;
 import com.amzass.enums.common.ConfigEnums.ChromeDriverVersion;
-import com.amzass.service.common.WebDriverManager;
 import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;

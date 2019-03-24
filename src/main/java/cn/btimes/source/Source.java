@@ -38,6 +38,7 @@ import org.jsoup.nodes.Attributes;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -209,7 +210,11 @@ public abstract class Source {
         List<Article> articles = new ArrayList<>();
         Map<String, Category> urls = this.getUrls();
         for (String url : urls.keySet()) {
-            driver.get(url);
+            try {
+                driver.get(url);
+            } catch (TimeoutException e) {
+                logger.error("Page connection timeout, ignore the exception: {}", url);
+            }
 
             // Scroll to bottom to make sure latest articles are loaded
             PageUtils.scrollToBottom(driver);
