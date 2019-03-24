@@ -79,7 +79,7 @@ public class IYiOu extends Source {
             try {
                 Article article = new Article();
                 String timeText = HtmlParser.text(row, ".time");
-                if ((StringUtils.contains(timeText, "小时") && !StringUtils.equals(timeText, "1小时前")) ||
+                if ((StringUtils.contains(timeText, "小时前") && !this.checkHoursBefore(timeText)) ||
                     (RegexUtils.match(timeText, "\\d{4}-\\d{2}-\\d{2}") && !StringUtils.contains(timeText, today))) {
                     throw new PastDateException("Time past limit: " + timeText);
                 }
@@ -137,11 +137,8 @@ public class IYiOu extends Source {
             return super.parseDateText(timeText);
         }
         int minutes = NumberUtils.toInt(RegexUtils.getMatched(timeText, "\\d+"));
-        if (Tools.containsAny(timeText, "小时")) {
-            if (minutes != 1) {
-                throw new PastDateException("Time past 1 hour: " + timeText);
-            }
-            minutes = 60;
+        if (Tools.containsAny(timeText, "小时前")) {
+            minutes = extractFromHoursBefore(timeText) * 60;
         } else if (!Tools.containsAny(timeText, "分钟")) {
             if (minutes == 0) {
                 throw new BusinessException("Unable to parse time text: " + timeText);

@@ -16,6 +16,6 @@ public class Config {
     private String fileSaveUrl;
     private String articleSaveUrl;
     private String dataImagesFull;
-    private int maxPastMinutes = 30;
+    private int maxPastMinutes = 180;
     private Application application;
 }

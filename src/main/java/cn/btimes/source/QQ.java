@@ -72,8 +72,8 @@ public class QQ extends Source {
             String dateTextCssQuery = ".time";
             this.checkDateTextExistence(row, dateTextCssQuery);
             String timeText = HtmlParser.text(row, dateTextCssQuery);
-            if (StringUtils.contains(timeText, "小时") &&
-                !StringUtils.equals(timeText, "1小时前")) {
+            if (StringUtils.contains(timeText, "小时前") &&
+                !this.checkHoursBefore(timeText)) {
                 continue;
             }
             articles.add(article);

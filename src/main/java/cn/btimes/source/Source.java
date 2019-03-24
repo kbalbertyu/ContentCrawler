@@ -56,6 +56,7 @@ import java.util.*;
 public abstract class Source {
     private static final String WITHOUT_YEAR = "1970";
     private static final String WITHOUT_MONTH_DAY = "01/01";
+    private static final int MAX_HOURS_BEFORE = 3;
     private final Logger logger = LoggerFactory.getLogger(Source.class);
     private static final String DOWNLOAD_PATH = "downloads";
     private static final List<String[]> sources = readSources();
@@ -576,7 +577,7 @@ public abstract class Source {
      * Download the images from article source,
      * then upload to server temp directory
      */
-    ImageUploadResult uploadImages(Article article, WebDriver driver) {
+    private ImageUploadResult uploadImages(Article article, WebDriver driver) {
         if (!article.hasImages()) {
             return null;
         }
@@ -800,6 +801,18 @@ public abstract class Source {
             html = StringUtils.trim(StringUtils.remove(html, str));
         }
         return html;
+    }
+
+    static int extractFromHoursBefore(String timeText) {
+        String hoursAgo = "小时前";
+        String hours = RegexUtils.getMatched(timeText, "(\\d+)" + hoursAgo);
+        hours = StringUtils.remove(hours, hoursAgo);
+        return StringUtils.isBlank(hours) ? 9999 : NumberUtils.toInt(hours);
+    }
+
+    boolean checkHoursBefore(String timeText) {
+        int hours = extractFromHoursBefore(timeText);
+        return hours <= MAX_HOURS_BEFORE;
     }
 
     int calcMinutesAgo(Date date) {
