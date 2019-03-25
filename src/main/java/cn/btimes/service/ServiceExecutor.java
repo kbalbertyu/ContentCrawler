@@ -10,6 +10,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.amzass.enums.common.Country;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
+import com.amzass.utils.common.ProcessCleaner;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
 import com.mailman.model.common.WebApiResult;
@@ -17,6 +18,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,8 +44,6 @@ public class ServiceExecutor {
         List<Source> sources = new ArrayList<>();
         sources.add(ApplicationContext.getBean(Sina.class));
         sources.add(ApplicationContext.getBean(SinaFinance.class));
-        sources.add(ApplicationContext.getBean(YiCai.class));
-        sources.add(ApplicationContext.getBean(GasGoo.class));
         sources.add(ApplicationContext.getBean(JieMian.class));
         sources.add(ApplicationContext.getBean(COM163.class));
         sources.add(ApplicationContext.getBean(ThePaper.class));
@@ -64,6 +64,8 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(CCDY.class));
         sources.add(ApplicationContext.getBean(CTO51.class));
         sources.add(ApplicationContext.getBean(CNR.class));
+        sources.add(ApplicationContext.getBean(CNR.class));
+        sources.add(ApplicationContext.getBean(YiCai.class));
         return sources;
     }
 
@@ -75,14 +77,23 @@ public class ServiceExecutor {
         this.syncSavedArticles();
         WebDriver driver = webDriverLauncher.start(config);
         for (Source source : this.getSources()) {
+            String sourceName = source.getClass().getName();
+            logger.info("Start fetching from source: {}", sourceName);
             try {
+                source.execute(driver, config);
+            } catch (TimeoutException e) {
+                logger.error("Connection timeout, restart WebDriver and retry fetching: {}", sourceName);
+                ProcessCleaner.cleanWebDriver();
+                driver = webDriverLauncher.start(config);
                 source.execute(driver, config);
             } catch (Exception e) {
                 String message = String.format("Error found in executing: %s", this.getClass());
                 logger.error(message, e);
-                Messenger messenger = new Messenger(source.getClass().getName(), message);
+                Messenger messenger = new Messenger(sourceName, message);
                 this.messengers.add(messenger);
                 PageUtils.savePage4ErrorHandling(driver, String.valueOf(System.currentTimeMillis()), "execute");
+            } finally {
+                logger.info("Source fetching finished: {}", sourceName);
             }
         }
         if (this.messengers.isNotEmpty()) {

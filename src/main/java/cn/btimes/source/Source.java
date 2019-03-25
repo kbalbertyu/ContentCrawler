@@ -210,11 +210,7 @@ public abstract class Source {
         List<Article> articles = new ArrayList<>();
         Map<String, Category> urls = this.getUrls();
         for (String url : urls.keySet()) {
-            try {
-                driver.get(url);
-            } catch (TimeoutException e) {
-                logger.error("Page connection timeout, ignore the exception: {}", url);
-            }
+            driver.get(url);
 
             // Scroll to bottom to make sure latest articles are loaded
             PageUtils.scrollToBottom(driver);
@@ -268,6 +264,8 @@ public abstract class Source {
                 logger.error(message, e);
                 Messenger messenger = new Messenger(this.getClass().getName(), message + ": " + e.getMessage());
                 this.messengers.add(messenger);
+            } catch (TimeoutException e) {
+                throw e;
             } catch (Exception e) {
                 String message = String.format("Exception found for article: %s -> %s", article.getTitle(), article.getUrl());
                 logger.error(message, e);
@@ -684,6 +682,7 @@ public abstract class Source {
         File file = this.makeDownloadFile(fileName);
 
         String prefix = Tools.startWithAny(url, Constants.HTTP) ? StringUtils.EMPTY : Constants.HTTP + ":";
+        url = prefix + url;
         HttpGet get = HttpUtils.prepareHttpGet(prefix + url);
         CloseableHttpClient httpClient = HttpClients.createDefault();
         BasicHttpContext localContext = new BasicHttpContext();
@@ -701,7 +700,7 @@ public abstract class Source {
                     FileUtils.copyInputStreamToFile(is, file);
                     String path = file.getAbsolutePath();
 
-                    DownloadResult result = this.makeDownloadResult(originalUrl, path);
+                    DownloadResult result = this.makeDownloadResult(url, originalUrl, path);
                     logger.info("{} file downloaded, time costs {}. Size:{}, path:{}",
                         result.getFileName(),
                         Tools.formatCostTime(start),
@@ -742,15 +741,19 @@ public abstract class Source {
     /**
      * Generate new name with MD5 to avoid duplicated image names in an article
      */
-    private DownloadResult makeDownloadResult(String url, String path) throws IOException {
-        String ext = Common.determineImageFileType(path);
-        String fileNameNew = Common.toMD5(url) + "." + ext;
+    private DownloadResult makeDownloadResult(String url, String originalUrl, String path) throws IOException {
+        ImageType type = Common.determineImageFileType(path);
+        if (!type.allowed()) {
+            type = ImageType.DEFAULT_TYPE;
+            Common.convertImageFileType(url, path, type);
+        }
+        String fileNameNew = Common.toMD5(originalUrl) + "." + type.toExt();
 
         File fileNew = this.makeDownloadFile(fileNameNew);
         FileUtils.moveFile(FileUtils.getFile(path), fileNew);
         path = fileNew.getAbsolutePath();
 
-        return new DownloadResult(url, path, fileNameNew);
+        return new DownloadResult(originalUrl, path, fileNameNew);
     }
 
     private static List<String[]> readSources() {

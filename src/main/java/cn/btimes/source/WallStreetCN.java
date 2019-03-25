@@ -67,6 +67,7 @@ public class WallStreetCN extends Source {
                 this.checkDateTextExistence(row, dateTextCssQuery);
                 String timeText = HtmlParser.text(row, dateTextCssQuery);
                 if ((StringUtils.contains(timeText, "小时前") && !this.checkHoursBefore(timeText)) ||
+                    StringUtils.contains(timeText, "天") ||
                     RegexUtils.match(timeText, "\\d{4}-\\d{2}-\\d{2}")) {
                     throw new PastDateException("Time past limit: " + timeText);
                 }

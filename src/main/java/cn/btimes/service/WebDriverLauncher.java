@@ -2,24 +2,27 @@ package cn.btimes.service;
 
 import cn.btimes.model.common.Config;
 import cn.btimes.ui.ContentCrawler.Application;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.amzass.enums.common.ConfigEnums.ChromeDriverVersion;
+import com.amzass.enums.common.Directory;
 import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.PageUtils;
 import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2018-12-29 2:37 PM
@@ -61,6 +64,14 @@ public class WebDriverLauncher {
             options.addArguments("--headless");
         }
         options.setExperimentalOption("prefs", chromePrefs);
+        options.addArguments("start-maximized");
+        options.addArguments("enable-automation");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-infobars");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-browser-side-navigation");
+        options.addArguments("--disable-gpu");
+
         DesiredCapabilities cap = DesiredCapabilities.chrome();
         cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
         cap.setCapability(ChromeOptions.CAPABILITY, options);
@@ -69,18 +80,33 @@ public class WebDriverLauncher {
 
     private void fetchAdminCookies(WebDriver driver, Config config) {
         driver.get(config.getAdminUrl());
-        PageLoadHelper.visible(driver, By.id("mb_email"), WaitTime.Normal);
+        File cookieFile = this.getCookieFile(config);
+        if (cookieFile.exists()) {
+            Map<String, String> cookies = JSON.parseObject(Tools.readFileToString(cookieFile), new TypeReference<Map<String, String>>() {
+            });
+            PageUtils.addCookies(driver, cookies);
+            driver.get(config.getAdminUrl());
+        }
+
+        if (!PageLoadHelper.visible(driver, By.id("mb_email"), WaitTime.Normal)) {
+            return;
+        }
+        driver.manage().deleteAllCookies();
+
         PageUtils.setValue(driver, By.id("mb_email"), config.getAdminEmail());
         PageUtils.setValue(driver, By.id("login_mb_password"), config.getAdminPassword());
         PageUtils.click(driver, By.cssSelector("button[type=submit]"));
         WaitTime.Normal.execute();
-        Set<Cookie> cookieSet = driver.manage().getCookies();
 
+        Map<String, String> adminCookie = PageUtils.getCookies(driver);
         adminCookies = new HashMap<>();
-        Map<String, String> adminCookie = new HashMap<>();
-        for (Cookie cookie : cookieSet) {
-            adminCookie.put(cookie.getName(), cookie.getValue());
-        }
         adminCookies.put(config.getApplication(), adminCookie);
+        Tools.writeStringToFile(cookieFile, JSON.toJSONString(adminCookie, true));
+
+    }
+
+    private File getCookieFile(Config config) {
+        String cookieFileName = String.format("ASC-Cookies/%s.json", config.getApplication());
+        return new File(Directory.Tmp.path(), cookieFileName);
     }
 }

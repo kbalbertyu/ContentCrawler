@@ -3,10 +3,14 @@ package cn.btimes.utils;
 import cn.btimes.model.common.ImageType;
 import com.amzass.utils.common.Constants;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URL;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 9/5/2018 5:48 PM
@@ -68,7 +72,7 @@ public class Common {
         return pathParts[pathParts.length - 1];
     }
 
-    public static String determineImageFileType (String file) throws IOException {
+    public static ImageType determineImageFileType(String file) throws IOException {
         FileInputStream is = null;
         try {
             is = new FileInputStream(file);
@@ -79,8 +83,7 @@ public class Common {
         } finally {
             try {
                 is.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ignored) {
             }
         }
     }
@@ -104,5 +107,11 @@ public class Common {
     public static String getDomain(String url) {
         String[] parts = StringUtils.split(url, "/");
         return parts[1];
+    }
+
+    public static void convertImageFileType(String originalUrl, String path, ImageType targetType) throws IOException {
+        FileUtils.deleteQuietly(FileUtils.getFile(path));
+        BufferedImage im = ImageIO.read(new URL(originalUrl));
+        ImageIO.write(im, targetType.toExt(), FileUtils.getFile(path));
     }
 }

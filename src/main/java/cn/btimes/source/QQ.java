@@ -27,7 +27,7 @@ import java.util.*;
  */
 public class QQ extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static final int MAX_PAST_MINUTES = 90;
+    private static final int MAX_PAST_MINUTES = 180;
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
