@@ -4,6 +4,7 @@ import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
+import com.amzass.utils.common.Tools;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -86,7 +87,7 @@ public class Idol001 extends Source {
         Elements list = this.readList(doc);
         for (Element row : list) {
             String timeText = HtmlParser.text(row, ".news-time");
-            if (!StringUtils.contains(timeText, "分钟")) {
+            if (!Tools.containsAny(timeText, "分钟", "小时")) {
                 continue;
             }
 
