@@ -10,6 +10,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.amzass.enums.common.Country;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
+import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.ProcessCleaner;
 import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
@@ -34,7 +35,6 @@ import java.util.List;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/24/2018 8:33 AM
  */
 public class ServiceExecutor {
-    private static final int TIMEOUT_MAX_REPEAT = 10;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Inject private WebDriverLauncher webDriverLauncher;
@@ -42,16 +42,18 @@ public class ServiceExecutor {
     @Inject private EmailSenderHelper emailSenderHelper;
     @Inject private ApiRequest apiRequest;
     @Inject private DBManager dbManager;
-    private static String[] ALLOWED_SOURCES = allowedSources();
-    private static String[] DISABLE_JS = {"CNBeta", "YiCai", "JieMian", "COM163", "WallStreetCN", "NBD", "IYiOu",
-        "IFeng", "EntGroup", "CSCOMCN", "LUXE", "LvJie", "PinChain", "LadyMax", "CTO51"};
 
-    private static String[] allowedSources() {
+    protected String[] allowedSources() {
         String text = StringUtils.trim(Tools.getCustomizingValue("ALLOWED_SOURCES"));
         if (StringUtils.isBlank(text)) {
             return null;
         }
         return StringUtils.split(text, ",");
+    }
+
+    protected String[] jsDisabledSources() {
+        return new String[] {"CNBeta", "YiCai", "JieMian", "COM163", "WallStreetCN", "NBD", "IYiOu",
+            "IFeng", "EntGroup", "CSCOMCN", "LUXE", "LvJie", "PinChain", "LadyMax", "CTO51"};
     }
 
     protected List<Source> getSources() {
@@ -91,10 +93,13 @@ public class ServiceExecutor {
         boolean jsDisabled = false;
         for (Source source : this.getSources()) {
             String sourceName = StringUtils.substringAfterLast(source.getClass().getName(), ".");
-            if (ArrayUtils.isNotEmpty(ALLOWED_SOURCES) && !ArrayUtils.contains(ALLOWED_SOURCES, sourceName)) {
+            String[] allowedSources = this.allowedSources();
+            if (ArrayUtils.isNotEmpty(allowedSources) && !ArrayUtils.contains(allowedSources, sourceName)) {
                 continue;
             }
-            boolean disableJS = ArrayUtils.isNotEmpty(DISABLE_JS) && ArrayUtils.contains(DISABLE_JS, sourceName);
+
+            String[] jsDisabledSources = this.jsDisabledSources();
+            boolean disableJS = ArrayUtils.isNotEmpty(jsDisabledSources) && ArrayUtils.contains(jsDisabledSources, sourceName);
             if (disableJS && !jsDisabled) {
                 ProcessCleaner.cleanWebDriver();
                 WebDriverLauncher.adminCookies.clear();
@@ -102,7 +107,7 @@ public class ServiceExecutor {
                 jsDisabled = true;
             }
             logger.info("Start fetching from source: {}", sourceName);
-            for (int i = 0; i < TIMEOUT_MAX_REPEAT; i++) {
+            for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
                 try {
                     source.execute(driver, config);
                 } catch (TimeoutException e) {
