@@ -211,7 +211,11 @@ public abstract class Source {
         List<Article> articles = new ArrayList<>();
         Map<String, Category> urls = this.getUrls();
         for (String url : urls.keySet()) {
-            driver.get(url);
+            try {
+                driver.get(url);
+            } catch (TimeoutException e) {
+                logger.warn("List page loading timeout, try ignoring the exception: {}", url);
+            }
 
             // Scroll to bottom to make sure latest articles are loaded
             PageUtils.scrollToBottom(driver);

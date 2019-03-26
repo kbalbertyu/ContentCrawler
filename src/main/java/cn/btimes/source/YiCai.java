@@ -4,10 +4,13 @@ import cn.btimes.model.common.Article;
 import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
+import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +82,16 @@ public class YiCai extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readSummaryContent(driver, article);
+        try {
+            driver.get(article.getUrl());
+        } catch (TimeoutException e) {
+            logger.error("Article page timeout, try ignoring the exception: {} -> {}", article.getTitle(), article.getUrl());
+        }
+        WaitTime.Normal.execute();
+        Document doc = Jsoup.parse(driver.getPageSource());
+
+        this.parseSummary(doc, article);
+        this.parseContent(doc, article);
     }
 
     @Override
