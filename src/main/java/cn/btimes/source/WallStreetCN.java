@@ -10,6 +10,7 @@ import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.RegexUtils;
+import com.amzass.utils.common.Tools;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -76,7 +77,9 @@ public class WallStreetCN extends Source {
                 }
                 this.parseTitle(row, article);
                 this.parseSummary(row, article);
-
+                if (this.premiumOrVip(article.getUrl())) {
+                    continue;
+                }
                 articles.add(article);
             } catch (PastDateException e) {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
@@ -87,6 +90,10 @@ public class WallStreetCN extends Source {
             }
         }
         return articles;
+    }
+
+    private boolean premiumOrVip(String url) {
+        return Tools.containsAny(url, "/vip/", "/premium/");
     }
 
     @Override
