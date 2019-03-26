@@ -117,6 +117,7 @@ public abstract class Source {
     protected void readDateContent(WebDriver driver, Article article) {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
+        this.checkArticlePage(driver, article);
         Document doc = Jsoup.parse(driver.getPageSource());
 
         this.parseDate(doc, article);
@@ -395,6 +396,8 @@ public abstract class Source {
         this.messengers.add(messenger);
     }
 
+    void checkArticlePage(WebDriver driver, Article article) {
+    }
 
     private void deleteDownloadedImages(List<SavedImage> savedImages) {
         for (SavedImage image : savedImages) {

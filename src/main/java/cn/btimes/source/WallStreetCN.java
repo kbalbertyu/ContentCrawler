@@ -5,6 +5,8 @@ import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
+import com.amzass.utils.PageLoadHelper;
+import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.RegexUtils;
@@ -12,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,6 +104,13 @@ public class WallStreetCN extends Source {
             throw new BusinessException(String.format("Article url is from other source: %s", article.getUrl()));
         }
         this.readDateContent(driver, article);
+    }
+
+    @Override
+    void checkArticlePage(WebDriver driver, Article article) {
+        if (PageLoadHelper.present(driver, By.className("unlock-article"), WaitTime.Shortest)) {
+            throw new BusinessException(String.format("Premium article locked: %s -> %s", article.getTitle(), article.getUrl()));
+        }
     }
 
     @Override
