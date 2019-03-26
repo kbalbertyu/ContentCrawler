@@ -25,6 +25,7 @@ public class JieMian extends Source {
         URLS.put("https://www.jiemian.com/lists/42.html", Category.LIFESTYLE);
         URLS.put("https://www.jiemian.com/lists/2.html", Category.COMPANY);
         URLS.put("https://www.jiemian.com/lists/82.html", Category.SPORTS);
+        URLS.put("https://www.jiemian.com/lists/105.html", Category.TRAVEL);
     }
 
     @Override
