@@ -66,6 +66,7 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(EntGroup.class));
         sources.add(ApplicationContext.getBean(IYiOu.class));
         sources.add(ApplicationContext.getBean(IFeng.class));
+        sources.add(ApplicationContext.getBean(IFengTravel.class));
         sources.add(ApplicationContext.getBean(CSCOMCN.class));
         sources.add(ApplicationContext.getBean(LUXE.class));
         sources.add(ApplicationContext.getBean(LvJie.class));

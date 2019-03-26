@@ -60,14 +60,7 @@ public class IFeng extends Source {
         for (Element row : list) {
             try {
                 Article article = new Article();
-                String dateTextCssQuery = ".grey > span.fl";
-                this.checkDateTextExistence(row, dateTextCssQuery);
-                String timeText = HtmlParser.text(row, dateTextCssQuery);
-                if (RegexUtils.match(timeText, "\\d{4}-\\d{2}-\\d{2}")) {
-                    continue;
-                }
-
-                article.setUrl(row.attr("href"));
+                this.checkRow(row, article);
                 this.parseTitle(row, article);
                 this.parseSummary(row, article);
 
@@ -81,6 +74,17 @@ public class IFeng extends Source {
             }
         }
         return articles;
+    }
+
+    void checkRow(Element row, Article article) {
+        String dateTextCssQuery = ".grey > span.fl";
+        this.checkDateTextExistence(row, dateTextCssQuery);
+        String timeText = HtmlParser.text(row, dateTextCssQuery);
+        if (RegexUtils.containsRegex(timeText, "\\d{4}-\\d{2}-\\d{2}")) {
+            throw new PastDateException();
+        }
+
+        article.setUrl(row.attr("href"));
     }
 
     @Override
