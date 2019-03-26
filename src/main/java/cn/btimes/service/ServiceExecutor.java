@@ -34,6 +34,7 @@ import java.util.List;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/24/2018 8:33 AM
  */
 public class ServiceExecutor {
+    public static final int TIMEOUT_MAX_REPEAT = 10;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Inject private WebDriverLauncher webDriverLauncher;
@@ -88,7 +89,7 @@ public class ServiceExecutor {
                 continue;
             }
             logger.info("Start fetching from source: {}", sourceName);
-            while (true) {
+            for (int i = 0; i < TIMEOUT_MAX_REPEAT; i++) {
                 try {
                     source.execute(driver, config);
                 } catch (TimeoutException e) {
