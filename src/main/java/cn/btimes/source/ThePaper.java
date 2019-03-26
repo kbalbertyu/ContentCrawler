@@ -5,7 +5,7 @@ import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
-import com.amzass.utils.common.Constants;
+import com.amzass.utils.common.RegexUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -14,7 +14,10 @@ import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/25/2018 1:07 AM
@@ -36,18 +39,18 @@ public class ThePaper extends Source {
 
     @Override
     protected String getDateRegex() {
-        return null;
+        return "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}";
     }
 
     @Override
     protected String getDateFormat() {
-        return null;
+        return "yyyy-MM-dd HH:mm";
     }
 
     @Override
     protected CSSQuery getCSSQuery() {
         return new CSSQuery(".newsbox .news_li", ".news_txt", "h2 > a", "p",
-            ".news_about > p > span:contains(来源)", ".pdtt_trbs > span");
+            ".news_about > p > span:contains(来源)", ".news_about");
     }
 
     @Override
@@ -62,13 +65,11 @@ public class ThePaper extends Source {
                     continue;
                 }
 
-                try {
-                    this.parseDate(doc, article);
-                } catch (PastDateException e) {
-                    if (i++ < Constants.MAX_REPEAT_TIMES) {
-                        continue;
-                    }
-                    throw e;
+                String timeText = HtmlParser.text(row, ".pdtt_trbs > span");
+                if ((StringUtils.contains(timeText, "小时前") && !this.checkHoursBefore(timeText)) ||
+                    StringUtils.contains(timeText, "天") ||
+                    RegexUtils.match(timeText, "\\d{4}-\\d{2}-\\d{2}")) {
+                    throw new PastDateException("Time past limit: " + timeText);
                 }
 
                 super.parseTitle(row, article);
@@ -82,13 +83,9 @@ public class ThePaper extends Source {
         return articles;
     }
 
-    protected Date parseDateText(String timeText) {
-        return this.parseDescribableDateText(timeText);
-    }
-
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readTitleSourceContent(driver, article);
+        this.readTitleSourceDateContent(driver, article);
     }
 
     @Override

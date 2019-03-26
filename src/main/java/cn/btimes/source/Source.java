@@ -114,6 +114,17 @@ public abstract class Source {
         this.parseContent(doc, article);
     }
 
+    void readTitleSourceDateContent(WebDriver driver, Article article) {
+        driver.get(article.getUrl());
+        WaitTime.Normal.execute();
+        Document doc = Jsoup.parse(driver.getPageSource());
+
+        this.parseTitle(doc, article);
+        this.parseSource(doc, article);
+        this.parseDate(doc, article);
+        this.parseContent(doc, article);
+    }
+
     protected void readDateContent(WebDriver driver, Article article) {
         driver.get(article.getUrl());
         WaitTime.Normal.execute();
