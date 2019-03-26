@@ -11,10 +11,12 @@ import com.amzass.enums.common.Country;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
 import com.amzass.utils.common.ProcessCleaner;
+import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
 import com.mailman.model.common.WebApiResult;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -39,6 +41,15 @@ public class ServiceExecutor {
     @Inject private EmailSenderHelper emailSenderHelper;
     @Inject private ApiRequest apiRequest;
     @Inject private DBManager dbManager;
+    private static String[] ALLOWED_SOURCES = allowedSources();
+
+    private static String[] allowedSources() {
+        String text = StringUtils.trim(Tools.getCustomizingValue("ALLOWED_SOURCES"));
+        if (StringUtils.isBlank(text)) {
+            return null;
+        }
+        return StringUtils.split(text, ",");
+    }
 
     protected List<Source> getSources() {
         List<Source> sources = new ArrayList<>();
@@ -72,23 +83,28 @@ public class ServiceExecutor {
         this.syncSavedArticles();
         WebDriver driver = webDriverLauncher.start(config);
         for (Source source : this.getSources()) {
-            String sourceName = source.getClass().getName();
+            String sourceName = StringUtils.substringAfterLast(source.getClass().getName(), ".");
+            if (ArrayUtils.isNotEmpty(ALLOWED_SOURCES) && !ArrayUtils.contains(ALLOWED_SOURCES, sourceName)) {
+                continue;
+            }
             logger.info("Start fetching from source: {}", sourceName);
-            try {
-                source.execute(driver, config);
-            } catch (TimeoutException e) {
-                logger.error("Connection timeout, restart WebDriver and retry fetching: {}", sourceName);
-                ProcessCleaner.cleanWebDriver();
-                driver = webDriverLauncher.start(config);
-                source.execute(driver, config);
-            } catch (Exception e) {
-                String message = String.format("Error found in executing: %s", this.getClass());
-                logger.error(message, e);
-                Messenger messenger = new Messenger(sourceName, message);
-                this.messengers.add(messenger);
-                PageUtils.savePage4ErrorHandling(driver, String.valueOf(System.currentTimeMillis()), "execute");
-            } finally {
+            while (true) {
+                try {
+                    source.execute(driver, config);
+                } catch (TimeoutException e) {
+                    logger.error("Connection timeout, restart WebDriver and retry fetching: {}", sourceName);
+                    ProcessCleaner.cleanWebDriver();
+                    driver = webDriverLauncher.start(config);
+                    continue;
+                } catch (Exception e) {
+                    String message = String.format("Error found in executing: %s", this.getClass());
+                    logger.error(message, e);
+                    Messenger messenger = new Messenger(sourceName, message);
+                    this.messengers.add(messenger);
+                    PageUtils.savePage4ErrorHandling(driver, String.valueOf(System.currentTimeMillis()), "execute");
+                }
                 logger.info("Source fetching finished: {}", sourceName);
+                break;
             }
         }
         if (this.messengers.isNotEmpty()) {
