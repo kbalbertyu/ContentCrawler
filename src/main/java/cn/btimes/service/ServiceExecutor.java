@@ -34,7 +34,7 @@ import java.util.List;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/24/2018 8:33 AM
  */
 public class ServiceExecutor {
-    public static final int TIMEOUT_MAX_REPEAT = 10;
+    private static final int TIMEOUT_MAX_REPEAT = 10;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Inject private WebDriverLauncher webDriverLauncher;
@@ -43,6 +43,8 @@ public class ServiceExecutor {
     @Inject private ApiRequest apiRequest;
     @Inject private DBManager dbManager;
     private static String[] ALLOWED_SOURCES = allowedSources();
+    private static String[] DISABLE_JS = {"CNBeta", "YiCai", "JieMian", "COM163", "WallStreetCN", "NBD", "IYiOu",
+        "IFeng", "EntGroup", "CSCOMCN", "LUXE", "LvJie", "PinChain", "LadyMax", "CTO51"};
 
     private static String[] allowedSources() {
         String text = StringUtils.trim(Tools.getCustomizingValue("ALLOWED_SOURCES"));
@@ -56,24 +58,26 @@ public class ServiceExecutor {
         List<Source> sources = new ArrayList<>();
         sources.add(ApplicationContext.getBean(Sina.class));
         sources.add(ApplicationContext.getBean(SinaFinance.class));
+        sources.add(ApplicationContext.getBean(ThePaper.class));
+        sources.add(ApplicationContext.getBean(QQ.class));
+        sources.add(ApplicationContext.getBean(IFengTravel.class));
+
+        // JS Disabled source must be after the others
         sources.add(ApplicationContext.getBean(JieMian.class));
         sources.add(ApplicationContext.getBean(COM163.class));
-        sources.add(ApplicationContext.getBean(ThePaper.class));
         sources.add(ApplicationContext.getBean(WallStreetCN.class));
-        sources.add(ApplicationContext.getBean(NBD.class));
-        sources.add(ApplicationContext.getBean(QQ.class));
         sources.add(ApplicationContext.getBean(CNBeta.class));
-        sources.add(ApplicationContext.getBean(EntGroup.class));
+        sources.add(ApplicationContext.getBean(YiCai.class));
+        sources.add(ApplicationContext.getBean(NBD.class));
         sources.add(ApplicationContext.getBean(IYiOu.class));
         sources.add(ApplicationContext.getBean(IFeng.class));
-        sources.add(ApplicationContext.getBean(IFengTravel.class));
+        sources.add(ApplicationContext.getBean(EntGroup.class));
         sources.add(ApplicationContext.getBean(CSCOMCN.class));
         sources.add(ApplicationContext.getBean(LUXE.class));
         sources.add(ApplicationContext.getBean(LvJie.class));
         sources.add(ApplicationContext.getBean(PinChain.class));
         sources.add(ApplicationContext.getBean(LadyMax.class));
         sources.add(ApplicationContext.getBean(CTO51.class));
-        sources.add(ApplicationContext.getBean(YiCai.class));
         return sources;
     }
 
@@ -83,11 +87,19 @@ public class ServiceExecutor {
         this.deleteOldArticleLogs();
         this.deleteDownloadedFiles();
         this.syncSavedArticles();
-        WebDriver driver = webDriverLauncher.start(config);
+        WebDriver driver = webDriverLauncher.start(config, false);
+        boolean jsDisabled = false;
         for (Source source : this.getSources()) {
             String sourceName = StringUtils.substringAfterLast(source.getClass().getName(), ".");
             if (ArrayUtils.isNotEmpty(ALLOWED_SOURCES) && !ArrayUtils.contains(ALLOWED_SOURCES, sourceName)) {
                 continue;
+            }
+            boolean disableJS = ArrayUtils.isNotEmpty(DISABLE_JS) && ArrayUtils.contains(DISABLE_JS, sourceName);
+            if (disableJS && !jsDisabled) {
+                ProcessCleaner.cleanWebDriver();
+                WebDriverLauncher.adminCookies.clear();
+                driver = webDriverLauncher.start(config, true);
+                jsDisabled = true;
             }
             logger.info("Start fetching from source: {}", sourceName);
             for (int i = 0; i < TIMEOUT_MAX_REPEAT; i++) {
@@ -96,7 +108,7 @@ public class ServiceExecutor {
                 } catch (TimeoutException e) {
                     logger.error("Connection timeout, restart WebDriver and retry fetching: {}", sourceName);
                     ProcessCleaner.cleanWebDriver();
-                    driver = webDriverLauncher.start(config);
+                    driver = webDriverLauncher.start(config, disableJS);
                     continue;
                 } catch (Exception e) {
                     String message = String.format("Error found in executing: %s", this.getClass());

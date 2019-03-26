@@ -87,7 +87,7 @@ public abstract class Source {
     }
 
     void readContentSource(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
+        this.openArticlePage(driver, article);
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
@@ -95,8 +95,16 @@ public abstract class Source {
         this.parseContent(doc, article);
     }
 
+    private void openArticlePage(WebDriver driver, Article article) {
+        try {
+            driver.get(article.getUrl());
+        } catch (TimeoutException e) {
+            logger.error("Timeout on opening article page, ignore it and try reading: {} -> {}", article.getTitle(), article.getUrl());
+        }
+    }
+
     void readSummaryContent(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
+        this.openArticlePage(driver, article);
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
@@ -105,7 +113,7 @@ public abstract class Source {
     }
 
     void readTitleSourceContent(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
+        this.openArticlePage(driver, article);
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
@@ -115,7 +123,7 @@ public abstract class Source {
     }
 
     void readTitleSourceDateContent(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
+        this.openArticlePage(driver, article);
         WaitTime.Normal.execute();
         Document doc = Jsoup.parse(driver.getPageSource());
 
@@ -126,7 +134,7 @@ public abstract class Source {
     }
 
     protected void readDateContent(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
+        this.openArticlePage(driver, article);
         WaitTime.Normal.execute();
         this.checkArticlePage(driver, article);
         Document doc = Jsoup.parse(driver.getPageSource());

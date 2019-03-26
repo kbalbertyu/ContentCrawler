@@ -6,13 +6,15 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.amzass.enums.common.ConfigEnums.ChromeDriverVersion;
 import com.amzass.enums.common.Directory;
+import com.amzass.model.common.ActionLog;
+import com.amzass.ui.utils.UITools;
 import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.PageUtils;
 import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
-import org.apache.commons.io.FileUtils;
+import com.kber.commons.DBManager;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -32,30 +34,38 @@ public class WebDriverLauncher {
     private static final boolean USE_HEADLESS_DRIVER = StringUtils.isNotBlank(Tools.getCustomizingValue("USE_HEADLESS_DRIVER"));
     @Inject private WebDriverManager webDriverManager;
     public static Map<Application, Map<String, String>> adminCookies;
+    @Inject private DBManager dbManager;
 
-    public WebDriver start(Config config) {
-        return this.startDriver(config, true);
+    public WebDriver start(Config config, boolean disableJS) {
+        return this.startDriver(config, true, disableJS);
     }
 
-    public WebDriver startWithoutLogin(Config config) {
-        return this.startDriver(config, false);
+    public WebDriver startWithoutLogin(Config config, boolean disableJS) {
+        return this.startDriver(config, false, disableJS);
     }
 
-    private WebDriver startDriver(Config config, boolean login) {
+    private WebDriver startDriver(Config config, boolean login, boolean disableJS) {
         ChromeDriverVersion chromeDriverVersion = Tools.defaultChromeDriver();
         if (chromeDriverVersion == null) {
             chromeDriverVersion = ChromeDriverVersion.values()[0];
         }
 
-        DesiredCapabilities dCaps = this.prepareChromeCaps();
+        DesiredCapabilities dCaps = this.prepareChromeCaps(disableJS);
         WebDriver driver = webDriverManager.initCustomChromeDriver(chromeDriverVersion, Constants.DEFAULT_DRIVER_TIME_OUT, dCaps);
         if (login && (adminCookies == null || adminCookies.getOrDefault(config.getApplication(), null) == null)) {
             this.fetchAdminCookies(driver, config);
         }
+        if (disableJS) {
+            String logId = "disableJS";
+            ActionLog log = dbManager.readById(logId, ActionLog.class);
+            if (log == null && UITools.confirmed("Please disable JS manually.")) {
+                dbManager.save(new ActionLog(logId), ActionLog.class);
+            }
+        }
         return driver;
     }
 
-    private DesiredCapabilities prepareChromeCaps() {
+    private DesiredCapabilities prepareChromeCaps(boolean disableJS) {
         HashMap<String, Object> chromePrefs = new HashMap<>();
         chromePrefs.put("profile.default_content_settings.popups", 0);
         chromePrefs.put("download.default_directory", DOWNLOAD_PATH);
@@ -64,13 +74,12 @@ public class WebDriverLauncher {
             options.addArguments("--headless");
         }
         options.setExperimentalOption("prefs", chromePrefs);
-        options.addArguments("start-maximized");
-        options.addArguments("enable-automation");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-infobars");
-        options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--disable-browser-side-navigation");
-        options.addArguments("--disable-gpu");
+
+        if (disableJS) {
+            options.addArguments("user-data-dir=Profile\\JSDisabled");
+        } else {
+            options.addArguments("user-data-dir=Profile\\JSEnabled");
+        }
 
         DesiredCapabilities cap = DesiredCapabilities.chrome();
         cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
@@ -80,7 +89,13 @@ public class WebDriverLauncher {
 
     private void fetchAdminCookies(WebDriver driver, Config config) {
         driver.get(config.getAdminUrl());
+
         File cookieFile = this.getCookieFile(config);
+        if (!PageLoadHelper.visible(driver, By.id("mb_email"), WaitTime.Normal)) {
+            this.loadCookies(driver, config, cookieFile);
+            return;
+        }
+
         if (cookieFile.exists()) {
             Map<String, String> cookies = JSON.parseObject(Tools.readFileToString(cookieFile), new TypeReference<Map<String, String>>() {
             });
@@ -89,6 +104,7 @@ public class WebDriverLauncher {
         }
 
         if (!PageLoadHelper.visible(driver, By.id("mb_email"), WaitTime.Normal)) {
+            this.loadCookies(driver, config, cookieFile);
             return;
         }
         driver.manage().deleteAllCookies();
@@ -98,11 +114,14 @@ public class WebDriverLauncher {
         PageUtils.click(driver, By.cssSelector("button[type=submit]"));
         WaitTime.Normal.execute();
 
+        this.loadCookies(driver, config, cookieFile);
+    }
+
+    private void loadCookies(WebDriver driver, Config config, File cookieFile) {
         Map<String, String> adminCookie = PageUtils.getCookies(driver);
         adminCookies = new HashMap<>();
         adminCookies.put(config.getApplication(), adminCookie);
         Tools.writeStringToFile(cookieFile, JSON.toJSONString(adminCookie, true));
-
     }
 
     private File getCookieFile(Config config) {
