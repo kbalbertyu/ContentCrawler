@@ -34,7 +34,6 @@ public class IYiOu extends Source {
     private static final int MAX_PAST_MINUTES = 60;
 
     static {
-        URLS.put("https://www.iyiou.com/AI/", Category.FUTURE_INDUSTRIES);
         URLS.put("https://www.iyiou.com/smartcity/", Category.FUTURE_INDUSTRIES);
         URLS.put("https://www.iyiou.com/new_manufacturing/", Category.FUTURE_INDUSTRIES);
     }

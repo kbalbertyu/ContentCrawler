@@ -50,21 +50,16 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(WallStreetCN.class));
         sources.add(ApplicationContext.getBean(NBD.class));
         sources.add(ApplicationContext.getBean(QQ.class));
-        sources.add(ApplicationContext.getBean(HeXun.class));
         sources.add(ApplicationContext.getBean(CNBeta.class));
         sources.add(ApplicationContext.getBean(EntGroup.class));
         sources.add(ApplicationContext.getBean(IYiOu.class));
         sources.add(ApplicationContext.getBean(IFeng.class));
-        sources.add(ApplicationContext.getBean(People.class));
         sources.add(ApplicationContext.getBean(CSCOMCN.class));
         sources.add(ApplicationContext.getBean(LUXE.class));
         sources.add(ApplicationContext.getBean(LvJie.class));
         sources.add(ApplicationContext.getBean(PinChain.class));
         sources.add(ApplicationContext.getBean(LadyMax.class));
-        sources.add(ApplicationContext.getBean(CCDY.class));
         sources.add(ApplicationContext.getBean(CTO51.class));
-        sources.add(ApplicationContext.getBean(CNR.class));
-        sources.add(ApplicationContext.getBean(CNR.class));
         sources.add(ApplicationContext.getBean(YiCai.class));
         return sources;
     }

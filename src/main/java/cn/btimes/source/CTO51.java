@@ -30,7 +30,6 @@ public class CTO51 extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("http://iot.51cto.com/", Category.FUTURE_INDUSTRIES);
         URLS.put("http://ai.51cto.com/", Category.FUTURE_INDUSTRIES);
         URLS.put("http://bigdata.51cto.com/", Category.FUTURE_INDUSTRIES);
         URLS.put("http://cloud.51cto.com/", Category.FUTURE_INDUSTRIES);
