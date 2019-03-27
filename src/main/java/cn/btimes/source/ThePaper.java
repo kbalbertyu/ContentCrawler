@@ -96,11 +96,6 @@ public class ThePaper extends Source {
     }
 
     @Override
-    String removeSourceNoise(String source) {
-        return StringUtils.trim(StringUtils.remove(source, "来源："));
-    }
-
-    @Override
     protected int getSourceId() {
         return 12;
     }

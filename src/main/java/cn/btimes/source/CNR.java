@@ -41,11 +41,6 @@ public class CNR extends Source {
     }
 
     @Override
-    String removeSourceNoise(String source) {
-        return StringUtils.substringAfter(source, "来源：");
-    }
-
-    @Override
     protected CSSQuery getCSSQuery() {
         return new CSSQuery(".articleList > ul > li", ".TRS_Editor", ".text > strong > a",
             ".text > p", ".subject > .source > span:contains(来源：)", ".publishTime");

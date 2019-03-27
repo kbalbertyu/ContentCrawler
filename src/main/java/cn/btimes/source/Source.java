@@ -195,17 +195,6 @@ public abstract class Source {
     }
 
     void parseSource(Element doc, Article article) {
-        CSSQuery cssQuery = this.getCSSQuery();
-        if (StringUtils.isBlank(cssQuery.getSource())) {
-            return;
-        }
-        this.checkSourceExistence(doc, cssQuery.getSource());
-        String source = HtmlParser.text(doc, cssQuery.getSource());
-        article.setSource(this.removeSourceNoise(source));
-    }
-
-    String removeSourceNoise(String source) {
-        return source;
     }
 
     void parseSummary(Element doc, Article article) {
@@ -410,10 +399,6 @@ public abstract class Source {
 
     private void checkSummaryExistence(Element doc, String cssQuery) {
         this.checkElementExistence(doc, cssQuery, "Summary");
-    }
-
-    private void checkSourceExistence(Element doc, String cssQuery) {
-        this.checkElementExistence(doc, cssQuery, "Source");
     }
 
     private void checkElementExistence(Element doc, String cssQuery, String name) {

@@ -99,11 +99,6 @@ public class IFeng extends Source {
     }
 
     @Override
-    String removeSourceNoise(String source) {
-        return StringUtils.substringAfter(source, "来源：");
-    }
-
-    @Override
     protected int getSourceId() {
         return 706;
     }
