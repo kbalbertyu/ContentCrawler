@@ -460,13 +460,16 @@ public abstract class Source {
         if (Tools.containsAny(timeText, "刚刚")) {
             return new Date();
         }
-        if (!Tools.containsAny(timeText, "分钟")) {
-            throw new PastDateException("Time without minutes: " + timeText);
-        }
         int minutes = NumberUtils.toInt(RegexUtils.getMatched(timeText, "\\d+"));
         if (minutes == 0) {
             throw new BusinessException("Unable to parse time text: " + timeText);
         }
+        if (Tools.contains(timeText, "小时")) {
+            minutes *= 60;
+        } else if (!Tools.contains("分钟")) {
+            throw new PastDateException("Time text doesn't contain minutes or hours: " + timeText);
+        }
+
         if (minutes > config.getMaxPastMinutes()) {
             throw new PastDateException("Time has past limit: " + timeText);
         }
