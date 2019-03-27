@@ -17,7 +17,10 @@ public class KR36 extends SourceWithoutDriver {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("https://36kr.com/", Category.TECH);
+        URLS.put("https://36kr.com/information/technology", Category.TECH);
+        URLS.put("https://36kr.com/information/innovate", Category.TECH);
+        URLS.put("https://36kr.com/information/real_estate", Category.REALESTATE);
+        URLS.put("https://36kr.com/information/travel", Category.AUTO);
     }
 
     @Override
