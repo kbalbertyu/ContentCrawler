@@ -76,7 +76,7 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(ZJOLbiz.class));
         sources.add(ApplicationContext.getBean(ZJOLec.class));
         sources.add(ApplicationContext.getBean(KR36.class));
-        sources.add(ApplicationContext.getBean(HuanQiuTech.class));
+        sources.add(ApplicationContext.getBean(HuanQiu.class));
         sources.add(ApplicationContext.getBean(STDaily.class));
         sources.add(ApplicationContext.getBean(CECN.class));
         return sources;

@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-27 1:29 PM
  */
-public class HuanQiuTech extends SourceWithoutDriver {
+public class HuanQiu extends SourceWithoutDriver {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -48,7 +48,7 @@ public class HuanQiuTech extends SourceWithoutDriver {
 
     @Override
     protected int getSourceId() {
-        return 1357;
+        return 20;
     }
 
     @Override
