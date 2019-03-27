@@ -6,15 +6,12 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.amzass.enums.common.ConfigEnums.ChromeDriverVersion;
 import com.amzass.enums.common.Directory;
-import com.amzass.model.common.ActionLog;
-import com.amzass.ui.utils.UITools;
 import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.PageUtils;
 import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
-import com.kber.commons.DBManager;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -34,38 +31,30 @@ public class WebDriverLauncher {
     private static final boolean USE_HEADLESS_DRIVER = StringUtils.isNotBlank(Tools.getCustomizingValue("USE_HEADLESS_DRIVER"));
     @Inject private WebDriverManager webDriverManager;
     public static Map<Application, Map<String, String>> adminCookies;
-    @Inject private DBManager dbManager;
 
-    public WebDriver start(Config config, boolean disableJS) {
-        return this.startDriver(config, true, disableJS);
+    public WebDriver start(Config config) {
+        return this.startDriver(config, true);
     }
 
-    public WebDriver startWithoutLogin(Config config, boolean disableJS) {
-        return this.startDriver(config, false, disableJS);
+    public WebDriver startWithoutLogin(Config config) {
+        return this.startDriver(config, false);
     }
 
-    private WebDriver startDriver(Config config, boolean login, boolean disableJS) {
+    private WebDriver startDriver(Config config, boolean login) {
         ChromeDriverVersion chromeDriverVersion = Tools.defaultChromeDriver();
         if (chromeDriverVersion == null) {
             chromeDriverVersion = ChromeDriverVersion.values()[0];
         }
 
-        DesiredCapabilities dCaps = this.prepareChromeCaps(disableJS);
+        DesiredCapabilities dCaps = this.prepareChromeCaps();
         WebDriver driver = webDriverManager.initCustomChromeDriver(chromeDriverVersion, Constants.DEFAULT_DRIVER_TIME_OUT, dCaps);
         if (login && (adminCookies == null || adminCookies.getOrDefault(config.getApplication(), null) == null)) {
             this.fetchAdminCookies(driver, config);
         }
-        if (disableJS) {
-            String logId = "disableJS";
-            ActionLog log = dbManager.readById(logId, ActionLog.class);
-            if (log == null && UITools.confirmed("Please disable JS manually.")) {
-                dbManager.save(new ActionLog(logId), ActionLog.class);
-            }
-        }
         return driver;
     }
 
-    private DesiredCapabilities prepareChromeCaps(boolean disableJS) {
+    private DesiredCapabilities prepareChromeCaps() {
         HashMap<String, Object> chromePrefs = new HashMap<>();
         chromePrefs.put("profile.default_content_settings.popups", 0);
         chromePrefs.put("download.default_directory", DOWNLOAD_PATH);
@@ -74,12 +63,6 @@ public class WebDriverLauncher {
             options.addArguments("--headless");
         }
         options.setExperimentalOption("prefs", chromePrefs);
-
-        if (disableJS) {
-            options.addArguments("user-data-dir=Profile\\JSDisabled");
-        } else {
-            options.addArguments("user-data-dir=Profile\\JSEnabled");
-        }
 
         DesiredCapabilities cap = DesiredCapabilities.chrome();
         cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);

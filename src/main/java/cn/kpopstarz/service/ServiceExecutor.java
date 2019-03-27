@@ -35,9 +35,4 @@ public class ServiceExecutor extends cn.btimes.service.ServiceExecutor {
     protected String[] allowedSources() {
         return null;
     }
-
-    @Override
-    protected String[] jsDisabledSources() {
-        return null;
-    }
 }

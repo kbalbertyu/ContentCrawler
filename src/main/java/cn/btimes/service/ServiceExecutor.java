@@ -51,11 +51,6 @@ public class ServiceExecutor {
         return StringUtils.split(text, ",");
     }
 
-    protected String[] jsDisabledSources() {
-        return new String[] {"CNBeta", "YiCai", "JieMian", "COM163", "WallStreetCN", "NBD", "IYiOu",
-            "IFeng", "EntGroup", "CSCOMCN", "LUXE", "LvJie", "PinChain", "LadyMax", "CTO51"};
-    }
-
     protected List<Source> getSources() {
         List<Source> sources = new ArrayList<>();
         sources.add(ApplicationContext.getBean(Sina.class));
@@ -89,22 +84,12 @@ public class ServiceExecutor {
         this.deleteOldArticleLogs();
         this.deleteDownloadedFiles();
         this.syncSavedArticles();
-        WebDriver driver = webDriverLauncher.start(config, false);
-        boolean jsDisabled = false;
+        WebDriver driver = webDriverLauncher.start(config);
         for (Source source : this.getSources()) {
             String sourceName = StringUtils.substringAfterLast(source.getClass().getName(), ".");
             String[] allowedSources = this.allowedSources();
             if (ArrayUtils.isNotEmpty(allowedSources) && !ArrayUtils.contains(allowedSources, sourceName)) {
                 continue;
-            }
-
-            String[] jsDisabledSources = this.jsDisabledSources();
-            boolean disableJS = ArrayUtils.isNotEmpty(jsDisabledSources) && ArrayUtils.contains(jsDisabledSources, sourceName);
-            if (disableJS && !jsDisabled) {
-                ProcessCleaner.cleanWebDriver();
-                WebDriverLauncher.adminCookies.clear();
-                driver = webDriverLauncher.start(config, true);
-                jsDisabled = true;
             }
             logger.info("Start fetching from source: {}", sourceName);
             for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
@@ -113,7 +98,7 @@ public class ServiceExecutor {
                 } catch (TimeoutException e) {
                     logger.error("Connection timeout, restart WebDriver and retry fetching: {}", sourceName);
                     ProcessCleaner.cleanWebDriver();
-                    driver = webDriverLauncher.start(config, disableJS);
+                    driver = webDriverLauncher.start(config);
                     continue;
                 } catch (Exception e) {
                     String message = String.format("Error found in executing: %s", this.getClass());
