@@ -22,6 +22,7 @@ public class HuanQiuTech extends SourceWithoutDriver {
     static {
         URLS.put("http://tech.huanqiu.com/it/?agt=15438", Category.TECH);
         URLS.put("http://tech.huanqiu.com/science/?agt=15438", Category.TECH);
+        URLS.put("http://go.huanqiu.com/news/tour/", Category.TRAVEL);
     }
 
     @Override
