@@ -4,13 +4,10 @@ import cn.btimes.model.common.Article;
 import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
-import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +20,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-02 10:03 AM
  */
-public class YiCai extends Source {
+public class YiCai extends SourceWithoutDriver {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
 
@@ -82,16 +79,7 @@ public class YiCai extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        try {
-            driver.get(article.getUrl());
-        } catch (TimeoutException e) {
-            logger.error("Article page timeout, try ignoring the exception: {} -> {}", article.getTitle(), article.getUrl());
-        }
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        this.parseSummary(doc, article);
-        this.parseContent(doc, article);
+        this.readSummaryContent(driver, article);
     }
 
     @Override

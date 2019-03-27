@@ -6,7 +6,6 @@ import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.service.sellerhunt.HtmlParser;
-import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.RegexUtils;
@@ -15,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -28,7 +26,7 @@ import java.util.*;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-05 8:03 PM
  */
-public class IYiOu extends Source {
+public class IYiOu extends SourceWithoutDriver {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
     private static final int MAX_PAST_MINUTES = 60;
@@ -107,13 +105,7 @@ public class IYiOu extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        this.parseDate(doc, article);
-        this.parseSummary(doc, article);
-        this.parseContent(doc, article);
+        this.readDateSummaryContent(driver, article);
     }
 
     private void convertImageToNoneHttps(Element contentElm) {

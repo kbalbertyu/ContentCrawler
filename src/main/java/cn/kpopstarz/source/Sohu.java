@@ -3,6 +3,7 @@ package cn.kpopstarz.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
+import cn.btimes.source.SourceWithoutDriver;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.common.Tools;
 import org.apache.commons.lang3.StringUtils;
@@ -19,7 +20,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-11 4:38 PM
  */
-public class Sohu extends Source {
+public class Sohu extends SourceWithoutDriver {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {

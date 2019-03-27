@@ -3,8 +3,6 @@ package cn.btimes.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
-import com.amzass.utils.PageLoadHelper.WaitTime;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -66,10 +64,7 @@ public class CCDY extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-        this.parseContent(doc, article);
+        this.readContent(driver, article);
     }
 
     @Override

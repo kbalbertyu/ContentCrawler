@@ -18,7 +18,7 @@ import java.util.*;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-03 6:38 AM
  */
-public class PinChain extends Source {
+public class PinChain extends SourceWithoutDriver {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final int MAX_PAST_DAYS = 0;
     private static final Map<String, Category> URLS = new HashMap<>();

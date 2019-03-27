@@ -4,10 +4,8 @@ import cn.btimes.model.common.Article;
 import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
-import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import org.apache.commons.lang3.time.DateFormatUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -87,12 +85,7 @@ public class EEO extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Short.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        this.parseDate(doc, article);
-        this.parseContent(doc, article);
+        this.readDateContent(driver, article);
     }
 
     @Override

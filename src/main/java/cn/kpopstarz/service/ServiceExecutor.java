@@ -18,8 +18,8 @@ public class ServiceExecutor extends cn.btimes.service.ServiceExecutor {
         sources.add(ApplicationContext.getBean(HanNvTuan.class));
         sources.add(ApplicationContext.getBean(Sina.class));
         sources.add(ApplicationContext.getBean(Sohu.class));
-        sources.add(ApplicationContext.getBean(Idol001.class));
         sources.add(ApplicationContext.getBean(ReBo.class));
+        sources.add(ApplicationContext.getBean(Idol001.class));
         return sources;
     }
 

@@ -56,7 +56,7 @@ public class CNR extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readContentSource(driver, article);
+        this.readContent(driver, article);
     }
 
     @Override

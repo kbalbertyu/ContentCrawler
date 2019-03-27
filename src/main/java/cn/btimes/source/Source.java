@@ -9,9 +9,11 @@ import com.amzass.enums.common.DateFormat;
 import com.amzass.enums.common.Directory;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.sellerhunt.HtmlParser;
+import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.*;
 import com.amzass.utils.common.Exceptions.BusinessException;
+import com.amzass.utils.common.JsoupWrapper.WebRequest;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
 import org.apache.commons.io.FileUtils;
@@ -80,67 +82,98 @@ public abstract class Source {
 
     protected abstract void readArticle(WebDriver driver, Article article);
 
+    boolean withoutDriver() {
+        return false;
+    }
+
     protected Elements readList(Document doc) {
         String cssQuery = this.getCSSQuery().getList();
         this.checkArticleListExistence(doc, cssQuery);
         return doc.select(cssQuery);
     }
 
-    void readContentSource(WebDriver driver, Article article) {
-        this.openArticlePage(driver, article);
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        this.parseSource(doc, article);
+    protected void readContent(WebDriver driver, Article article) {
+        Document doc = this.openArticlePage(driver, article);
         this.parseContent(doc, article);
     }
 
-    private void openArticlePage(WebDriver driver, Article article) {
-        try {
-            driver.get(article.getUrl());
-        } catch (TimeoutException e) {
-            logger.error("Timeout on opening article page, ignore it and try reading: {} -> {}", article.getTitle(), article.getUrl());
-        }
+    void readDateSummaryContent(WebDriver driver, Article article) {
+        Document doc = this.openArticlePage(driver, article);
+
+        this.parseDate(doc, article);
+        this.parseSummary(doc, article);
+        this.parseContent(doc, article);
     }
 
     void readSummaryContent(WebDriver driver, Article article) {
-        this.openArticlePage(driver, article);
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
+        Document doc = this.openArticlePage(driver, article);
 
         this.parseSummary(doc, article);
         this.parseContent(doc, article);
     }
 
-    void readTitleSourceContent(WebDriver driver, Article article) {
-        this.openArticlePage(driver, article);
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
+    void readTitleContent(WebDriver driver, Article article) {
+        Document doc = this.openArticlePage(driver, article);
 
         this.parseTitle(doc, article);
-        this.parseSource(doc, article);
         this.parseContent(doc, article);
     }
 
-    void readTitleSourceDateContent(WebDriver driver, Article article) {
-        this.openArticlePage(driver, article);
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
+    void readTitleDateContent(WebDriver driver, Article article) {
+        Document doc = this.openArticlePage(driver, article);
 
         this.parseTitle(doc, article);
-        this.parseSource(doc, article);
         this.parseDate(doc, article);
         this.parseContent(doc, article);
     }
 
     protected void readDateContent(WebDriver driver, Article article) {
-        this.openArticlePage(driver, article);
-        WaitTime.Normal.execute();
-        this.checkArticlePage(driver, article);
-        Document doc = Jsoup.parse(driver.getPageSource());
+        Document doc = this.openArticlePage(driver, article);
 
         this.parseDate(doc, article);
         this.parseContent(doc, article);
+    }
+
+    private Document openArticlePage(WebDriver driver, Article article) {
+        return this.openPage(driver, article.getUrl());
+    }
+
+    private Document openPage(WebDriver driver, String url) {
+        if (this.withoutDriver()) {
+            try {
+                return getDocumentByJsoup(url);
+            } catch (BusinessException e) {
+                logger.error("Unable to load page via Jsoup, try using WebDriver: {}", url);
+            }
+        }
+        try {
+            driver.get(url);
+        } catch (TimeoutException e) {
+            logger.warn("List page loading timeout, try ignoring the exception: {}", url);
+        }
+
+        // Scroll to bottom to make sure latest content are loaded
+        PageUtils.scrollToBottom(driver);
+        WaitTime.Normal.execute();
+
+        return Jsoup.parse(driver.getPageSource());
+    }
+
+    private Document getDocumentByJsoup(String url) {
+        BusinessException exception = null;
+        for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
+            try {
+                return new WebRequest(url).submit().document;
+            } catch (Exception e) {
+                exception = new BusinessException(e);
+                logger.error("Failed to load url of: {} -> {}", i + 1, url, e.getMessage());
+                if (i < Constants.MAX_REPEAT_TIMES - 1) {
+                    PageLoadHelper.WaitTime.Shorter.execute();
+                }
+            }
+        }
+
+        throw exception;
     }
 
     protected void parseDateTitleSummaryList(List<Article> articles, Elements list) {
@@ -194,9 +227,6 @@ public abstract class Source {
         article.setTitle(linkElm.text());
     }
 
-    void parseSource(Element doc, Article article) {
-    }
-
     void parseSummary(Element doc, Article article) {
         CSSQuery cssQuery = this.getCSSQuery();
         if (StringUtils.isBlank(cssQuery.getSummary())) {
@@ -225,17 +255,7 @@ public abstract class Source {
         List<Article> articles = new ArrayList<>();
         Map<String, Category> urls = this.getUrls();
         for (String url : urls.keySet()) {
-            try {
-                driver.get(url);
-            } catch (TimeoutException e) {
-                logger.warn("List page loading timeout, try ignoring the exception: {}", url);
-            }
-
-            // Scroll to bottom to make sure latest articles are loaded
-            PageUtils.scrollToBottom(driver);
-            WaitTime.Normal.execute();
-
-            Document doc = Jsoup.parse(driver.getPageSource());
+            Document doc = this.openPage(driver, url);
             try {
                 List<Article> articlesNew = this.parseList(doc);
                 if (articlesNew.size() == 0) {
@@ -408,9 +428,6 @@ public abstract class Source {
         Messenger messenger = new Messenger(this.getClass().getName(),
             String.format("%s not found with: %s", name, cssQuery));
         this.messengers.add(messenger);
-    }
-
-    void checkArticlePage(WebDriver driver, Article article) {
     }
 
     private void deleteDownloadedImages(List<SavedImage> savedImages) {

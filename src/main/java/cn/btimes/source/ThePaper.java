@@ -55,7 +55,6 @@ public class ThePaper extends Source {
 
     @Override
     protected List<Article> parseList(Document doc) {
-        int i = 0;
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
         for (Element row : list) {
@@ -85,7 +84,7 @@ public class ThePaper extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readTitleSourceDateContent(driver, article);
+        this.readTitleDateContent(driver, article);
     }
 
     @Override

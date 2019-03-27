@@ -3,8 +3,6 @@ package cn.btimes.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
-import com.amzass.utils.PageLoadHelper.WaitTime;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -15,7 +13,7 @@ import java.util.*;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-05 6:41 PM
  */
-public class LUXE extends Source {
+public class LUXE extends SourceWithoutDriver {
     private static final int MAX_PAST_DAYS = 0;
     private static final Map<String, Category> URLS = new HashMap<>();
 
@@ -63,11 +61,7 @@ public class LUXE extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        this.parseContent(doc, article);
+        this.readContent(driver, article);
     }
 
     @Override

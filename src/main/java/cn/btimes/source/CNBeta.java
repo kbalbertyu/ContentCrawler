@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-22 8:51 AM
  */
-public class CNBeta extends Source {
+public class CNBeta extends SourceWithoutDriver {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
 
@@ -87,7 +87,7 @@ public class CNBeta extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readContentSource(driver, article);
+        this.readContent(driver, article);
     }
 
     @Override

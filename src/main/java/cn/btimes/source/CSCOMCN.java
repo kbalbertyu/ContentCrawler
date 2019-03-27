@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-23 3:29 PM
  */
-public class CSCOMCN extends Source {
+public class CSCOMCN extends SourceWithoutDriver {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -53,7 +53,7 @@ public class CSCOMCN extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readContentSource(driver, article);
+        this.readContent(driver, article);
     }
 
     @Override

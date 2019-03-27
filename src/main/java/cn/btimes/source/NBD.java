@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-02 3:41 PM
  */
-public class NBD extends Source {
+public class NBD extends SourceWithoutDriver {
 
     private static final Map<String, Category> URLS = new HashMap<>();
 

@@ -5,10 +5,8 @@ import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import com.amzass.service.sellerhunt.HtmlParser;
-import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -17,12 +15,15 @@ import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-05 4:41 PM
  */
-public class LadyMax extends Source {
+public class LadyMax extends SourceWithoutDriver {
     private static final String TO_DELETE_SEPARATOR = "###TO-DELETE###";
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
@@ -90,13 +91,7 @@ public class LadyMax extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        this.parseDate(doc, article);
-        this.parseTitle(doc, article);
-        this.parseContent(doc, article);
+        this.readTitleDateContent(driver, article);
     }
 
     @Override

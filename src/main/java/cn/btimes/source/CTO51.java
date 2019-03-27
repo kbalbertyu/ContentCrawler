@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-06 12:05 AM
  */
-public class CTO51 extends Source {
+public class CTO51 extends SourceWithoutDriver {
     private static final String TO_DELETE_SEPARATOR = "###TO-DELETE###";
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -98,7 +98,7 @@ public class CTO51 extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readContentSource(driver, article);
+        this.readContent(driver, article);
     }
 
     @Override

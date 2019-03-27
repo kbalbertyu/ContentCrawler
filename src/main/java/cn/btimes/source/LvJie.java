@@ -3,9 +3,6 @@ package cn.btimes.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
-import com.amzass.utils.PageLoadHelper.WaitTime;
-import com.amzass.utils.common.PageUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -16,7 +13,7 @@ import java.util.*;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-03 6:03 AM
  */
-public class LvJie extends Source {
+public class LvJie extends SourceWithoutDriver {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -59,13 +56,7 @@ public class LvJie extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Normal.execute();
-        PageUtils.scrollToBottom(driver);
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        this.parseSource(doc, article);
-        this.parseContent(doc, article);
+        this.readContent(driver, article);
     }
 
     @Override

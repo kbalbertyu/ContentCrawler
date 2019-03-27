@@ -1,12 +1,9 @@
-package cn.kpopstarz.source;
+package cn.btimes.source;
 
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
-import cn.btimes.source.SourceWithoutDriver;
-import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 
@@ -16,13 +13,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-11 5:23 PM
+ * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-26 10:03 PM
  */
-public class HanNvTuan extends SourceWithoutDriver {
+public class ZJOLbiz extends SourceWithoutDriver {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("http://www.hannvtuan.com/index.php?m=content", Category.General);
+        URLS.put("http://biz.zjol.com.cn/zjjjbd/cjxw_11149/", Category.ECONOMY);
+        URLS.put("http://biz.zjol.com.cn/zjjjbd/cjxw/", Category.ECONOMY);
     }
 
     @Override
@@ -42,37 +40,25 @@ public class HanNvTuan extends SourceWithoutDriver {
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return new CSSQuery("li:contains([娱乐])", "div.content", "a[title]", "",
-            "", ".uk-article-meta");
+        return new CSSQuery(".listUl > li", ".artCon", "h4 > a", "",
+            "", ".time");
     }
 
     @Override
     protected int getSourceId() {
-        return 14;
+        return 15;
     }
 
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
-        for (Element row : list) {
-            Article article = new Article();
-
-            CSSQuery cssQuery = this.getCSSQuery();
-            this.checkTitleExistence(row, cssQuery.getTitle());
-            Element linkElm = row.select(cssQuery.getTitle()).get(0);
-            if (StringUtils.isBlank(article.getUrl())) {
-                article.setUrl(linkElm.attr("href"));
-            }
-            article.setTitle(linkElm.attr("title"));
-
-            articles.add(article);
-        }
+        this.parseDateTitleList(articles, list);
         return articles;
     }
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readDateContent(driver, article);
+        this.readContent(driver, article);
     }
 }

@@ -3,8 +3,7 @@ package cn.kpopstarz.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
-import com.amzass.utils.PageLoadHelper.WaitTime;
-import org.jsoup.Jsoup;
+import cn.btimes.source.SourceWithoutDriver;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -18,7 +17,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-11 4:59 AM
  */
-public class ReBo extends Source {
+public class ReBo extends SourceWithoutDriver {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -70,9 +69,6 @@ public class ReBo extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        driver.get(article.getUrl());
-        WaitTime.Normal.execute();
-        Document doc = Jsoup.parse(driver.getPageSource());
-        this.parseContent(doc, article);
+        this.readContent(driver, article);
     }
 }

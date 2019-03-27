@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-02 4:47 PM
  */
-public class COM163 extends Source {
+public class COM163 extends SourceWithoutDriver {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
 
@@ -77,7 +77,7 @@ public class COM163 extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readTitleSourceContent(driver, article);
+        this.readTitleContent(driver, article);
     }
 
     @Override

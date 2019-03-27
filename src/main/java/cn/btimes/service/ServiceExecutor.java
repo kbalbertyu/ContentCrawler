@@ -58,8 +58,6 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(ThePaper.class));
         sources.add(ApplicationContext.getBean(QQ.class));
         sources.add(ApplicationContext.getBean(IFengTravel.class));
-
-        // JS Disabled source must be after the others
         sources.add(ApplicationContext.getBean(JieMian.class));
         sources.add(ApplicationContext.getBean(COM163.class));
         sources.add(ApplicationContext.getBean(WallStreetCN.class));
@@ -75,6 +73,8 @@ public class ServiceExecutor {
         sources.add(ApplicationContext.getBean(PinChain.class));
         sources.add(ApplicationContext.getBean(LadyMax.class));
         sources.add(ApplicationContext.getBean(CTO51.class));
+        sources.add(ApplicationContext.getBean(ZJOLbiz.class));
+        sources.add(ApplicationContext.getBean(ZJOLec.class));
         return sources;
     }
 
