@@ -28,9 +28,16 @@ public enum ArticleSource {
     PinChain("pinchain.com", "品橙旅游"),
     QQ("qq.com", "腾讯新闻"),
     Sina("sina.com.cn", "新浪新闻"),
+    SinaFinance("finance.sina.com.cn", "新浪财经"),
     ThePaper("thepaper.cn", "澎湃"),
     WallStreetCN("wallstreetcn.com", "华尔街见闻"),
     YiCai("yicai.com", "第一财经"),
+    ZJOLbiz("biz.zjol.com.cn", "浙商网"),
+    ZJOLec("ec.zjol.com.cn", "浙江在线-电商生活"),
+    KR36("36kr.com", "36氪"),
+    HuanQiuTech("tech.huanqiu.com", "环球科技"),
+    HuanQiuTour("go.huanqiu.comm", "环球旅游"),
+    STDaily("stdaily.com", "国际科技频道"),
     Undefined("", "未知来源");
 
     ArticleSource(String domain, String title) {
