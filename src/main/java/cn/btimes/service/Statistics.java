@@ -58,7 +58,7 @@ public class Statistics {
 
         StringBuilder sb = new StringBuilder();
         this.statsToHtml(sortedStats, sb);
-        String subject = "近7天内文章抓取统计";
+        String subject = String.format("[%s]近7天内文章抓取统计", config.getApplication());
         this.sendMessage(subject, sb.toString(), config);
     }
 

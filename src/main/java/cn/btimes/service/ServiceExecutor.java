@@ -116,22 +116,23 @@ public class ServiceExecutor {
             }
         }
         if (this.messengers.isNotEmpty()) {
-            this.sendErrorMessage();
+            this.sendErrorMessage(config);
         }
     }
 
-    private void sendErrorMessage() {
+    private void sendErrorMessage(Config config) {
         Date date = new Date();
         String hour = DateFormatUtils.format(date, "HH");
         if (!StringUtils.equals(hour, "12")) {
             return;
         }
-        String logId = "Send_Message_" + DateFormatUtils.format(date, "yyyy-MM-dd");
+        String logId = String.format("Send_Error_Message_%s_%s", config.getApplication(),
+            DateFormatUtils.format(date, "yyyy-MM-dd"));
         ActionLog log = dbManager.readById(logId, ActionLog.class);
         if (log != null) {
             return;
         }
-        this.sendMessage(this.messengers);
+        this.sendMessage(this.messengers, config);
         dbManager.save(new ActionLog(logId), ActionLog.class);
     }
 
@@ -141,7 +142,7 @@ public class ServiceExecutor {
         if (!StringUtils.equalsIgnoreCase(hour, "Fri")) {
             return;
         }
-        String logId = String.format("Send_Message_%s_%s", config.getApplication(),
+        String logId = String.format("Send_Stat_Message_%s_%s", config.getApplication(),
             DateFormatUtils.format(date, "yyyy-MM-dd", Country.US.locale()));
         ActionLog log = dbManager.readById(logId, ActionLog.class);
         if (log != null) {
@@ -226,7 +227,7 @@ public class ServiceExecutor {
         dbManager.save(new ActionLog(logId), ActionLog.class);
     }
 
-    private void sendMessage(Messengers messengers) {
+    private void sendMessage(Messengers messengers, Config config) {
         StringBuilder sb = new StringBuilder();
         sb.append("<table>");
         for (Messenger messenger : messengers.getList()) {
@@ -240,6 +241,7 @@ public class ServiceExecutor {
             sb.append("</tr>");
         }
         sb.append("</table>");
-        this.emailSenderHelper.send("ContentCrawler Error Messages", sb.toString(), "tansoyu@gmail.com");
+        String subject = String.format("[%s]ContentCrawler Error Messages", config.getApplication());
+        this.emailSenderHelper.send(subject, sb.toString(), "tansoyu@gmail.com");
     }
 }
