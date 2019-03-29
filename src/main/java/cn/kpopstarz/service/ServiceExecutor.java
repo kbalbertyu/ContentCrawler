@@ -24,14 +24,6 @@ public class ServiceExecutor extends cn.btimes.service.ServiceExecutor {
     }
 
     @Override
-    protected void statistic() {
-    }
-
-    @Override
-    protected void syncSavedArticles() {
-    }
-
-    @Override
     protected String[] allowedSources() {
         return null;
     }

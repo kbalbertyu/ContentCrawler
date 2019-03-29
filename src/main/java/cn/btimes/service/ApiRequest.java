@@ -1,5 +1,6 @@
 package cn.btimes.service;
 
+import cn.btimes.model.common.Config;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
 import com.amzass.model.submit.OrderEnums.ReturnCode;
@@ -19,24 +20,24 @@ import java.io.IOException;
  */
 public class ApiRequest extends WebApiRequest {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebApiRequest.class);
-    private static final String WEB_API_ENDPOINT = "https://www.businesstimes.cn/api";
+    private static final String WEB_API_ENDPOINT = "/api";
 
-    public WebApiResult get(String path) {
-        return this.send(path, Method.GET, "");
+    public WebApiResult get(String path, Config config) {
+        return this.send(config, path, Method.GET, "");
     }
 
-    public WebApiResult post(String path, String dataText) {
-        return this.send(path, Method.POST, dataText);
+    public WebApiResult post(String path, String dataText, Config config) {
+        return this.send(config, path, Method.POST, dataText);
     }
 
-    public static String getFullUrl(String path) {
-        return WEB_API_ENDPOINT + path;
+    private static String getFullUrl(String path, Config config) {
+        return config.getFrontUrl() + WEB_API_ENDPOINT + path;
     }
 
-    private WebApiResult send(String path, Method method, String dataText) {
+    private WebApiResult send(Config config, String path, Method method, String dataText) {
         for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
             try {
-                String result = Jsoup.connect(getFullUrl(path)).ignoreContentType(true)
+                String result = Jsoup.connect(getFullUrl(path, config)).ignoreContentType(true)
                     .validateTLSCertificates(false)
                     .data("data", dataText)
                     .method(method).timeout(WaitTime.SuperLong.valInMS()).maxBodySize(0).execute().body();

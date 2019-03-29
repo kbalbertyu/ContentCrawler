@@ -38,6 +38,10 @@ public enum ArticleSource {
     HuanQiuTech("tech.huanqiu.com", "环球科技"),
     HuanQiuTour("go.huanqiu.comm", "环球旅游"),
     STDaily("stdaily.com", "国际科技频道"),
+    HanNvTuan("hannvtuan.com", "韩国女子组合"),
+    Idol001("idol001.com", "爱豆"),
+    ReBo("y3600.co", "热播网"),
+    Sohu("sohu.com", "搜狐"),
     Undefined("", "未知来源");
 
     ArticleSource(String domain, String title) {

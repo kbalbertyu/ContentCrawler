@@ -8,8 +8,11 @@ import lombok.Data;
  */
 @Data
 public class Config {
+    private String frontUrl;
     private String adminUrl;
     private String adminEmail;
+    private String recipient = "maintain@btimes.com.cn";
+    private String developerEmail = "tansoyu@gmail.com";
     private String adminPassword;
     private String cdnUrl;
     private String fileUploadUrl;

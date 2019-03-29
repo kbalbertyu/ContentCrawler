@@ -84,10 +84,10 @@ public class ServiceExecutor {
 
     public void execute(Config config) {
         messengers.clear();
-        this.statistic();
+        this.statistic(config);
         this.deleteOldArticleLogs();
         this.deleteDownloadedFiles();
-        this.syncSavedArticles();
+        this.syncSavedArticles(config);
         WebDriver driver = webDriverLauncher.start(config);
         for (Source source : this.getSources()) {
             String sourceName = StringUtils.substringAfterLast(source.getClass().getName(), ".");
@@ -135,18 +135,19 @@ public class ServiceExecutor {
         dbManager.save(new ActionLog(logId), ActionLog.class);
     }
 
-    protected void statistic() {
+    private void statistic(Config config) {
         Date date = new Date();
         String hour = DateFormatUtils.format(date, "E", Country.US.locale());
         if (!StringUtils.equalsIgnoreCase(hour, "Fri")) {
             return;
         }
-        String logId = "Send_Message_" + DateFormatUtils.format(date, "yyyy-MM-dd", Country.US.locale());
+        String logId = String.format("Send_Message_%s_%s", config.getApplication(),
+            DateFormatUtils.format(date, "yyyy-MM-dd", Country.US.locale()));
         ActionLog log = dbManager.readById(logId, ActionLog.class);
         if (log != null) {
             return;
         }
-        ApplicationContext.getBean(Statistics.class).execute();
+        ApplicationContext.getBean(Statistics.class).execute(config);
         dbManager.save(new ActionLog(logId), ActionLog.class);
     }
 
@@ -169,8 +170,8 @@ public class ServiceExecutor {
      * Read article original links from website via API,
      * save to DB in action_log table if not exists.
      */
-    protected void syncSavedArticles() {
-        WebApiResult result = apiRequest.get("/article/fetchCrawledLinks");
+    private void syncSavedArticles(Config config) {
+        WebApiResult result = apiRequest.get("/article/fetchCrawledLinks", config);
         if (StringUtils.equals(result.getCode(), "0")) {
             logger.error("Unable to fetch articles: {}", result.getMessage());
             return;

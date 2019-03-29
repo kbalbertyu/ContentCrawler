@@ -3,6 +3,7 @@ package cn.btimes.service;
 import cn.btimes.model.common.ArticleData;
 import cn.btimes.model.common.ArticleSource;
 import cn.btimes.model.common.Category;
+import cn.btimes.model.common.Config;
 import cn.btimes.model.stat.Count;
 import cn.btimes.model.stat.Stat;
 import com.alibaba.fastjson.JSONException;
@@ -27,8 +28,8 @@ public class Statistics {
     @Inject private ApiRequest apiRequest;
     @Inject private EmailSenderHelper emailSenderHelper;
 
-    public void execute() {
-        WebApiResult result = apiRequest.get("/article/crawledArticleStat");
+    public void execute(Config config) {
+        WebApiResult result = apiRequest.get("/article/crawledArticleStat", config);
         if (result != null) {
             String data = result.getData();
             try {
@@ -37,14 +38,14 @@ public class Statistics {
                     logger.warn("No stat data found: {}", data);
                     return;
                 }
-                this.stat(articleDataList);
+                this.stat(articleDataList, config);
             } catch (JSONException e) {
                 logger.error("Unable to parse stat result: {}", data, e);
             }
         }
     }
 
-    private void stat(List<ArticleData> articleDataList) {
+    private void stat(List<ArticleData> articleDataList, Config config) {
         Map<ArticleSource, Stat> stats = new TreeMap<>();
         for (ArticleData articleData : articleDataList) {
             ArticleSource source = articleData.source();
@@ -58,7 +59,7 @@ public class Statistics {
         StringBuilder sb = new StringBuilder();
         this.statsToHtml(sortedStats, sb);
         String subject = "近7天内文章抓取统计";
-        this.sendMessage(subject, sb.toString());
+        this.sendMessage(subject, sb.toString(), config);
     }
 
     private List<Entry<ArticleSource, Stat>> sortStat(Map<ArticleSource, Stat> stats) {
@@ -120,7 +121,7 @@ public class Statistics {
         }
     }
 
-    private void sendMessage(String subject, String content) {
-        this.emailSenderHelper.send(subject, content, "tansoyu@gmail.com", "maintain@btimes.com.cn");
+    private void sendMessage(String subject, String content, Config config) {
+        this.emailSenderHelper.send(subject, content, config.getDeveloperEmail(), config.getRecipient());
     }
 }
