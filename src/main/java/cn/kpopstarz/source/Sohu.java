@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-11 4:38 PM
  */
-public class Sohu extends SourceWithoutDriver {
+public class Sohu extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {

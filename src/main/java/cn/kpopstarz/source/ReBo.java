@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-11 4:59 AM
  */
-public class ReBo extends SourceWithoutDriver {
+public class ReBo extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {

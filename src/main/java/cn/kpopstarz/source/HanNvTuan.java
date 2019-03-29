@@ -18,7 +18,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-11 5:23 PM
  */
-public class HanNvTuan extends SourceWithoutDriver {
+public class HanNvTuan extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {

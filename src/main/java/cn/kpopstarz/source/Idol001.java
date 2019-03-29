@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-11 3:54 PM
  */
-public class Idol001 extends SourceWithoutDriver {
+public class Idol001 extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
