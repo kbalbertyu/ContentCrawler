@@ -29,7 +29,6 @@ import java.util.*;
 public class IYiOu extends SourceWithoutDriver {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
-    private static final int MAX_PAST_MINUTES = 60;
 
     static {
         URLS.put("https://www.iyiou.com/smartcity/", Category.FUTURE_INDUSTRIES);
@@ -87,7 +86,7 @@ public class IYiOu extends SourceWithoutDriver {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
                     continue;
                 }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", MAX_PAST_MINUTES, e);
+                logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
                 break;
             }
         }
@@ -136,7 +135,7 @@ public class IYiOu extends SourceWithoutDriver {
             }
         }
 
-        if (minutes > MAX_PAST_MINUTES) {
+        if (minutes > config.getMaxPastMinutes()) {
             throw new PastDateException("Time past limit: " + timeText);
         }
         return DateUtils.addMinutes(new Date(), -1 * minutes);

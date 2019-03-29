@@ -18,4 +18,9 @@ public class Config {
     private String dataImagesFull;
     private int maxPastMinutes = 180;
     private Application application;
+    private int maxPastHours;
+
+    public void init() {
+        this.maxPastHours = this.maxPastMinutes / 60;
+    }
 }

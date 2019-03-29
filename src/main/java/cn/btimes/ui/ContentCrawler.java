@@ -49,6 +49,7 @@ public class ContentCrawler {
         });
         Config config = configs.get(application);
         config.setApplication(application);
+        config.init();
         return config;
     }
 

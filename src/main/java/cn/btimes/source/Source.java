@@ -59,7 +59,6 @@ import java.util.*;
 public abstract class Source {
     private static final String WITHOUT_YEAR = "1970";
     private static final String WITHOUT_MONTH_DAY = "01/01";
-    private static final int MAX_HOURS_BEFORE = 3;
     private final Logger logger = LoggerFactory.getLogger(Source.class);
     private static final String DOWNLOAD_PATH = "downloads";
     private static final List<String[]> sources = readSources();
@@ -857,7 +856,7 @@ public abstract class Source {
 
     boolean checkHoursBefore(String timeText) {
         int hours = extractFromHoursBefore(timeText);
-        return hours <= MAX_HOURS_BEFORE;
+        return hours <= config.getMaxPastHours();
     }
 
     int calcMinutesAgo(Date date) {
