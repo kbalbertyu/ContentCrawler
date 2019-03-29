@@ -67,6 +67,9 @@ public class Sina extends Source {
 
                 this.parseDate(row, article);
                 this.parseTitle(row, article);
+                if (StringUtils.contains(article.getUrl(), "slide.")) {
+                    continue;
+                }
                 this.parseSummary(row, article);
 
                 articles.add(article);
