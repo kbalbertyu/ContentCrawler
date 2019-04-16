@@ -22,7 +22,6 @@ public class NBD extends SourceWithoutDriver {
 
     static {
         URLS.put("http://finance.nbd.com.cn/", Category.FINANCE);
-        URLS.put("http://economy.nbd.com.cn/", Category.ECONOMY);
         URLS.put("http://money.nbd.com.cn/", Category.FINANCE);
     }
 
