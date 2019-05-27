@@ -14,6 +14,7 @@ import java.util.List;
  */
 @Data
 public class Article {
+    private int id;
     private String url;
     private String title;
     private Date date;

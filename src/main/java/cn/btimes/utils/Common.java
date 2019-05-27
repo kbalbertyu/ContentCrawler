@@ -1,7 +1,13 @@
 package cn.btimes.utils;
 
+import cn.btimes.model.common.Config;
 import cn.btimes.model.common.ImageType;
+import cn.btimes.ui.ContentCrawler.Application;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
+import com.amzass.enums.common.Directory;
 import com.amzass.utils.common.Constants;
+import com.amzass.utils.common.Tools;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -11,6 +17,7 @@ import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 9/5/2018 5:48 PM
@@ -113,5 +120,20 @@ public class Common {
         FileUtils.deleteQuietly(FileUtils.getFile(path));
         BufferedImage im = ImageIO.read(new URL(originalUrl));
         ImageIO.write(im, targetType.toExt(), FileUtils.getFile(path));
+    }
+
+    public static Config loadApplicationConfig(Application application) {
+        String configStr = Tools.readFileToString(FileUtils.getFile(Directory.Customize.path(), "application.json"));
+        HashMap<Application, Config> configs = JSONObject.parseObject(configStr, new TypeReference<HashMap<Application, Config>>() {
+        });
+        Config config = configs.get(application);
+        config.setApplication(application);
+        config.init();
+        return config;
+    }
+
+    public static Config loadApplicationConfig(String appName) {
+        Application application = Application.determineApplication(appName);
+        return Common.loadApplicationConfig(application);
     }
 }
