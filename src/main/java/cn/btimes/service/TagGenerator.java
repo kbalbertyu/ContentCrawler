@@ -62,6 +62,11 @@ public class TagGenerator {
             }
             for (Article article : articles) {
                 logger.info("Parsing tags for article: {} -> {}", article.getId(), article.getTitle());
+                if (article.getId() <= 216258) {
+                    logger.info("Article is skipped: {}", article.getId());
+                    continue;
+                }
+
                 List<Tag> tags = this.execute(article.getTitle(), article.getContent());
                 if (CollectionUtils.isEmpty(tags)) {
                     logger.error("No tags parsed for article: {} -> {}", article.getId(), article.getTitle());

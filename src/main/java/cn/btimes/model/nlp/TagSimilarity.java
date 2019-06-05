@@ -9,13 +9,13 @@ import lombok.Data;
 public class TagSimilarity {
     private int tag1;
     private int tag2;
-    private double scoreSimilar;
+    private double scoreDistance;
     private double scoreLiteral;
 
-    public TagSimilarity(int tag1, int tag2, double scoreSimilar, double scoreLiteral) {
+    public TagSimilarity(int tag1, int tag2, double scoreDistance, double scoreLiteral) {
         this.tag1 = tag1;
         this.tag2 = tag2;
-        this.scoreSimilar = scoreSimilar;
+        this.scoreDistance = scoreDistance;
         this.scoreLiteral = scoreLiteral;
     }
 }

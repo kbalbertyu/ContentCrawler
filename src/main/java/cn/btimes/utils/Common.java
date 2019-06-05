@@ -17,7 +17,10 @@ import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 9/5/2018 5:48 PM
@@ -135,5 +138,41 @@ public class Common {
     public static Config loadApplicationConfig(String appName) {
         Application application = Application.determineApplication(appName);
         return Common.loadApplicationConfig(application);
+    }
+
+    public static double calcSimilarity(String text1, String text2) {
+        if (StringUtils.containsIgnoreCase(text1, text2) || StringUtils.containsIgnoreCase(text2, text1)) {
+            return 1d;
+        }
+        char[] texts1 = text1.toCharArray();
+        char[] texts2 = text2.toCharArray();
+        Arrays.sort(texts1);
+        Arrays.sort(texts2);
+        int count = sameChars(texts1, texts2);
+        int total = (texts1.length + texts2.length)/2;
+
+        return (double) Math.round(count/total * 100) / 100;
+    }
+
+    private static int sameChars(char[] arr1, char[] arr2) {
+        LinkedList<Character> list = new LinkedList<>();
+        for (char str : arr1) {
+            if(!list.contains(str)) {
+                list.add(str);
+            }
+        }
+
+        for (char str : arr2) {
+            if (list.contains(str)) {
+                list.remove(str);
+            }
+        }
+        return list.size();
+    }
+
+    public static void main(String[] args) {
+        String text1 = "纽约时装周";
+        String text2 = "伦敦时装周活动";
+        System.out.println(calcSimilarity(text1, text2));
     }
 }

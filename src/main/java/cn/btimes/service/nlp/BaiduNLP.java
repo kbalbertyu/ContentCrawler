@@ -78,8 +78,8 @@ public class BaiduNLP extends AbstractNLP {
             return res.getDouble("score");
         } catch (JSONException e) {
             logger.error("Unable to parse score from result: {}", res, e);
+            return -1d;
         }
-        return 0d;
     }
 
     /**
@@ -96,7 +96,7 @@ public class BaiduNLP extends AbstractNLP {
             return res.getDouble("score");
         } catch (JSONException e) {
             logger.error("Unable to parse score from result: {}", res, e);
+            return -1d;
         }
-        return 0d;
     }
 }

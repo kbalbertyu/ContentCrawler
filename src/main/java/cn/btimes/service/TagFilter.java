@@ -24,7 +24,7 @@ public class TagFilter {
     @Inject private BaiduFilter baiduFilter;
 
     private void execute(Config config) {
-        WebApiResult result = apiRequest.get("/article/fetchArticlesTags", config);
+        WebApiResult result = apiRequest.get("/article/fetchArticlesTags?status=0", config);
         if (result == null) {
             logger.error("Tas result not found");
             return;
@@ -63,10 +63,16 @@ public class TagFilter {
         }
     }
 
+    private void test(Config config) {
+        String tagIdsText = "166520,166521,166567,166687,166810,166934,167023,167028,167268,167283,167368,167571,167771,168232,168366,168367,168557,168666,169395,169495,169818,170003,170534,170555,170620,170636,170723,171107,171120,171210,171425,172405,172547,172568,172597,172610,172700,172903,173334,174120,174123,174332,174507,174570,174792,175293,175377,175572,175774,175852,176247,176279,176389,176462,176472,176619,176645,177084,177247,177500";
+        WebApiResult result = apiRequest.post("/article/banTags", tagIdsText, config);
+        System.out.println(result);
+    }
+
     public static void main(String[] args) {
         String appName = args.length > 0 ? args[0] : null;
         Config config = Common.loadApplicationConfig(appName);
-        ApplicationContext.getBean(TagFilter.class).execute(config);
+        ApplicationContext.getBean(TagFilter.class).test(config);
         System.exit(0);
     }
 }

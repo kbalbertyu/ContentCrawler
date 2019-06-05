@@ -25,7 +25,7 @@ public class TagSimilar {
     @Inject private BaiduNLP baiduNLP;
 
     private void execute(Config config) {
-        WebApiResult result = apiRequest.get("/article/fetchArticlesTags?banned=2", config);
+        WebApiResult result = apiRequest.get("/article/fetchArticlesTags?banned=1", config);
         if (result == null) {
             logger.error("Tas result not found");
             return;
@@ -44,10 +44,10 @@ public class TagSimilar {
                 if (i == j) {
                     continue;
                 }
-                double scoreSimilar = baiduNLP.similar(tag1.getTag(), tag2.getTag());
+                double scoreDistance = baiduNLP.similar(tag1.getTag(), tag2.getTag());
                 double scoreLiteral = baiduNLP.similarLiteral(tag1.getTag(), tag2.getTag());
 
-                TagSimilarity tagSimilarity = new TagSimilarity(tag1.getId(), tag2.getId(), scoreSimilar, scoreLiteral);
+                TagSimilarity tagSimilarity = new TagSimilarity(tag1.getId(), tag2.getId(), scoreDistance, scoreLiteral);
                 tagSimilarities.add(tagSimilarity);
             }
         }
