@@ -9,9 +9,11 @@ import cn.btimes.service.nlp.IFlyNLP;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.google.inject.Inject;
+import com.kber.commons.DBManager;
 import com.mailman.model.common.WebApiResult;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +29,7 @@ public class TagGenerator {
     private final Logger logger = LoggerFactory.getLogger(TagGenerator.class);
     private final List<AbstractNLP> nlpList = this.initNLPList();
     @Inject private ApiRequest apiRequest;
+    @Inject private DBManager dbManager;
 
     private List<AbstractNLP> initNLPList() {
         List<AbstractNLP> nlpList = new ArrayList<>();
@@ -46,37 +49,39 @@ public class TagGenerator {
     }
 
     private void execute(Config config) {
-        int page = 10;
-        while (true) {
-            page++;
-            logger.info("Executing page: {}", page);
-            WebApiResult result = apiRequest.get("/article/fetchArticlesForTags?page=" + page, config);
-            if (result == null) {
-                logger.error("Article result not found on page: {}", page);
-                return;
-            }
-            List<Article> articles = JSONObject.parseArray(result.getData(), Article.class);
-            if (articles.size() == 0) {
-                logger.error("No article found on page: {}", page);
-                return;
-            }
-            for (Article article : articles) {
-                logger.info("Parsing tags for article: {} -> {}", article.getId(), article.getTitle());
-                if (article.getId() <= 216258) {
-                    logger.info("Article is skipped: {}", article.getId());
-                    continue;
-                }
+        String logId = "TagGeneratorRun";
+        ActionLog log = dbManager.readById(logId, ActionLog.class);
+        String timestamp = log == null ? "" : log.getLasttime();
 
-                List<Tag> tags = this.execute(article.getTitle(), article.getContent());
-                if (CollectionUtils.isEmpty(tags)) {
-                    logger.error("No tags parsed for article: {} -> {}", article.getId(), article.getTitle());
-                    continue;
-                }
-                logger.info("Importing tags for article: {} -> {}", article.getId(), tags);
-                this.filterTags(tags);
-                this.importTags(article.getId(), tags, config);
-            }
+        WebApiResult result = apiRequest.get("/article/fetchArticlesForTags?timestamp=" + timestamp, config);
+        if (result == null) {
+            logger.error("Article result not found after timestamp: {}", timestamp);
+            return;
         }
+        List<Article> articles = JSONObject.parseArray(result.getData(), Article.class);
+        if (articles.size() == 0) {
+            logger.error("No article found after timestamp: {}", timestamp);
+            return;
+        }
+        for (Article article : articles) {
+            String articleLogId = "ArticleTag" + article.getId();
+            ActionLog articleLog = dbManager.readById(articleLogId, ActionLog.class);
+            if (articleLog != null) {
+                continue;
+            }
+            logger.info("Parsing tags for article: {} -> {}", article.getId(), article.getTitle());
+            List<Tag> tags = this.execute(article.getTitle(), article.getContent());
+            if (CollectionUtils.isEmpty(tags)) {
+                logger.error("No tags parsed for article: {} -> {}", article.getId(), article.getTitle());
+                continue;
+            }
+            logger.info("Importing tags for article: {} -> {}", article.getId(), tags);
+            this.filterTags(tags);
+            this.importTags(article.getId(), tags, config);
+            dbManager.save(new ActionLog(articleLogId), ActionLog.class);
+        }
+
+        dbManager.save(new ActionLog(logId), ActionLog.class);
     }
 
     private void filterTags(List<Tag> tags) {
