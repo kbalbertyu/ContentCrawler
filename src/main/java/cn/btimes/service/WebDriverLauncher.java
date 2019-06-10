@@ -33,28 +33,32 @@ public class WebDriverLauncher {
     public static Map<Application, Map<String, String>> adminCookies;
 
     public WebDriver start(Config config) {
-        return this.startDriver(config, true);
+        return this.startDriver(config, true, null);
     }
 
     public WebDriver startWithoutLogin(Config config) {
-        return this.startDriver(config, false);
+        return this.startDriver(config, false, null);
     }
 
-    private WebDriver startDriver(Config config, boolean login) {
+    public WebDriver startWithoutLogin(String profile) {
+        return this.startDriver(null, false, profile);
+    }
+
+    private WebDriver startDriver(Config config, boolean login, String profile) {
         ChromeDriverVersion chromeDriverVersion = Tools.defaultChromeDriver();
         if (chromeDriverVersion == null) {
             chromeDriverVersion = ChromeDriverVersion.values()[0];
         }
 
-        DesiredCapabilities dCaps = this.prepareChromeCaps();
+        DesiredCapabilities dCaps = this.prepareChromeCaps(profile);
         WebDriver driver = webDriverManager.initCustomChromeDriver(chromeDriverVersion, Constants.DEFAULT_DRIVER_TIME_OUT, dCaps);
-        if (login && (adminCookies == null || adminCookies.getOrDefault(config.getApplication(), null) == null)) {
+        if (login && config != null && (adminCookies == null || adminCookies.getOrDefault(config.getApplication(), null) == null)) {
             this.fetchAdminCookies(driver, config);
         }
         return driver;
     }
 
-    private DesiredCapabilities prepareChromeCaps() {
+    private DesiredCapabilities prepareChromeCaps(String profile) {
         HashMap<String, Object> chromePrefs = new HashMap<>();
         chromePrefs.put("profile.default_content_settings.popups", 0);
         chromePrefs.put("download.default_directory", DOWNLOAD_PATH);
@@ -63,6 +67,9 @@ public class WebDriverLauncher {
             options.addArguments("--headless");
         }
         options.setExperimentalOption("prefs", chromePrefs);
+        if (StringUtils.isNotBlank(profile)) {
+            options.addArguments("user-data-dir=Profile\\" + profile);
+        }
 
         DesiredCapabilities cap = DesiredCapabilities.chrome();
         cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
