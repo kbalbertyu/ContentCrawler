@@ -1,25 +1,26 @@
 package cn.btimes.service;
 
+import cn.btimes.model.baidu.SmartApp;
 import cn.btimes.model.baidu.SmartAppConfig;
 import cn.btimes.model.common.Config;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.enums.common.Directory;
+import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
 import com.amzass.service.sellerhunt.HtmlParser;
+import com.amzass.ui.utils.UITools;
 import com.amzass.utils.PageLoadHelper.WaitTime;
-import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.PageUtils;
 import com.amzass.utils.common.RegexUtils;
 import com.amzass.utils.common.RegexUtils.Regex;
 import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
+import com.kber.commons.DBManager;
 import com.mailman.model.common.WebApiResult;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.By;
@@ -29,8 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -38,12 +37,12 @@ import java.util.List;
  */
 public class BaiduSiteMapUploader implements ServiceExecutorInterface {
     private final Logger logger = LoggerFactory.getLogger(TagGenerator.class);
-    private static final int DAYS_BEFORE = 3;
+    private static final int DAYS_BEFORE = 1;
     @Inject private ApiRequest apiRequest;
     @Inject private WebDriverLauncher webDriverLauncher;
+    @Inject private DBManager dbManager;
     private static final List<SmartAppConfig> smartApps = loadSmartApps();
     private static final String SITE_MAP_FILE_NAME = "baidu-smart-app-sitemap-%s.txt";
-    private static final String SITE_MAP_FILE_NAME_ALL = "baidu-smart-app-sitemap-%s-all.txt";
     private static final String SITE_MAP_URL = "https://smartprogram.baidu.com/developer/home/promotion.html?appId=%d&tabCur=search&searchCur=newminiapp";
 
     private static List<SmartAppConfig> loadSmartApps() {
@@ -55,49 +54,51 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
         for (SmartAppConfig smartAppConfig : smartApps) {
             WebDriver driver = null;
             try {
-                File siteMapFile = this.generateSiteMapFile(smartAppConfig, config);
-                if (siteMapFile == null || !siteMapFile.exists()) {
+                SmartApp app = smartAppConfig.getApp();
+                List<String> urls = this.generateSiteMapFile(smartAppConfig, config);
+                if (urls == null || urls.size() == 0) {
+                    logger.warn("No site map urls found: {}", app.name());
                     continue;
                 }
-                driver = webDriverLauncher.startWithoutLogin(smartAppConfig.getApp().name());
 
-                for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
-                    driver.get(String.format(SITE_MAP_URL, smartAppConfig.getApp().id));
+                logger.info("Uploading site map file: {}", app.name());
+                driver = webDriverLauncher.startWithoutLogin(app.name());
 
-                    List<WebElement> buttons = driver.findElements(By.className("upload-btn"));
-                    for (WebElement button : buttons) {
-                        if (StringUtils.contains(button.getText(), "上传文件")) {
-                            PageUtils.click(driver, button);
-                            break;
-                        }
-                    }
-                    WaitTime.Short.execute();
+                driver.get(String.format(SITE_MAP_URL, app.id));
+                WaitTime.Normal.execute();
 
-                    String absPath = siteMapFile.getAbsolutePath();
-                    List<String> lines = Tools.readFile(siteMapFile);
-
-                    Document doc = Jsoup.parse(driver.getPageSource());
-                    int itemsRemains = this.getItemsRemains(doc);
-                    if (itemsRemains < lines.size()) {
-                        logger.warn("No enough remaining items for submitting: to upload={}, remains={}", lines.size(), itemsRemains);
-                        break;
-                    }
-
-                    PageUtils.setValue(driver, By.name("realtime"), absPath);
-                    if (!this.validateUploadStatus(driver, lines.size())) {
-                        String backupFilePath = StringUtils.replace(absPath, ".txt", System.currentTimeMillis() + ".txt");
-                        try {
-                            FileUtils.copyFile(siteMapFile, FileUtils.getFile(backupFilePath));
-                        } catch (IOException e) {
-                            logger.error("Unable to move failed sitemap file to fail folder: ", e);
-                        }
-                        logger.error("Failed to upload sitemap file, retry after short waiting.");
-                        WaitTime.Normal.execute();
-                    } else {
-                        logger.info("Success to upload sitemap file.");
+                List<WebElement> buttons = driver.findElements(By.className("upload-btn"));
+                boolean hasPopup = false;
+                for (WebElement button : buttons) {
+                    if (StringUtils.contains(button.getText(), "上传文件")) {
+                        PageUtils.click(driver, button);
+                        hasPopup = true;
                         break;
                     }
                 }
+                if (!hasPopup) {
+                    logger.error("Upload popup not clicked.");
+                    if (!UITools.confirmed("Please click the upload tab manually.")) {
+                        continue;
+                    }
+                }
+
+                WaitTime.Short.execute();
+                Document doc = Jsoup.parse(driver.getPageSource());
+                int itemsRemains = this.getItemsRemains(doc);
+                if (itemsRemains == 0) {
+                    logger.warn("No more remaining items for submitting: to upload={}", urls.size());
+                    continue;
+                }
+
+                urls = urls.size() <= itemsRemains ? urls : urls.subList(0, itemsRemains - 1);
+                File siteMapFile = FileUtils.getFile(Directory.Tmp.path(), String.format(SITE_MAP_FILE_NAME, smartAppConfig.getApp()));
+                Tools.writeLinesToFile(siteMapFile, urls);
+
+                driver.findElement(By.name("realtime")).sendKeys(siteMapFile.getAbsolutePath());
+                WaitTime.Normal.execute();
+
+                urls.forEach(url -> dbManager.save(new ActionLog(url), ActionLog.class));
             } finally {
                 if (driver != null) {
                     driver.close();
@@ -114,23 +115,10 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
         return NumberUtils.toInt(numberText);
     }
 
-    private boolean validateUploadStatus(WebDriver driver, int size) {
-        String dateText = DateFormatUtils.format(new Date(), "yyyy/MM/dd");
-        for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
-            Document doc = Jsoup.parse(driver.getPageSource());
-            String rowTest = HtmlParser.text(doc, "table:contains(上传日期) > tbody > tr");
-            if (StringUtils.contains(rowTest, String.valueOf(size)) && StringUtils.contains(rowTest, dateText)) {
-                return true;
-            }
-            WaitTime.Short.execute();
-        }
-        return false;
-    }
-
     /**
      * Generate SiteMap for Baidu Smart App
      */
-    private File generateSiteMapFile(SmartAppConfig smartAppConfig, Config config) {
+    private List<String> generateSiteMapFile(SmartAppConfig smartAppConfig, Config config) {
         String fetchUrl = String.format("/article/fetchBaiduSmartAppSiteMap?tag_days=%d&article_days=%d&category=%d",
             DAYS_BEFORE, DAYS_BEFORE, smartAppConfig.getCategory().id);
         WebApiResult result = apiRequest.get(fetchUrl, config);
@@ -142,26 +130,11 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
             return null;
         }
 
-        File fileAll = FileUtils.getFile(Directory.Tmp.path(), String.format(SITE_MAP_FILE_NAME_ALL, smartAppConfig.getApp()));
-        if (fileAll.exists()) {
-            List<String> uploadedUrls = Tools.readFile(fileAll);
-            if (CollectionUtils.isNotEmpty(uploadedUrls)) {
-                urls.removeIf(uploadedUrls::contains);
-                uploadedUrls.addAll(urls);
-            } else {
-                uploadedUrls = urls;
-            }
-            if (urls.size() == 0) {
-                return null;
-            }
-            Tools.writeLinesToFile(fileAll, uploadedUrls);
-        } else {
-            Tools.writeLinesToFile(fileAll, urls);
+        urls.removeIf(url -> dbManager.readById(url, ActionLog.class) != null);
+        if (urls.size() == 0) {
+            return null;
         }
-
-        File file = FileUtils.getFile(Directory.Tmp.path(), String.format(SITE_MAP_FILE_NAME, smartAppConfig.getApp()));
-        Tools.writeLinesToFile(file, urls);
-        return file;
+        return urls;
     }
 
     public static void main(String[] args) {
