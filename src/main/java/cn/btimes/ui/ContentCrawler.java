@@ -1,7 +1,9 @@
 package cn.btimes.ui;
 
 import cn.btimes.model.common.Config;
+import cn.btimes.service.BaiduSiteMapUploader;
 import cn.btimes.service.ServiceExecutor;
+import cn.btimes.service.ServiceExecutorInterface;
 import cn.btimes.utils.Common;
 import com.amzass.service.common.ApplicationContext;
 import com.amzass.utils.common.ProcessCleaner;
@@ -17,9 +19,10 @@ public class ContentCrawler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ContentCrawler.class);
     public enum Application {
         BTimes(ApplicationContext.getBean(ServiceExecutor.class)),
-        Kpopstarz(ApplicationContext.getBean(cn.kpopstarz.service.ServiceExecutor.class));
+        Kpopstarz(ApplicationContext.getBean(cn.kpopstarz.service.ServiceExecutor.class)),
+        BaiduSmartAppSiteMap(ApplicationContext.getBean(BaiduSiteMapUploader.class));
 
-        Application(ServiceExecutor executor) {
+        Application(ServiceExecutorInterface executor) {
             this.executor = executor;
         }
 
@@ -35,7 +38,7 @@ public class ContentCrawler {
             return BTimes;
         }
 
-        private ServiceExecutor executor;
+        private ServiceExecutorInterface executor;
     }
 
     public static void main(String[] args) {
