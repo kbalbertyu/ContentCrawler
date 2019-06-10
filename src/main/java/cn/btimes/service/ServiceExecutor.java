@@ -34,7 +34,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/24/2018 8:33 AM
  */
-public class ServiceExecutor {
+public class ServiceExecutor implements ServiceExecutorInterface {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Inject private WebDriverLauncher webDriverLauncher;
