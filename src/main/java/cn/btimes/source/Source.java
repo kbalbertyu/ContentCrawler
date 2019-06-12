@@ -239,7 +239,11 @@ public abstract class Source {
     protected void parseContent(Document doc, Article article) {
         CSSQuery cssQuery = this.getCSSQuery();
         this.checkArticleContentExistence(doc, cssQuery.getContent());
-        Element contentElm = doc.select(cssQuery.getContent()).first();
+        Elements contentElms = doc.select(cssQuery.getContent());
+        if (contentElms.size() == 0) {
+            throw new BusinessException(String.format("Content not found with selector: %s", cssQuery.getContent()));
+        }
+        Element contentElm = contentElms.first();
         article.setContent(this.cleanHtml(contentElm));
         this.fetchContentImages(article, contentElm);
     }
