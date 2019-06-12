@@ -24,6 +24,7 @@ public class ServiceExecutor extends cn.btimes.service.ServiceExecutor {
         sources.add(ApplicationContext.getBean(HanFenLeYuan.class));
         sources.add(ApplicationContext.getBean(People.class));
         sources.add(ApplicationContext.getBean(YuLe.class));
+        sources.add(ApplicationContext.getBean(KPopHui.class));
         return sources;
     }
 
