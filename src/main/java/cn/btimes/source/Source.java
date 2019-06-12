@@ -226,7 +226,7 @@ public abstract class Source {
         article.setTitle(linkElm.text());
     }
 
-    void parseSummary(Element doc, Article article) {
+    protected void parseSummary(Element doc, Article article) {
         CSSQuery cssQuery = this.getCSSQuery();
         if (StringUtils.isBlank(cssQuery.getSummary())) {
             return;
@@ -412,7 +412,7 @@ public abstract class Source {
         this.checkElementExistence(doc, cssQuery, "Article content");
     }
 
-    void checkDateTextExistence(Element doc, String cssQuery) {
+    protected void checkDateTextExistence(Element doc, String cssQuery) {
         this.checkElementExistence(doc, cssQuery, "Date text");
     }
 
