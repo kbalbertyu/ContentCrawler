@@ -47,7 +47,7 @@ public class KPopHui extends SourceWithoutDriver {
 
     @Override
     protected int getSourceId() {
-        return 0;
+        return 20;
     }
 
     @Override

@@ -43,7 +43,7 @@ public class People extends cn.btimes.source.People {
 
     @Override
     protected int getSourceId() {
-        return 0;
+        return 18;
     }
 
     @Override

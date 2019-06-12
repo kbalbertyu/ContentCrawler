@@ -46,7 +46,7 @@ public class HanFan extends SourceWithoutDriver {
 
     @Override
     protected int getSourceId() {
-        return 0;
+        return 16;
     }
 
     @Override
