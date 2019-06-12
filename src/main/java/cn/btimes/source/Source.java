@@ -196,7 +196,7 @@ public abstract class Source {
         }
     }
 
-    void parseDateTitleList(List<Article> articles, Elements list) {
+    protected void parseDateTitleList(List<Article> articles, Elements list) {
         int i = 0;
         for (Element row : list) {
             try {
