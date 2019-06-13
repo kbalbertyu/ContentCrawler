@@ -4,6 +4,7 @@ import cn.btimes.model.common.Config;
 import cn.btimes.service.BaiduSiteMapUploader;
 import cn.btimes.service.ServiceExecutor;
 import cn.btimes.service.ServiceExecutorInterface;
+import cn.btimes.service.TagGenerator;
 import cn.btimes.utils.Common;
 import com.amzass.service.common.ApplicationContext;
 import com.amzass.utils.common.ProcessCleaner;
@@ -20,7 +21,8 @@ public class ContentCrawler {
     public enum Application {
         BTimes(ApplicationContext.getBean(ServiceExecutor.class)),
         Kpopstarz(ApplicationContext.getBean(cn.kpopstarz.service.ServiceExecutor.class)),
-        BaiduSmartAppSiteMap(ApplicationContext.getBean(BaiduSiteMapUploader.class));
+        BaiduSmartAppSiteMap(ApplicationContext.getBean(BaiduSiteMapUploader.class)),
+        TagGenerator(ApplicationContext.getBean(TagGenerator.class));
 
         Application(ServiceExecutorInterface executor) {
             this.executor = executor;

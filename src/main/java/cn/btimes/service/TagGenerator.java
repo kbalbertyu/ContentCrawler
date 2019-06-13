@@ -25,7 +25,7 @@ import java.util.*;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-05-23 9:07 AM
  */
-public class TagGenerator {
+public class TagGenerator implements ServiceExecutorInterface {
     private final Logger logger = LoggerFactory.getLogger(TagGenerator.class);
     private final List<AbstractNLP> nlpList = this.initNLPList();
     @Inject private ApiRequest apiRequest;
@@ -48,7 +48,7 @@ public class TagGenerator {
         return null;
     }
 
-    private void execute(Config config) {
+    public void execute(Config config) {
         String logId = "TagGeneratorRun";
         ActionLog log = dbManager.readById(logId, ActionLog.class);
         String timestamp = log == null ? "" : log.getLasttime();

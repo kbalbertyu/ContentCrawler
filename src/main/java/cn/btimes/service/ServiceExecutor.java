@@ -4,6 +4,7 @@ import cn.btimes.model.common.Config;
 import cn.btimes.model.common.Messenger;
 import cn.btimes.model.common.Messengers;
 import cn.btimes.source.*;
+import cn.btimes.ui.ContentCrawler.Application;
 import cn.btimes.utils.Common;
 import cn.btimes.utils.PageUtils;
 import com.alibaba.fastjson.JSONObject;
@@ -42,6 +43,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
     @Inject private EmailSenderHelper emailSenderHelper;
     @Inject private ApiRequest apiRequest;
     @Inject private DBManager dbManager;
+    @Inject private TagGenerator tagGenerator;
 
     protected String[] allowedSources() {
         String text = StringUtils.trim(Tools.getCustomizingValue("ALLOWED_SOURCES"));
@@ -84,6 +86,9 @@ public class ServiceExecutor implements ServiceExecutorInterface {
 
     public void execute(Config config) {
         messengers.clear();
+        if (config.getApplication() == Application.BTimes) {
+            this.generateArticleTags(config);
+        }
         this.statistic(config);
         this.deleteOldArticleLogs();
         this.deleteDownloadedFiles();
@@ -118,6 +123,16 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         if (this.messengers.isNotEmpty()) {
             this.sendErrorMessage(config);
         }
+    }
+
+    private void generateArticleTags(Config config) {
+        String logId = "TagGenerate" + DateFormatUtils.format(new Date(), "yyyyMMddHH");
+        ActionLog log = dbManager.readById(logId, ActionLog.class);
+        if (log != null) {
+            return;
+        }
+        tagGenerator.execute(config);
+        dbManager.save(new ActionLog(logId), ActionLog.class);
     }
 
     private void sendErrorMessage(Config config) {
