@@ -37,7 +37,6 @@ import java.util.List;
  */
 public class BaiduSiteMapUploader implements ServiceExecutorInterface {
     private final Logger logger = LoggerFactory.getLogger(TagGenerator.class);
-    private static final int DAYS_BEFORE = 1;
     @Inject private ApiRequest apiRequest;
     @Inject private WebDriverLauncher webDriverLauncher;
     @Inject private DBManager dbManager;
@@ -120,7 +119,7 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
      */
     private List<String> generateSiteMapFile(SmartAppConfig smartAppConfig, Config config) {
         String fetchUrl = String.format("/article/fetchBaiduSmartAppSiteMap?tag_days=%d&article_days=%d&category=%d",
-            DAYS_BEFORE, DAYS_BEFORE, smartAppConfig.getCategory().id);
+            smartAppConfig.getDaysBeforeTag(), smartAppConfig.getDaysBefore(), smartAppConfig.getCategory().id);
         WebApiResult result = apiRequest.get(fetchUrl, config);
         if (result == null || StringUtils.isBlank(result.getData())) {
             return null;

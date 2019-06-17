@@ -12,4 +12,6 @@ public class SmartAppConfig {
     private String username;
     private String password;
     private Category category;
+    private int daysBefore;
+    private int daysBeforeTag;
 }
