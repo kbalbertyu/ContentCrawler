@@ -16,4 +16,12 @@ public class BTExceptions {
             super(errorMsg);
         }
     }
+
+    public static class PageEndException extends RuntimeException {
+        private static final long serialVersionUID = 2346784321240567438L;
+
+        public PageEndException(String errorMsg) {
+            super(errorMsg);
+        }
+    }
 }
