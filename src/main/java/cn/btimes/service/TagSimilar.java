@@ -6,7 +6,6 @@ import cn.btimes.model.nlp.TagSimilarity;
 import cn.btimes.service.nlp.BaiduNLP;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.amzass.service.common.ApplicationContext;
 import com.google.inject.Inject;
 import com.mailman.model.common.WebApiResult;
@@ -19,22 +18,13 @@ import java.util.List;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-05-24 2:48 PM
  */
-public class TagSimilar {
+public class TagSimilar extends TagHandler {
     private final Logger logger = LoggerFactory.getLogger(TagGenerator.class);
     @Inject private ApiRequest apiRequest;
     @Inject private BaiduNLP baiduNLP;
 
-    private void execute(Config config) {
-        WebApiResult result = apiRequest.get("/article/fetchArticlesTags?banned=1", config);
-        if (result == null) {
-            logger.error("Tas result not found");
-            return;
-        }
-        List<Tag> tags = JSONObject.parseArray(result.getData(), Tag.class);
-        if (tags.size() == 0) {
-            logger.error("No tag parsed in result: {}", result.getData());
-            return;
-        }
+    public void execute(Config config) {
+        List<Tag> tags = this.readTags("/article/fetchArticlesTags?banned=1", config);
 
         List<TagSimilarity> tagSimilarities = new ArrayList<>();
         for (int i = 0; i < tags.size(); i++) {

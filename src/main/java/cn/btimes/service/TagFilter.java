@@ -4,7 +4,6 @@ import cn.btimes.model.common.Config;
 import cn.btimes.model.nlp.Tag;
 import cn.btimes.service.filter.BaiduFilter;
 import cn.btimes.utils.Common;
-import com.alibaba.fastjson.JSONObject;
 import com.amzass.service.common.ApplicationContext;
 import com.google.inject.Inject;
 import com.mailman.model.common.WebApiResult;
@@ -18,22 +17,13 @@ import java.util.List;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-05-24 11:32 AM
  */
-public class TagFilter {
+public class TagFilter extends TagHandler {
     private final Logger logger = LoggerFactory.getLogger(TagFilter.class);
     @Inject private ApiRequest apiRequest;
     @Inject private BaiduFilter baiduFilter;
 
-    private void execute(Config config) {
-        WebApiResult result = apiRequest.get("/article/fetchArticlesTags?status=0", config);
-        if (result == null) {
-            logger.error("Tas result not found");
-            return;
-        }
-        List<Tag> tags = JSONObject.parseArray(result.getData(), Tag.class);
-        if (tags.size() == 0) {
-            logger.error("No tag parsed in result: {}", result.getData());
-            return;
-        }
+    public void execute(Config config) {
+        List<Tag> tags = this.readTags("/article/fetchArticlesTags?status=0", config);
         List<Integer> bannedTagIds = new ArrayList<>();
         List<Integer> approvedTagIds = new ArrayList<>();
         for (Tag tag : tags) {
@@ -43,6 +33,7 @@ public class TagFilter {
             }
             bannedTagIds.add(tag.getId());
         }
+        WebApiResult result;
         if (bannedTagIds.size() != 0) {
             String tagIdsText = StringUtils.join(bannedTagIds, ",");
             result = apiRequest.post("/article/banTags", tagIdsText, config);
