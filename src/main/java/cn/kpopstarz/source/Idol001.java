@@ -49,11 +49,13 @@ public class Idol001 extends Source {
         URLS.put("https://idol001.com/star/zhengxiujing.html", Category.General);
         URLS.put("https://idol001.com/star/lizhongshuo.html", Category.General);
         URLS.put("https://idol001.com/star/winner.html", Category.General);
-        URLS.put("https://idol001.com/star/winner.html", Category.General);
         URLS.put("https://idol001.com/star/zhengxiuyan.html", Category.General);
         URLS.put("https://idol001.com/star/sosi.html", Category.General);
         URLS.put("https://idol001.com/star/2pm.html", Category.General);
         URLS.put("https://idol001.com/star/superjunior.html", Category.General);
+        URLS.put("https://idol001.com/star/itzy.html", Category.General);
+        URLS.put("https://idol001.com/star/txt.html", Category.General);
+        URLS.put("https://idol001.com/star/(g)i-dle.html", Category.General);
     }
 
     @Override
