@@ -22,6 +22,9 @@ public class Config {
     private int maxPastMinutes = 180;
     private Application application;
     private int maxPastHours;
+    private String baiduAMPSite;
+    private String baiduAMPToken;
+    private int baiduAMPDaysBefore = 3;
 
     public void init() {
         this.maxPastHours = this.maxPastMinutes / 60;
