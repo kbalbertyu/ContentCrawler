@@ -11,6 +11,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.amzass.enums.common.Country;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
+import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.ProcessCleaner;
 import com.amzass.utils.common.Tools;
@@ -22,8 +23,10 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,6 +125,25 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         }
         if (this.messengers.isNotEmpty()) {
             this.sendErrorMessage(config);
+        }
+    }
+
+    private void updateArticles(Config config, WebDriver driver) {
+        List<String> aids = Tools.readFile(FileUtils.getFile("C:\\Work\\Projects\\BT\\uv_article.csv"));
+        for (String aid : aids) {
+            String url = String.format("%s/pages/publish/publish/form.php?w=u&skip_field_validation=1&ar_id=%s", config.getAdminUrl(), aid);
+            driver.get(url);
+            WaitTime.Normal.execute();
+            List<WebElement> elements = driver.findElements(By.className("article_submit"));
+            for (WebElement element : elements) {
+                String text = StringUtils.trim(element.getText());
+                if (!StringUtils.equals(text, "保存")) {
+                    continue;
+                }
+                PageUtils.click(driver, element);
+                break;
+            }
+            WaitTime.Normal.execute();
         }
     }
 
