@@ -1,10 +1,7 @@
 package cn.btimes.ui;
 
 import cn.btimes.model.common.Config;
-import cn.btimes.service.BaiduSiteMapUploader;
-import cn.btimes.service.ServiceExecutor;
-import cn.btimes.service.ServiceExecutorInterface;
-import cn.btimes.service.TagGenerator;
+import cn.btimes.service.*;
 import cn.btimes.utils.Common;
 import com.amzass.service.common.ApplicationContext;
 import com.amzass.utils.common.ProcessCleaner;
@@ -22,7 +19,8 @@ public class ContentCrawler {
         BTimes(ApplicationContext.getBean(ServiceExecutor.class)),
         Kpopstarz(ApplicationContext.getBean(cn.kpopstarz.service.ServiceExecutor.class)),
         BaiduSmartAppSiteMap(ApplicationContext.getBean(BaiduSiteMapUploader.class)),
-        TagGenerator(ApplicationContext.getBean(TagGenerator.class));
+        TagGenerator(ApplicationContext.getBean(TagGenerator.class)),
+        YiQiZeng(ApplicationContext.getBean(YiQiZengCrawler.class));
 
         Application(ServiceExecutorInterface executor) {
             this.executor = executor;
