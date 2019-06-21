@@ -1,5 +1,6 @@
 package cn.btimes.service;
 
+import cn.btimes.model.baidu.BaiduAMPResult;
 import cn.btimes.model.baidu.SmartApp;
 import cn.btimes.model.baidu.SmartAppConfig;
 import cn.btimes.model.common.Config;
@@ -29,7 +30,9 @@ import org.openqa.selenium.WebElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.List;
 
 /**
@@ -43,6 +46,7 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
     private static final List<SmartAppConfig> smartApps = loadSmartApps();
     private static final String SITE_MAP_FILE_NAME = "baidu-smart-app-sitemap-%s.txt";
     private static final String SITE_MAP_URL = "https://smartprogram.baidu.com/developer/home/promotion.html?appId=%d&tabCur=search&searchCur=newminiapp";
+    private static final String BAIDU_AMP_UPLOAD_URL = "http://data.zz.baidu.com/urls?site=%s&token=%s&type=amp";
 
     private static List<SmartAppConfig> loadSmartApps() {
         String configStr = Tools.readFileToString(FileUtils.getFile(Directory.Customize.path(), "baiduSmartApps.json"));
@@ -50,11 +54,89 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
     }
 
     public void execute(Config config) {
+        this.executeAMP(config);
+        this.executeSmartApp(config);
+    }
+
+    private void executeAMP(Config config) {
+        String fetchUrl = String.format("/article/fetchBaiduAMPSiteMap?article_days=%d", config.getBaiduAMPDaysBefore());
+        List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
+        if (urls == null || urls.size() == 0) {
+            logger.warn("No AMP site map urls found");
+            return;
+        }
+        String postUrl = String.format(BAIDU_AMP_UPLOAD_URL, config.getBaiduAMPSite(), config.getBaiduAMPToken());
+        String data = StringUtils.join(urls, StringUtils.LF);
+
+        String body = this.postBaidAMPSiteMap(postUrl, data);
+        BaiduAMPResult result = JSONObject.parseObject(body, BaiduAMPResult.class);
+        if (result.getError() != 0) {
+            logger.error("SiteMap urls not imported: {}", result.getMessage());
+            return;
+        }
+        logger.info("SiteMap urls imported: success={}, remain={}, not same site={}, invalid={}",
+            result.getSuccessAmp(), result.getReaminAmp(), result.getNotSameSite(), result.getNotValid());
+        urls.forEach(url -> dbManager.save(new ActionLog(url), ActionLog.class));
+    }
+
+    /**
+     * <a href="https://liqita.iteye.com/blog/2221082">Reference</a>
+     */
+    private String postBaidAMPSiteMap(String postUrl, String data) {
+        StringBuilder result = new StringBuilder();
+        PrintWriter out = null;
+        BufferedReader in = null;
+        try {
+            //建立URL之间的连接
+            URLConnection conn = new URL(postUrl).openConnection();
+            //设置通用的请求属性
+            conn.setRequestProperty("Host","data.zz.baidu.com");
+            conn.setRequestProperty("User-Agent", "curl/7.12.1");
+            conn.setRequestProperty("Content-Length", String.valueOf(data.length()));
+            conn.setRequestProperty("Content-Type", "text/plain");
+
+            //发送POST请求必须设置如下两行
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+
+            //获取conn对应的输出流
+            out = new PrintWriter(conn.getOutputStream());
+            //发送请求参数
+            out.print(data);
+            //进行输出流的缓冲
+            out.flush();
+            //通过BufferedReader输入流来读取Url的响应
+            in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String line;
+            while ((line = in.readLine()) != null) {
+                result.append(line);
+            }
+        } catch (Exception e) {
+            logger.error("Unable to send out the SiteMap urls.");
+        } finally {
+            try {
+                if (out != null) {
+                    out.close();
+                }
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException ex) {
+                logger.error("Unable to close stream.");
+            }
+        }
+        return result.toString();
+    }
+
+    private void executeSmartApp(Config config) {
         for (SmartAppConfig smartAppConfig : smartApps) {
             WebDriver driver = null;
             try {
                 SmartApp app = smartAppConfig.getApp();
-                List<String> urls = this.generateSiteMapFile(smartAppConfig, config);
+                String fetchUrl = String.format("/article/fetchBaiduSmartAppSiteMap?tag_days=%d&article_days=%d&category=%d",
+                    smartAppConfig.getDaysBeforeTag(), smartAppConfig.getDaysBefore(), smartAppConfig.getCategory().id);
+
+                List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
                 if (urls == null || urls.size() == 0) {
                     logger.warn("No site map urls found: {}", app.name());
                     continue;
@@ -115,11 +197,9 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
     }
 
     /**
-     * Generate SiteMap for Baidu Smart App
+     * Fetch SiteMap urls for Baidu
      */
-    private List<String> generateSiteMapFile(SmartAppConfig smartAppConfig, Config config) {
-        String fetchUrl = String.format("/article/fetchBaiduSmartAppSiteMap?tag_days=%d&article_days=%d&category=%d",
-            smartAppConfig.getDaysBeforeTag(), smartAppConfig.getDaysBefore(), smartAppConfig.getCategory().id);
+    private List<String> fetchSiteMapUrls(String fetchUrl, Config config) {
         WebApiResult result = apiRequest.get(fetchUrl, config);
         if (result == null || StringUtils.isBlank(result.getData())) {
             return null;
