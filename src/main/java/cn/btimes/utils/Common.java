@@ -170,6 +170,12 @@ public class Common {
         return list.size();
     }
 
+    public static String getFileExtension(String fileName) {
+        fileName = StringUtils.substringBefore(fileName, "?");
+        String[] parts = StringUtils.split(fileName, ".");
+        return parts[parts.length - 1].toLowerCase();
+    }
+
     public static void main(String[] args) {
         String text1 = "纽约时装周";
         String text2 = "伦敦时装周活动";

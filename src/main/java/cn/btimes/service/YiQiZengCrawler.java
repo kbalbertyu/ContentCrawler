@@ -3,16 +3,32 @@ package cn.btimes.service;
 import cn.btimes.model.common.BTExceptions.PageEndException;
 import cn.btimes.model.common.Config;
 import cn.btimes.model.yiqizeng.Product;
+import cn.btimes.utils.Common;
 import cn.btimes.utils.PageUtils;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.amzass.model.submit.OrderEnums.ReturnCode;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Exceptions.BusinessException;
+import com.amzass.utils.common.HttpUtils;
 import com.amzass.utils.common.RegexUtils;
+import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
+import com.mailman.model.common.WebApiResult;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.jsoup.Connection;
+import org.jsoup.Connection.Method;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,9 +39,16 @@ import org.openqa.selenium.WebElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static cn.btimes.service.WebDriverLauncher.DOWNLOAD_PATH;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019/6/17 23:07
@@ -71,8 +94,142 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
                 if (++i >= Constants.MAX_REPEAT_TIMES) {
                     throw e;
                 }
+                continue;
+            }
+            this.saveProduct(product, config);
+            WaitTime.Longest.execute();
+        }
+    }
+
+    private void saveProduct(Product product, Config config) {
+        this.downloadImages(product);
+        Connection conn = Jsoup.connect(config.getFrontUrl() + config.getArticleSaveUrl())
+            .validateTLSCertificates(false)
+            .method(Method.POST)
+            .data("data", JSON.toJSONString(product));
+
+        int i = 0;
+        for (File file : product.getGalleryFiles()) {
+            String filePath = file.getAbsolutePath();
+            try {
+                FileInputStream fs = new FileInputStream(file);
+                conn.data("gallery[" + i + "]", filePath, fs);
+                i++;
+            } catch (IOException e) {
+                String message = String.format("Unable to upload file: %s", filePath);
+                logger.error(message, e);
+                throw new BusinessException(e);
             }
         }
+
+        int j = 0;
+        for (File file : product.getContentGalleryFiles()) {
+            String filePath = file.getAbsolutePath();
+            try {
+                FileInputStream fs = new FileInputStream(file);
+                conn.data("contentGallery[" + j + "]", filePath, fs);
+                i++;
+            } catch (IOException e) {
+                String message = String.format("Unable to upload file: %s", filePath);
+                logger.error(message, e);
+                throw new BusinessException(e);
+            }
+        }
+
+        for (int k = 0; k < Constants.MAX_REPEAT_TIMES; k++) {
+            String message;
+            try {
+                String body = conn.ignoreContentType(true).timeout(0).execute().body();
+                WebApiResult result = JSONObject.parseObject(body, WebApiResult.class);
+                if (ReturnCode.notFail(result.getCode())) {
+                    logger.info("Product saved: {} -> {}", product.getId(), product.getTitle());
+                } else {
+                    logger.error("Unable to save the product: {} -> {}", product.getId(), product.getTitle());
+                }
+                this.deleteFiles(product);
+                return;
+            } catch (Exception e) {
+                message = String.format("Unable to save product, retry in %d seconds:", WaitTime.Normal.val());
+                logger.error(message, e);
+            }
+            WaitTime.Normal.execute();
+        }
+    }
+
+    private void deleteFiles(Product product) {
+        for (File file : product.getGalleryFiles()) {
+            FileUtils.deleteQuietly(file);
+        }
+        for (File file : product.getContentGalleryFiles()) {
+            FileUtils.deleteQuietly(file);
+        }
+    }
+
+    private void downloadImages(Product product) {
+        if (product.getGallery().size() > 0) {
+            List<File> galleryFiles = new ArrayList<>();
+            for (String src : product.getGallery()) {
+                File file = this.downloadImage(src, product.getId());
+                galleryFiles.add(file);
+            }
+            product.setGalleryFiles(galleryFiles);
+        }
+        if (product.getContentGallery().size() > 0) {
+            List<File> galleryFiles = new ArrayList<>();
+            for (String src : product.getContentGallery()) {
+                File file = this.downloadImage(src, product.getId());
+                galleryFiles.add(file);
+            }
+            product.setContentGalleryFiles(galleryFiles);
+        }
+    }
+
+    private File downloadImage(String url, int productId) {
+        String fileName = Common.extractFileNameFromUrl(url);
+        File file = this.makeDownloadFile(fileName, String.valueOf(productId));
+
+        String encodedUrl = StringUtils.replace(url, " ", "%20");
+        HttpGet get = HttpUtils.prepareHttpGet(encodedUrl);
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+
+        for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
+            CloseableHttpResponse resp = null;
+            InputStream is = null;
+            try {
+                resp = httpClient.execute(get);
+                int status = resp.getStatusLine().getStatusCode();
+                if (status == HttpStatus.SC_OK) {
+                    is = resp.getEntity().getContent();
+                    FileUtils.copyInputStreamToFile(is, file);
+                    return file;
+                }
+                String message = String.format("Failed to execute file download request: fileName=%s, url=%s, status=%s.", fileName, url, status);
+                logger.error(message);
+            } catch (Exception ex) {
+                String message = String.format("Failed to download file of %s： %s", fileName, Tools.getExceptionMsg(ex));
+                logger.error(message);
+            } finally {
+                get.releaseConnection();
+                IOUtils.closeQuietly(is);
+                IOUtils.closeQuietly(resp);
+            }
+        }
+        throw new BusinessException(String.format("Failed to execute %s file download request after retried.", fileName));
+    }
+
+    private File makeDownloadFile(String fileName, String productId) {
+        String ext = Common.getFileExtension(fileName);
+        fileName = Common.toMD5(fileName) + "." + ext;
+
+        File file = FileUtils.getFile(DOWNLOAD_PATH, productId, fileName);
+        if (file.exists()) {
+            FileUtils.deleteQuietly(file);
+            file = FileUtils.getFile(DOWNLOAD_PATH, productId, fileName);
+        }
+        if (!file.canWrite()) {
+            file.setWritable(true);
+        }
+        return file;
     }
 
     private void parseProductDetail(Document doc, Product product) {
@@ -88,6 +245,7 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
             product.setTitleNote(StringUtils.trim(titleNoteElm.text()));
         }
 
+        // Prices
         String priceText = HtmlParser.text(doc, ".stock > .stock-top > .price");
         if (StringUtils.isBlank(priceText)) {
             throw new BusinessException("Price not found.");
@@ -102,7 +260,44 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
         product.setVipPrice(formatPrice(prices[0]));
         product.setMarketPrice(formatPrice(prices[1]));
 
+        // Sold and stock
+        String soldAndStockText = HtmlParser.text(doc, ".stock > .stock-top > .work");
+        String[] parts = StringUtils.split(soldAndStockText, "库存");
+        if (parts.length != 2) {
+            throw new BusinessException(String.format("Unable to find sold and stock total: %s", soldAndStockText));
+        }
+        product.setSoldCount(formatNumber(parts[0]));
+        product.setInventory(formatNumber(parts[1]));
 
+        // Gallery images
+        List<String> gallery = new ArrayList<>();
+        Elements galleryElms = doc.select("#toggleImg img");
+        for (Element galleryElm : galleryElms) {
+            gallery.add(galleryElm.attr("src"));
+        }
+        product.setGallery(gallery);
+
+        // Detail images
+        List<String> contentGallery = new ArrayList<>();
+        Elements contentGalleryElms = doc.select("div.rows:contains(图文详情) img");
+        for (Element contentGalleryElm : contentGalleryElms) {
+            contentGallery.add(contentGalleryElm.attr("src"));
+        }
+        product.setContentGallery(contentGallery);
+
+        String note = HtmlParser.text(doc, "div.rows:contains(图文详情)");
+        note = StringUtils.trim(StringUtils.remove(note, "图文详情"));
+        product.setDescription(note);
+
+        // Product specs
+        Map<String, List<String>> specs = new HashMap<>();
+        Elements specsElms = doc.select("#spec > div");
+        for (Element specsElm : specsElms) {
+            String name = HtmlParser.text(specsElm, "p");
+            List<String> spec = HtmlParser.texts(specsElm.select(".group-spec > div"));
+            specs.put(name, spec);
+        }
+        product.setSpecs(specs);
     }
 
     static float formatPrice(String priceText) {
@@ -111,6 +306,14 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
             throw new BusinessException(String.format("Unable to format price: %s", priceText));
         }
         return NumberUtils.toFloat(priceTextClean);
+    }
+
+    private static int formatNumber(String numberText) {
+        String numberTextClean = RegexUtils.getMatched(numberText, "[0-9]+");
+        if (StringUtils.isBlank(numberTextClean)) {
+            throw new BusinessException(String.format("Unable to format number: %s", numberText));
+        }
+        return NumberUtils.toInt(numberTextClean);
     }
 
     private boolean accessDetailPage(WebDriver driver, String url) {
@@ -175,7 +378,7 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
             String link = linkElms.first().attr("href");
             Map<String, String> params = PageUtils.getParameters(link);
             Product product = new Product();
-            product.setId(NumberUtils.toInt(params.getOrDefault("groupId", "0")));
+            product.setId(NumberUtils.toInt(params.getOrDefault("goodID", "0")));
             product.setGroupType(NumberUtils.toInt(params.getOrDefault("groupType", "0")));
             products.add(product);
         }
