@@ -69,21 +69,27 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
         }
 
         List<Product> products = this.fetchProducts(driver);
-        if (products.size() == 0) {
+        int size = products.size();
+        if (size == 0) {
             logger.warn("No products found.");
             return;
+        } else {
+            logger.info("Found {} products.", size);
         }
         try {
             this.fetchDetails(driver, config, products);
         } catch (BusinessException e) {
             logger.error("Unable to fetch product details: ", e);
+        } catch (Exception e) {
+            logger.error("Unknown exception found: ", e);
         }
     }
 
     private void fetchDetails(WebDriver driver, Config config, List<Product> products) {
         int i = 0;
         for (Product product : products) {
-            if (!this.accessDetailPage(driver, config.getAdminUrl() + product.formUrl())) {
+            logger.info("Fetching product: {} -> {}", product.getId(), product.getTitle());
+            if (!this.accessDetailPage(driver, config, product)) {
                 logger.error("Unable to open page: {}", product.formUrl());
                 continue;
             }
@@ -97,7 +103,7 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
                 continue;
             }
             this.saveProduct(product, config);
-            WaitTime.Longest.execute();
+            WaitTime.Normal.execute();
         }
     }
 
@@ -316,12 +322,18 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
         return NumberUtils.toInt(numberTextClean);
     }
 
-    private boolean accessDetailPage(WebDriver driver, String url) {
+    private boolean accessDetailPage(WebDriver driver, Config config, Product product) {
+        String url = config.getAdminUrl() + product.formUrl();
         driver.get(url);
+        WaitTime.Short.execute();
+        if (!this.loginAlready(driver)) {
+            this.login(driver, config);
+            driver.get(url);
+        }
         WaitTime.Normal.execute();
         if (!PageLoadHelper.present(driver, By.id("goodName"), WaitTime.Normal)) {
             driver.get(url);
-            WaitTime.Long.execute();
+            WaitTime.Normal.execute();
             return PageLoadHelper.present(driver, By.id("goodName"), WaitTime.Normal);
         }
         return true;
@@ -355,7 +367,7 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
 
         int currentPage = this.parseCurrentPageNo(doc);
         PageUtils.click(driver, By.className("next"));
-        WaitTime.Long.execute();
+        WaitTime.Normal.execute();
 
         doc = Jsoup.parse(driver.getPageSource());
         int newPage = this.parseCurrentPageNo(doc);
@@ -363,6 +375,7 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
         if (currentPage == newPage) {
             throw new PageEndException(String.format("List page ends on: %s", currentPage));
         }
+        logger.info("Fetching products from page: {}", newPage);
     }
 
     private void parseProductList(Document doc, List<Product> products) {
