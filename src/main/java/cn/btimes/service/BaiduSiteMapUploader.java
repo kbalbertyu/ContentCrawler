@@ -168,18 +168,13 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
                 Document doc = Jsoup.parse(driver.getPageSource());
                 int itemsRemains = this.getItemsRemains(doc);
                 if (itemsRemains == 0) {
-                    logger.warn("No more remaining items for submitting: to upload={}", urls.size());
+                    logger.warn("No more remaining items for submitting: to upload={}, try upload to weekly submission.", urls.size());
+                    this.upload(smartAppConfig, driver, urls, By.name("batch"));
                     continue;
                 }
 
-                urls = urls.size() <= itemsRemains ? urls : urls.subList(0, itemsRemains - 1);
-                File siteMapFile = FileUtils.getFile(Directory.Tmp.path(), String.format(SITE_MAP_FILE_NAME, smartAppConfig.getApp()));
-                Tools.writeLinesToFile(siteMapFile, urls);
-
-                driver.findElement(By.name("realtime")).sendKeys(siteMapFile.getAbsolutePath());
-                WaitTime.Normal.execute();
-
-                urls.forEach(url -> dbManager.save(new ActionLog(url), ActionLog.class));
+                urls = urls.size() <= itemsRemains ? urls : urls.subList(0, itemsRemains);
+                this.upload(smartAppConfig, driver, urls, By.name("realtime"));
             } finally {
                 if (driver != null) {
                     driver.close();
@@ -187,6 +182,16 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
                 }
             }
         }
+    }
+
+    private void upload(SmartAppConfig smartAppConfig, WebDriver driver, List<String> urls, By inputBy) {
+        File siteMapFile = FileUtils.getFile(Directory.Tmp.path(), String.format(SITE_MAP_FILE_NAME, smartAppConfig.getApp()));
+        Tools.writeLinesToFile(siteMapFile, urls);
+
+        driver.findElement(inputBy).sendKeys(siteMapFile.getAbsolutePath());
+        WaitTime.Normal.execute();
+
+        urls.forEach(url -> dbManager.save(new ActionLog(url), ActionLog.class));
     }
 
     private int getItemsRemains(Document doc) {
