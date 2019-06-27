@@ -6,16 +6,14 @@ import cn.btimes.model.yiqizeng.Product;
 import cn.btimes.utils.Common;
 import cn.btimes.utils.PageUtils;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.model.submit.OrderEnums.ReturnCode;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
-import com.amzass.utils.common.Constants;
+import com.amzass.utils.common.*;
 import com.amzass.utils.common.Exceptions.BusinessException;
-import com.amzass.utils.common.HttpUtils;
-import com.amzass.utils.common.RegexUtils;
-import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
 import com.mailman.model.common.WebApiResult;
 import org.apache.commons.io.FileUtils;
@@ -43,10 +41,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static cn.btimes.service.WebDriverLauncher.DOWNLOAD_PATH;
 
@@ -56,39 +51,52 @@ import static cn.btimes.service.WebDriverLauncher.DOWNLOAD_PATH;
 public class YiQiZengCrawler implements ServiceExecutorInterface {
     private static final String DRIVER_KEY = "YiQiZeng";
     private static final String LIST_URL = "/goodsPurchase/toGoodsPurchase?menuID=66";
+    private static final int MIN_DAYS_DIFF_FETCH = 5;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     @Inject private WebDriverLauncher webDriverLauncher;
+    @Inject private ApiRequest apiRequest;
 
     @Override
     public void execute(Config config) {
         WebDriver driver = webDriverLauncher.startWithoutLogin(DRIVER_KEY);
-        this.login(driver, config);
-
         if (this.accessList(driver, config) && this.accessList(driver, config)) {
             throw new BusinessException("Unable to access to the list page.");
         }
 
-        List<Product> products = this.fetchProducts(driver);
-        int size = products.size();
-        if (size == 0) {
-            logger.warn("No products found.");
-            return;
-        } else {
-            logger.info("Found {} products.", size);
-        }
-        try {
-            this.fetchDetails(driver, config, products);
-        } catch (BusinessException e) {
-            logger.error("Unable to fetch product details: ", e);
-        } catch (Exception e) {
-            logger.error("Unknown exception found: ", e);
+        for (int page = 1; ; page++) {
+            logger.info("Fetching from page: {}", page);
+            List<Product> products;
+            try {
+                this.accessList(driver, config);
+                products = this.fetchProducts(driver, page);
+            } catch (PageEndException e) {
+                logger.warn("Page ended on: {}", page);
+                break;
+            }
+            int size = products.size();
+            if (size == 0) {
+                logger.warn("No products found.");
+                return;
+            } else {
+                logger.info("Found {} products.", size);
+            }
+            try {
+                this.fetchDetails(driver, config, products);
+            } catch (BusinessException e) {
+                logger.error("Unable to fetch product details: ", e);
+            }
+            WaitTime.Normal.execute();
         }
     }
 
     private void fetchDetails(WebDriver driver, Config config, List<Product> products) {
         int i = 0;
         for (Product product : products) {
-            logger.info("Fetching product: {} -> {}", product.getId(), product.getTitle());
+            logger.info("Fetching product: {}", product.getId());
+            if (this.fetchAlready(product.getId(), config)) {
+                logger.info("Product fetched already: {}", product.getId());
+                continue;
+            }
             if (!this.accessDetailPage(driver, config, product)) {
                 logger.error("Unable to open page: {}", product.formUrl());
                 continue;
@@ -104,6 +112,20 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
             }
             this.saveProduct(product, config);
             WaitTime.Normal.execute();
+        }
+    }
+
+    private boolean fetchAlready(int id, Config config) {
+        WebApiResult result = apiRequest.get(config.getFrontUrl() + "/product/fetch/" + id);
+        if (result == null || StringUtils.isBlank(result.getData())) {
+            return false;
+        }
+        try {
+            Product product = JSONObject.parseObject(result.getData(), Product.class);
+            return DateHelper.daysBetween(product.getDateUpdated(), new Date()) <= MIN_DAYS_DIFF_FETCH;
+        } catch (JSONException e) {
+            logger.error("Unable to parse JSON: {}", result.getData(), e);
+            return false;
         }
     }
 
@@ -339,46 +361,39 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
         return true;
     }
 
-    private List<Product> fetchProducts(WebDriver driver) {
-        List<Product> products = new ArrayList<>();
+    private List<Product> fetchProducts(WebDriver driver, int page) {
+        this.goToPage(driver, page);
         Document doc = Jsoup.parse(driver.getPageSource());
-        Element nextElm = doc.select("ul.pagination > li.next").first();
-        do {
-            try {
-                this.parseProductList(doc, products);
+        return this.parseProductList(doc);
+    }
+
+    private void goToPage(WebDriver driver, int toPage) {
+        List<WebElement> pageElms = driver.findElements(By.cssSelector(".pagination > .page"));
+
+        WebElement lastShownPage = null;
+        for (WebElement pageElm : pageElms) {
+            int page = NumberUtils.toInt(pageElm.getText());
+            if (page == toPage) {
+                PageUtils.click(driver, pageElm.findElement(By.tagName("a")));
                 WaitTime.Normal.execute();
-                this.nextPage(driver);
-            } catch (PageEndException e) {
-                logger.warn("Page end: ", e);
-                break;
+                return;
             }
-        } while (!nextElm.hasClass("disabled"));
-
-        return products;
-    }
-
-    private int parseCurrentPageNo(Document doc) {
-        String pageText = HtmlParser.text(doc, "ul.pagination > li.active");
-        return NumberUtils.toInt(pageText);
-    }
-
-    private void nextPage(WebDriver driver) {
-        Document doc = Jsoup.parse(driver.getPageSource());
-
-        int currentPage = this.parseCurrentPageNo(doc);
-        PageUtils.click(driver, By.className("next"));
-        WaitTime.Normal.execute();
-
-        doc = Jsoup.parse(driver.getPageSource());
-        int newPage = this.parseCurrentPageNo(doc);
-
-        if (currentPage == newPage) {
-            throw new PageEndException(String.format("List page ends on: %s", currentPage));
+            lastShownPage = pageElm;
         }
-        logger.info("Fetching products from page: {}", newPage);
+        if (StringUtils.contains(lastShownPage.getAttribute("class"), "active")) {
+            throw new PageEndException("Page ended, page not found: " + toPage);
+        }
+        WebElement next = driver.findElement(By.cssSelector(".pagination > .next"));
+        if (StringUtils.contains(next.getAttribute("class"), "disabled")) {
+            throw new PageEndException("Page ended, page not found: " + toPage);
+        }
+        PageUtils.click(driver, lastShownPage);
+        WaitTime.Normal.execute();
+        this.goToPage(driver, toPage);
     }
 
-    private void parseProductList(Document doc, List<Product> products) {
+    private List<Product> parseProductList(Document doc) {
+        List<Product> products = new ArrayList<>();
         Elements rows = doc.select("#productGoods > .row > .col-sm-3");
         if (rows.size() == 0) {
             throw new PageEndException("No product found on page");
@@ -395,10 +410,16 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
             product.setGroupType(NumberUtils.toInt(params.getOrDefault("groupType", "0")));
             products.add(product);
         }
+        return products;
     }
 
     private boolean accessList(WebDriver driver, Config config) {
-        driver.get(config.getAdminUrl() + LIST_URL);
+        String url = config.getAdminUrl() + LIST_URL;
+        driver.get(url);
+        if (!this.loginAlready(driver)) {
+            this.login(driver, config);
+            driver.get(url);
+        }
         return !PageLoadHelper.present(driver, By.id("productGoods"), WaitTime.Long);
     }
 

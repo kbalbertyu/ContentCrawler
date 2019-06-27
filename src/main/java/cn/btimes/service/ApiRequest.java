@@ -26,6 +26,10 @@ public class ApiRequest extends WebApiRequest {
         return this.send(config, path, Method.GET, "");
     }
 
+    public WebApiResult get(String url) {
+        return this.send(url, Method.GET, "");
+    }
+
     public WebApiResult post(String path, String dataText, Config config) {
         return this.send(config, path, Method.POST, dataText);
     }
@@ -35,9 +39,13 @@ public class ApiRequest extends WebApiRequest {
     }
 
     private WebApiResult send(Config config, String path, Method method, String dataText) {
+        return this.send(getFullUrl(path, config), method, dataText);
+    }
+
+    private WebApiResult send(String url, Method method, String dataText) {
         for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
             try {
-                String result = Jsoup.connect(getFullUrl(path, config)).ignoreContentType(true)
+                String result = Jsoup.connect(url).ignoreContentType(true)
                     .validateTLSCertificates(false)
                     .data("data", dataText)
                     .method(method).timeout(WaitTime.SuperLong.valInMS()).maxBodySize(0).execute().body();
@@ -46,17 +54,17 @@ public class ApiRequest extends WebApiRequest {
                 if (ReturnCode.notFail(resultObj.getCode())) {
                     return resultObj;
                 }
-                LOGGER.error("Upload Record result failed: {} -> {}", path, resultObj.getMessage());
+                LOGGER.error("Upload Record result failed: {} -> {}", url, resultObj.getMessage());
                 break;
             } catch (IOException e) {
-                LOGGER.error("Upload Record result failed: {}", path, e);
+                LOGGER.error("Upload Record result failed: {}", url, e);
                 if (i < Constants.MAX_REPEAT_TIMES - 1) {
                     WaitTime.Short.execute();
                 }
             } catch (JSONException e) {
-                LOGGER.error("Invalid json response: {}", path);
+                LOGGER.error("Invalid json response: {}", url);
             } catch (Exception e) {
-                LOGGER.error("Unexpected exception occurred while uploading record: {}", path, e);
+                LOGGER.error("Unexpected exception occurred while uploading record: {}", url, e);
                 return null;
             }
         }

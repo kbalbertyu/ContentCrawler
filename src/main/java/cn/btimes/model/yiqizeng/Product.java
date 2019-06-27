@@ -4,6 +4,7 @@ import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 
 import java.io.File;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +30,7 @@ public class Product {
     private List<File> galleryFiles;
     @JSONField(serialize = false)
     private List<File> contentGalleryFiles;
+    private Date dateUpdated;
 
     public String formUrl() {
         return String.format("/goodsPurchase/toCommoditydetails?goodID=%d&groupType=%d&btnMember=1", id, groupType);
