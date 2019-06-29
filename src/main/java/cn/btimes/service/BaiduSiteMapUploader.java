@@ -59,13 +59,14 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
     }
 
     private void executeAMP(Config config) {
-        String fetchUrl = String.format("/article/fetchBaiduAMPSiteMap?article_days=%d", config.getBaiduAMPDaysBefore());
+        String fetchUrl = String.format("/article/fetchBaiduAMPSiteMap?only_tag=1&article_days=%d", config.getBaiduAMPDaysBefore());
         List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
         if (urls == null || urls.size() == 0) {
             logger.warn("No AMP site map urls found");
             return;
         }
         String postUrl = String.format(BAIDU_AMP_UPLOAD_URL, config.getBaiduAMPSite(), config.getBaiduAMPToken());
+        urls = urls.subList(0, 1000);
         String data = StringUtils.join(urls, StringUtils.LF);
 
         String body = this.postBaidAMPSiteMap(postUrl, data);
@@ -112,7 +113,7 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
                 result.append(line);
             }
         } catch (Exception e) {
-            logger.error("Unable to send out the SiteMap urls.");
+            logger.error("Unable to send out the SiteMap urls.", e);
         } finally {
             try {
                 if (out != null) {
