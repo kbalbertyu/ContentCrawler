@@ -50,6 +50,7 @@ import static cn.btimes.service.WebDriverLauncher.DOWNLOAD_PATH;
  */
 public class YiQiZengCrawler implements ServiceExecutorInterface {
     private static final String DRIVER_KEY = "YiQiZeng";
+    private static final String DETAIL_DRIVER_KEY = "YiQiZeng_Detail";
     private static final String LIST_URL = "/goodsPurchase/toGoodsPurchase?menuID=66";
     private static final int MIN_DAYS_DIFF_FETCH = 5;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -59,6 +60,7 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
     @Override
     public void execute(Config config) {
         WebDriver driver = webDriverLauncher.startWithoutLogin(DRIVER_KEY);
+        WebDriver driverDetail = webDriverLauncher.startWithoutLogin(DETAIL_DRIVER_KEY);
         if (this.accessList(driver, config) && this.accessList(driver, config)) {
             throw new BusinessException("Unable to access to the list page.");
         }
@@ -67,7 +69,7 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
             logger.info("Fetching from page: {}", page);
             List<Product> products;
             try {
-                this.accessList(driver, config);
+                // this.accessList(driver, config);
                 products = this.fetchProducts(driver, page);
             } catch (PageEndException e) {
                 logger.warn("Page ended on: {}", page);
@@ -81,7 +83,7 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
                 logger.info("Found {} products.", size);
             }
             try {
-                this.fetchDetails(driver, config, products);
+                this.fetchDetails(driverDetail, config, products);
             } catch (BusinessException e) {
                 logger.error("Unable to fetch product details: ", e);
             }
@@ -172,7 +174,8 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
                 if (ReturnCode.notFail(result.getCode())) {
                     logger.info("Product saved: {} -> {}", product.getId(), product.getTitle());
                 } else {
-                    logger.error("Unable to save the product: {} -> {}", product.getId(), product.getTitle());
+                    logger.error("Unable to save the product: {} -> {}, error = {}",
+                        product.getId(), product.getTitle(), result.getMessage());
                 }
                 this.deleteFiles(product);
                 return;
