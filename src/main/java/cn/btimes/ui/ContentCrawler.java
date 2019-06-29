@@ -54,9 +54,10 @@ public class ContentCrawler {
             application.executor.execute(config);
         } catch (Exception e) {
             LOGGER.error("Unknown error found: ", e);
+        } finally {
+            LOGGER.info("Total execute time: {}", Tools.formatCostTime(totalStart));
+            ProcessCleaner.cleanWebDriver();
+            System.exit(0);
         }
-        LOGGER.info("Total execute time: {}", Tools.formatCostTime(totalStart));
-        ProcessCleaner.cleanWebDriver();
-        System.exit(0);
     }
 }
