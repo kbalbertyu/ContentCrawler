@@ -6,6 +6,7 @@ import cn.btimes.utils.Common;
 import com.amzass.service.common.ApplicationContext;
 import com.amzass.utils.common.ProcessCleaner;
 import com.amzass.utils.common.Tools;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,9 @@ public class ContentCrawler {
 
     public static void main(String[] args) {
         ProcessCleaner.cleanWebDriver();
+        if (ArrayUtils.contains(args, "CLEAN_DRIVERS_ONLY")) {
+            System.exit(0);
+        }
         LOGGER.info("Start crawling contents.");
         long totalStart = System.currentTimeMillis();
         String appName = args.length > 0 ? args[0] : null;
