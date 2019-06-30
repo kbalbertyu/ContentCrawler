@@ -36,11 +36,7 @@ public class WebDriverLauncher {
         return this.startDriver(config, true, null);
     }
 
-    public WebDriver startWithoutLogin(Config config) {
-        return this.startDriver(config, false, null);
-    }
-
-    public WebDriver startWithoutLogin(String profile) {
+    WebDriver startWithoutLogin(String profile) {
         return this.startDriver(null, false, profile);
     }
 
