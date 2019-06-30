@@ -31,9 +31,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,33 +59,45 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
     public void execute(Config config) {
         WebDriver driver = webDriverLauncher.startWithoutLogin(DRIVER_KEY);
         WebDriver driverDetail = webDriverLauncher.startWithoutLogin(DETAIL_DRIVER_KEY);
-        if (this.accessList(driver, config) && this.accessList(driver, config)) {
+        if (!this.accessList(driver, config) && !this.accessList(driver, config)) {
             throw new BusinessException("Unable to access to the list page.");
         }
 
         for (int page = 1; ; page++) {
-            logger.info("Fetching from page: {}", page);
-            List<Product> products;
             try {
-                // this.accessList(driver, config);
-                products = this.fetchProducts(driver, page);
-            } catch (PageEndException e) {
-                logger.warn("Page ended on: {}", page);
-                break;
+                logger.info("Fetching from page: {}", page);
+                List<Product> products;
+                try {
+                    products = this.fetchProducts(driver, page);
+                } catch (PageEndException e) {
+                    logger.warn("Page ended on: {}", page);
+                    break;
+                }
+                int size = products.size();
+                if (size == 0) {
+                    logger.warn("No products found.");
+                    return;
+                } else {
+                    logger.info("Found {} products.", size);
+                }
+                try {
+                    this.fetchDetails(driverDetail, config, products);
+                } catch (BusinessException e) {
+                    logger.error("Unable to fetch product details: ", e);
+                }
+                WaitTime.Normal.execute();
+            } catch (WebDriverException e) {
+                logger.error("WebDriver exception detected, restart web drivers and retry fetching.", e);
+                ProcessCleaner.cleanWebDriver();
+                driver = webDriverLauncher.startWithoutLogin(DRIVER_KEY);
+                driverDetail = webDriverLauncher.startWithoutLogin(DETAIL_DRIVER_KEY);
+                if (!this.accessList(driver, config) && !this.accessList(driver, config)) {
+                    throw new BusinessException("Unable to access to the list page.");
+                }
+                if (page > 0) {
+                    page--;
+                }
             }
-            int size = products.size();
-            if (size == 0) {
-                logger.warn("No products found.");
-                return;
-            } else {
-                logger.info("Found {} products.", size);
-            }
-            try {
-                this.fetchDetails(driverDetail, config, products);
-            } catch (BusinessException e) {
-                logger.error("Unable to fetch product details: ", e);
-            }
-            WaitTime.Normal.execute();
         }
     }
 
@@ -371,7 +381,18 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
     }
 
     private void goToPage(WebDriver driver, int toPage) {
-        List<WebElement> pageElms = driver.findElements(By.cssSelector(".pagination > .page"));
+        List<WebElement> paginationElms = driver.findElements(By.className("pagination"));
+        WebElement paginationElm = null;
+        for (WebElement elment : paginationElms) {
+            if (elment.isDisplayed()) {
+                paginationElm = elment;
+                break;
+            }
+        }
+        if (paginationElm == null) {
+            throw new BusinessException("Unabel to find clickable pagination.");
+        }
+        List<WebElement> pageElms = paginationElm.findElements(By.className("page"));
 
         WebElement lastShownPage = null;
         for (WebElement pageElm : pageElms) {
@@ -390,6 +411,7 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
         if (StringUtils.contains(next.getAttribute("class"), "disabled")) {
             throw new PageEndException("Page ended, page not found: " + toPage);
         }
+        PageUtils.scrollToBottom(driver);
         PageUtils.click(driver, lastShownPage);
         WaitTime.Normal.execute();
         this.goToPage(driver, toPage);
@@ -423,7 +445,7 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
             this.login(driver, config);
             driver.get(url);
         }
-        return !PageLoadHelper.present(driver, By.id("productGoods"), WaitTime.Long);
+        return PageLoadHelper.present(driver, By.id("productGoods"), WaitTime.Long);
     }
 
     private void login(WebDriver driver, Config config) {
