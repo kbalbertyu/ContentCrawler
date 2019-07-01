@@ -122,6 +122,10 @@ public class YiQiZengCrawler implements ServiceExecutorInterface {
                 }
                 continue;
             }
+            if (StringUtils.contains(product.getTitle(), "测试")) {
+                logger.warn("疑似测试产品，略过抓取：{}", product.getTitle());
+                continue;
+            }
             this.saveProduct(product, config);
             WaitTime.Normal.execute();
         }
