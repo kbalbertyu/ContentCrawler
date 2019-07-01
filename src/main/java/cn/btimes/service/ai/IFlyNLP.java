@@ -1,4 +1,4 @@
-package cn.btimes.service.nlp;
+package cn.btimes.service.ai;
 
 import cn.btimes.model.nlp.Tag;
 

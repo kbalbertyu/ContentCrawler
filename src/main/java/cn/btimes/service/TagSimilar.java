@@ -3,7 +3,7 @@ package cn.btimes.service;
 import cn.btimes.model.common.Config;
 import cn.btimes.model.nlp.Tag;
 import cn.btimes.model.nlp.TagSimilarity;
-import cn.btimes.service.nlp.BaiduNLP;
+import cn.btimes.service.ai.BaiduNLP;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSON;
 import com.amzass.service.common.ApplicationContext;
