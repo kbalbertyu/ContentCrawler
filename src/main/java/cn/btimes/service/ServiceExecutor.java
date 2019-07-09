@@ -61,15 +61,12 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         sources.add(ApplicationContext.getBean(Sina.class));
         sources.add(ApplicationContext.getBean(SinaFinance.class));
         sources.add(ApplicationContext.getBean(ThePaper.class));
-        sources.add(ApplicationContext.getBean(QQ.class));
         sources.add(ApplicationContext.getBean(IFengTravel.class));
         sources.add(ApplicationContext.getBean(JieMian.class));
         sources.add(ApplicationContext.getBean(COM163.class));
-        sources.add(ApplicationContext.getBean(WallStreetCN.class));
         sources.add(ApplicationContext.getBean(CNBeta.class));
         sources.add(ApplicationContext.getBean(YiCai.class));
         sources.add(ApplicationContext.getBean(NBD.class));
-        sources.add(ApplicationContext.getBean(IYiOu.class));
         sources.add(ApplicationContext.getBean(IFeng.class));
         sources.add(ApplicationContext.getBean(EntGroup.class));
         sources.add(ApplicationContext.getBean(CSCOMCN.class));
@@ -77,7 +74,6 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         sources.add(ApplicationContext.getBean(LvJie.class));
         sources.add(ApplicationContext.getBean(PinChain.class));
         sources.add(ApplicationContext.getBean(LadyMax.class));
-        sources.add(ApplicationContext.getBean(CTO51.class));
         sources.add(ApplicationContext.getBean(ZJOLbiz.class));
         sources.add(ApplicationContext.getBean(ZJOLec.class));
         sources.add(ApplicationContext.getBean(KR36.class));
