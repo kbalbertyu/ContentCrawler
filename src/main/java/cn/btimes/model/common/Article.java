@@ -34,7 +34,10 @@ public class Article {
         return ArrayUtils.isNotEmpty(imageIds);
     }
 
-    public void checkContent() {
+    public void validate() {
+        if (StringUtils.isBlank(title)) {
+            throw new BusinessException(String.format("Article title is blank: %s", url));
+        }
         if (StringUtils.isBlank(content)) {
             throw new BusinessException(String.format("Article content is blank: %s -> %s", title, url));
         }
