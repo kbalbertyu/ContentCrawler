@@ -1,19 +1,14 @@
 package cn.btimes.source;
 
 import cn.btimes.model.common.Article;
-import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
-import com.amzass.service.sellerhunt.HtmlParser;
-import com.amzass.utils.common.Constants;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,7 +20,6 @@ import java.util.Map;
  */
 public class LadyMax extends SourceWithoutDriver {
     private static final String TO_DELETE_SEPARATOR = "###TO-DELETE###";
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -49,26 +43,17 @@ public class LadyMax extends SourceWithoutDriver {
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return new CSSQuery("#list > div.i", ".newsview > .content", "a", "", "", ".newsview > .info");
+        return new CSSQuery("#list > div.i", ".newsview > .content", "a.tt", "", "", ".newsview > .info");
     }
 
     @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
-        int i = 0;
         for (Element row : list) {
-            try {
-                Article article = new Article();
-                super.parseTitle(row, article);
-                articles.add(article);
-            } catch (PastDateException e) {
-                if (i++ < Constants.MAX_REPEAT_TIMES) {
-                    continue;
-                }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
-                break;
-            }
+            Article article = new Article();
+            this.parseTitle(row, article);
+            articles.add(article);
         }
         return articles;
     }
@@ -91,15 +76,17 @@ public class LadyMax extends SourceWithoutDriver {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readTitleDateContent(driver, article);
+        this.readDateContent(driver, article);
     }
 
     @Override
     public void parseTitle(Element doc, Article article) {
-        String titleCssQuery = ".newsview > .title > h1";
+        String titleCssQuery = this.getCSSQuery().getTitle();
         this.checkTitleExistence(doc, titleCssQuery);
-        String title = HtmlParser.text(doc, titleCssQuery);
-        article.setTitle(StringUtils.substringBefore(title, "|"));
+        Element element = doc.select(titleCssQuery).get(0);
+        element.select("i").remove();
+        article.setUrl(element.attr("href"));
+        article.setTitle(StringUtils.substringAfter(element.text(), "|").trim());
     }
 
     @Override
