@@ -328,7 +328,7 @@ public abstract class Source {
     }
 
     private void saveArticle(Article article, WebDriver driver) {
-        article.checkContent();
+        article.validate();
         if (article.hasImages()) {
             ImageUploadResult result = this.uploadImages(article, driver);
             if (result != null) {
@@ -338,7 +338,7 @@ public abstract class Source {
             }
         }
         this.cleanThirdPartyImages(article);
-        article.checkContent();
+        article.validate();
 
         Connection conn = this.createWebConnection(config.getArticleSaveUrl(), adminCookie)
             .data("getstring", "")
