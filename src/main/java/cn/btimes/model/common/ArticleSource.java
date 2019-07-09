@@ -42,6 +42,7 @@ public enum ArticleSource {
     Idol001("idol001.com", "爱豆"),
     ReBo("y3600.co", "热播网"),
     Sohu("sohu.com", "搜狐"),
+    TechNode("technode.com", "动点科技"),
     Undefined("", "未知来源");
 
     ArticleSource(String domain, String title) {
