@@ -12,7 +12,8 @@ public enum Application {
     Kpopstarz(ApplicationContext.getBean(cn.kpopstarz.service.ServiceExecutor.class)),
     BaiduSmartAppSiteMap(ApplicationContext.getBean(BaiduSiteMapUploader.class)),
     TagGenerator(ApplicationContext.getBean(cn.btimes.service.TagGenerator.class)),
-    YiQiZeng(ApplicationContext.getBean(YiQiZengCrawler.class));
+    YiQiZeng(ApplicationContext.getBean(YiQiZengCrawler.class)),
+    RelatedArticle(ApplicationContext.getBean(RelatedArticleHandler.class));
 
     Application(ServiceExecutorInterface executor) {
         this.executor = executor;
