@@ -1,6 +1,5 @@
 package cn.btimes.model.common;
 
-import cn.btimes.ui.ContentCrawler.Application;
 import lombok.Data;
 
 /**

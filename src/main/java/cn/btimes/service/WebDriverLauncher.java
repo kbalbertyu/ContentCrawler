@@ -1,7 +1,7 @@
 package cn.btimes.service;
 
+import cn.btimes.model.common.Application;
 import cn.btimes.model.common.Config;
-import cn.btimes.ui.ContentCrawler.Application;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.amzass.enums.common.ConfigEnums.ChromeDriverVersion;

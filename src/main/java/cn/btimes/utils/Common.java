@@ -1,8 +1,8 @@
 package cn.btimes.utils;
 
+import cn.btimes.model.common.Application;
 import cn.btimes.model.common.Config;
 import cn.btimes.model.common.ImageType;
-import cn.btimes.ui.ContentCrawler.Application;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.amzass.enums.common.Directory;
@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 /**
@@ -140,7 +139,7 @@ public class Common {
         return Common.loadApplicationConfig(application);
     }
 
-    public static double calcSimilarity(String text1, String text2) {
+    private static double calcSimilarity(String text1, String text2) {
         if (StringUtils.containsIgnoreCase(text1, text2) || StringUtils.containsIgnoreCase(text2, text1)) {
             return 1d;
         }

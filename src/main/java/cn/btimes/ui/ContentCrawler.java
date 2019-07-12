@@ -1,13 +1,11 @@
 package cn.btimes.ui;
 
+import cn.btimes.model.common.Application;
 import cn.btimes.model.common.Config;
-import cn.btimes.service.*;
 import cn.btimes.utils.Common;
-import com.amzass.service.common.ApplicationContext;
 import com.amzass.utils.common.ProcessCleaner;
 import com.amzass.utils.common.Tools;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,31 +14,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ContentCrawler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ContentCrawler.class);
-    public enum Application {
-        BTimes(ApplicationContext.getBean(ServiceExecutor.class)),
-        Kpopstarz(ApplicationContext.getBean(cn.kpopstarz.service.ServiceExecutor.class)),
-        BaiduSmartAppSiteMap(ApplicationContext.getBean(BaiduSiteMapUploader.class)),
-        TagGenerator(ApplicationContext.getBean(TagGenerator.class)),
-        YiQiZeng(ApplicationContext.getBean(YiQiZengCrawler.class));
-
-        Application(ServiceExecutorInterface executor) {
-            this.executor = executor;
-        }
-
-        public static Application determineApplication(String name) {
-            if (StringUtils.isBlank(name)) {
-                return BTimes;
-            }
-            for (Application application : Application.values()) {
-                if (StringUtils.equalsIgnoreCase(application.name(), name)) {
-                    return application;
-                }
-            }
-            return BTimes;
-        }
-
-        private ServiceExecutorInterface executor;
-    }
 
     public static void main(String[] args) {
         ProcessCleaner.cleanWebDriver();
