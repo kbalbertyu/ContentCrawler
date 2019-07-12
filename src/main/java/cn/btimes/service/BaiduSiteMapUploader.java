@@ -43,17 +43,18 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
     @Inject private ApiRequest apiRequest;
     @Inject private WebDriverLauncher webDriverLauncher;
     @Inject private DBManager dbManager;
-    private static final List<SmartAppConfig> smartApps = loadSmartApps();
+    private List<SmartAppConfig> smartApps;
     private static final String SITE_MAP_FILE_NAME = "baidu-smart-app-sitemap-%s.txt";
     private static final String SITE_MAP_URL = "https://smartprogram.baidu.com/developer/home/promotion.html?appId=%d&tabCur=search&searchCur=newminiapp";
     private static final String BAIDU_AMP_UPLOAD_URL = "http://data.zz.baidu.com/urls?site=%s&token=%s&type=amp";
 
-    private static List<SmartAppConfig> loadSmartApps() {
+    private List<SmartAppConfig> loadSmartApps() {
         String configStr = Tools.readFileToString(FileUtils.getFile(Directory.Customize.path(), "baiduSmartApps.json"));
         return JSONObject.parseArray(configStr, SmartAppConfig.class);
     }
 
     public void execute(Config config) {
+        this.smartApps = this.loadSmartApps();
         this.executeAMP(config);
         this.executeSmartApp(config);
     }
