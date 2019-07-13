@@ -58,11 +58,11 @@ public class RelatedArticleHandler implements ServiceExecutorInterface {
             data[i] = articleId + ":" + counts.get(articleId);
             i++;
         }
-        WebApiResult result = apiRequest.post("/article/saveRelatedArticles?aid=" + aid, StringUtils.join(data, "|"), config);
+        String dataText = StringUtils.join(data, "|");
+        WebApiResult result = apiRequest.post("/article/saveRelatedArticles?aid=" + aid, dataText, config);
         if (result == null) {
-            String message = String.format("Unable to save related articles: %d", aid);
+            String message = String.format("Unable to save related articles: %d -> %s", aid, dataText);
             logger.error(message);
-            throw new BusinessException(message);
         }
     }
 
