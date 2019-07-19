@@ -3,7 +3,7 @@ package cn.btimes.service;
 import cn.btimes.model.common.Config;
 import cn.btimes.model.common.TagIndex;
 import com.alibaba.fastjson.JSONObject;
-import com.amzass.utils.common.Exceptions.BusinessException;
+import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.google.inject.Inject;
 import com.mailman.model.common.WebApiResult;
 import org.apache.commons.lang3.StringUtils;
@@ -48,6 +48,7 @@ public class RelatedArticleHandler implements ServiceExecutorInterface {
             }
             this.saveRelatedArticles(aid, counts, config);
             logger.info("Related articles imported: {}, {} of {}", aid, i++, total);
+            WaitTime.Short.execute();
         }
     }
 
