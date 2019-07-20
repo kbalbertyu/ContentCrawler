@@ -47,6 +47,7 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
     private static final String SITE_MAP_FILE_NAME = "baidu-smart-app-sitemap-%s.txt";
     private static final String SITE_MAP_URL = "https://smartprogram.baidu.com/developer/home/promotion.html?appId=%d&tabCur=search&searchCur=newminiapp";
     private static final String BAIDU_AMP_UPLOAD_URL = "http://data.zz.baidu.com/urls?site=%s&token=%s&type=amp";
+    private static final String BAIDU_SITEMAP_UPLOAD_URL = "http://data.zz.baidu.com/urls?site=%s&token=%s";
 
     private List<SmartAppConfig> loadSmartApps() {
         String configStr = Tools.readFileToString(FileUtils.getFile(Directory.Customize.path(), "baiduSmartApps.json"));
@@ -55,8 +56,21 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
 
     public void execute(Config config) {
         this.smartApps = this.loadSmartApps();
-        this.executeAMP(config);
         this.executeSmartApp(config);
+        this.executeSiteMap(config);
+        this.executeAMP(config);
+    }
+
+    private void executeSiteMap(Config config) {
+        String fetchUrl = String.format("/article/fetchBaiduSiteMap?only_tag=1&only_original=&article_days=%d",
+            config.getBaiduAMPDaysBefore());
+        List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
+        if (urls == null || urls.size() == 0) {
+            logger.warn("No site map urls found");
+            return;
+        }
+        String postUrl = String.format(BAIDU_SITEMAP_UPLOAD_URL, config.getBaiduAMPSite(), config.getBaiduAMPToken());
+        this.uploadSiteMap(urls, postUrl);
     }
 
     private void executeAMP(Config config) {
@@ -67,24 +81,44 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
             return;
         }
         String postUrl = String.format(BAIDU_AMP_UPLOAD_URL, config.getBaiduAMPSite(), config.getBaiduAMPToken());
-        urls = urls.subList(0, 1000);
-        String data = StringUtils.join(urls, StringUtils.LF);
+        this.uploadSiteMap(urls, postUrl);
+    }
 
-        String body = this.postBaidAMPSiteMap(postUrl, data);
-        BaiduAMPResult result = JSONObject.parseObject(body, BaiduAMPResult.class);
-        if (result.getError() != 0) {
-            logger.error("SiteMap urls not imported: {}", result.getMessage());
-            return;
+    private void uploadSiteMap(List<String> urls, String postUrl) {
+        int itemsPerUpload = 1000;
+        int size = urls.size();
+        for (int i = 0; ; i++) {
+            int start = i * itemsPerUpload;
+            int end = (i + 1) * itemsPerUpload;
+            if (end > size) {
+                end = size;
+            }
+            List<String> urlsForUpload = urls.subList(start, end);
+            if (urlsForUpload.size() == 0) {
+                logger.error("{} siteMap urls are imported.", size);
+                break;
+            }
+            String data = StringUtils.join(urlsForUpload, StringUtils.LF);
+
+            String body = this.postBaiduSiteMap(postUrl, data);
+            BaiduAMPResult result = JSONObject.parseObject(body, BaiduAMPResult.class);
+            if (result.getError() != 0) {
+                logger.error("SiteMap urls not imported: {}", result.getMessage());
+                return;
+            }
+            logger.info("SiteMap urls imported: success={}, remain={}, not same site={}, invalid={}",
+                result.getSuccess(), result.getRemain(), result.getNotSameSite(), result.getNotValid());
+            urlsForUpload.forEach(url -> dbManager.save(new ActionLog(url), ActionLog.class));
+            if (size == end) {
+                break;
+            }
         }
-        logger.info("SiteMap urls imported: success={}, remain={}, not same site={}, invalid={}",
-            result.getSuccessAmp(), result.getReaminAmp(), result.getNotSameSite(), result.getNotValid());
-        urls.forEach(url -> dbManager.save(new ActionLog(url), ActionLog.class));
     }
 
     /**
      * <a href="https://liqita.iteye.com/blog/2221082">Reference</a>
      */
-    private String postBaidAMPSiteMap(String postUrl, String data) {
+    private String postBaiduSiteMap(String postUrl, String data) {
         StringBuilder result = new StringBuilder();
         PrintWriter out = null;
         BufferedReader in = null;

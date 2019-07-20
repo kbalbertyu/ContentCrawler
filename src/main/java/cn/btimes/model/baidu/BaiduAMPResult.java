@@ -5,6 +5,9 @@ import lombok.Data;
 
 @Data
 public class BaiduAMPResult {
+    private int remain;
+    private int success;
+
     @JSONField(name = "remain_amp")
     private int reaminAmp;
 
