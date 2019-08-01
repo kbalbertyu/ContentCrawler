@@ -55,14 +55,14 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
 
     public void execute(Config config) {
         this.smartApps = this.loadSmartApps();
-        this.executeSmartApp(config);
         this.executeLinksUpload(config);
+        this.executeSmartApp(config);
     }
 
     private void executeLinksUpload(Config config) {
         for (BaiduLink baiduLink : BaiduLink.values()) {
             logger.info("Uploading Baidu links of {}", baiduLink.name());
-            String fetchUrl = String.format("/article/fetchBaiduSiteMap?type=%s&only_original=&article_days=%d",
+            String fetchUrl = String.format("/article/fetchBaiduSiteMap?dev=%s&only_original=&article_days=%d",
                 baiduLink.type, config.getBaiduDaysBefore());
             List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
             if (urls == null || urls.size() == 0) {
