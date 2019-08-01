@@ -67,7 +67,7 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
             List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
             if (urls == null || urls.size() == 0) {
                 logger.warn("No site map urls found");
-                return;
+                continue;
             }
             this.uploadSiteMap(urls, config, baiduLink);
         }
