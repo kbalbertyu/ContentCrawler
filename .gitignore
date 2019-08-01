@@ -7,3 +7,6 @@
 /drivers
 /*.iml
 /ContentCrawler.vmoptions
+/html
+/Profile
+/tmp
