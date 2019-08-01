@@ -40,7 +40,7 @@ import java.util.List;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019/6/10 9:13
  */
 public class BaiduLinksUploader implements ServiceExecutorInterface {
-    private final Logger logger = LoggerFactory.getLogger(TagGenerator.class);
+    private final Logger logger = LoggerFactory.getLogger(BaiduLinksUploader.class);
     @Inject private ApiRequest apiRequest;
     @Inject private WebDriverLauncher webDriverLauncher;
     @Inject private DBManager dbManager;
@@ -167,7 +167,7 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
                     continue;
                 }
 
-                logger.info("Uploading site map file: {}", app.name());
+                logger.info("Uploading site map file of {}, urls = {}", app.name(), urls.size());
                 driver = webDriverLauncher.startWithoutLogin(app.name());
 
                 driver.get(String.format(SITE_MAP_URL, app.id));
@@ -199,6 +199,7 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
                 }
 
                 urls = urls.size() <= itemsRemains ? urls : urls.subList(0, itemsRemains);
+                logger.info("Submitting daily urls of SmarApp: {}", urls.size());
                 this.upload(smartAppConfig, driver, urls, By.name("realtime"));
             } finally {
                 if (driver != null) {
