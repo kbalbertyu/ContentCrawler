@@ -4,7 +4,7 @@ import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 
 @Data
-public class BaiduAMPResult {
+public class BaiduResult {
     private int remain;
     private int success;
 

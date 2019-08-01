@@ -1,6 +1,6 @@
 package cn.btimes.service;
 
-import cn.btimes.model.baidu.BaiduAMPResult;
+import cn.btimes.model.baidu.BaiduResult;
 import cn.btimes.model.baidu.BaiduLink;
 import cn.btimes.model.baidu.SmartApp;
 import cn.btimes.model.baidu.SmartAppConfig;
@@ -91,7 +91,7 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
             String data = StringUtils.join(urlsForUpload, StringUtils.LF);
 
             String body = this.postBaiduSiteMap(postUrl, data);
-            BaiduAMPResult result = JSONObject.parseObject(body, BaiduAMPResult.class);
+            BaiduResult result = JSONObject.parseObject(body, BaiduResult.class);
             if (result.getError() != 0) {
                 logger.error("SiteMap urls not imported: {}", result.getMessage());
                 return;
