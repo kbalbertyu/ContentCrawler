@@ -38,7 +38,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019/6/10 9:13
  */
-public class BaiduSiteMapUploader implements ServiceExecutorInterface {
+public class BaiduLinksUploader implements ServiceExecutorInterface {
     private final Logger logger = LoggerFactory.getLogger(TagGenerator.class);
     @Inject private ApiRequest apiRequest;
     @Inject private WebDriverLauncher webDriverLauncher;
@@ -260,7 +260,7 @@ public class BaiduSiteMapUploader implements ServiceExecutorInterface {
     public static void main(String[] args) {
         String appName = args.length > 0 ? args[0] : null;
         Config config = Common.loadApplicationConfig(appName);
-        ApplicationContext.getBean(BaiduSiteMapUploader.class).execute(config);
+        ApplicationContext.getBean(BaiduLinksUploader.class).execute(config);
         System.exit(0);
     }
 }
