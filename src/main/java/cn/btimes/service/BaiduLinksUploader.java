@@ -1,6 +1,7 @@
 package cn.btimes.service;
 
 import cn.btimes.model.baidu.BaiduAMPResult;
+import cn.btimes.model.baidu.BaiduLink;
 import cn.btimes.model.baidu.SmartApp;
 import cn.btimes.model.baidu.SmartAppConfig;
 import cn.btimes.model.common.Config;
@@ -46,8 +47,6 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
     private List<SmartAppConfig> smartApps;
     private static final String SITE_MAP_FILE_NAME = "baidu-smart-app-sitemap-%s.txt";
     private static final String SITE_MAP_URL = "https://smartprogram.baidu.com/developer/home/promotion.html?appId=%d&tabCur=search&searchCur=newminiapp";
-    private static final String BAIDU_AMP_UPLOAD_URL = "http://data.zz.baidu.com/urls?site=%s&token=%s&type=amp";
-    private static final String BAIDU_SITEMAP_UPLOAD_URL = "http://data.zz.baidu.com/urls?site=%s&token=%s";
 
     private List<SmartAppConfig> loadSmartApps() {
         String configStr = Tools.readFileToString(FileUtils.getFile(Directory.Customize.path(), "baiduSmartApps.json"));
@@ -57,34 +56,25 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
     public void execute(Config config) {
         this.smartApps = this.loadSmartApps();
         this.executeSmartApp(config);
-        this.executeSiteMap(config);
-        this.executeAMP(config);
+        this.executeLinksUpload(config);
     }
 
-    private void executeSiteMap(Config config) {
-        String fetchUrl = String.format("/article/fetchBaiduSiteMap?only_tag=1&only_original=&article_days=%d",
-            config.getBaiduAMPDaysBefore());
-        List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
-        if (urls == null || urls.size() == 0) {
-            logger.warn("No site map urls found");
-            return;
+    private void executeLinksUpload(Config config) {
+        for (BaiduLink baiduLink : BaiduLink.values()) {
+            logger.info("Uploading Baidu links of {}", baiduLink.name());
+            String fetchUrl = String.format("/article/fetchBaiduSiteMap?type=%s&only_original=&article_days=%d",
+                baiduLink.type, config.getBaiduDaysBefore());
+            List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
+            if (urls == null || urls.size() == 0) {
+                logger.warn("No site map urls found");
+                return;
+            }
+            this.uploadSiteMap(urls, config, baiduLink);
         }
-        String postUrl = String.format(BAIDU_SITEMAP_UPLOAD_URL, config.getBaiduAMPSite(), config.getBaiduAMPToken());
-        this.uploadSiteMap(urls, postUrl);
     }
 
-    private void executeAMP(Config config) {
-        String fetchUrl = String.format("/article/fetchBaiduAMPSiteMap?only_tag=1&article_days=%d", config.getBaiduAMPDaysBefore());
-        List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
-        if (urls == null || urls.size() == 0) {
-            logger.warn("No AMP site map urls found");
-            return;
-        }
-        String postUrl = String.format(BAIDU_AMP_UPLOAD_URL, config.getBaiduAMPSite(), config.getBaiduAMPToken());
-        this.uploadSiteMap(urls, postUrl);
-    }
-
-    private void uploadSiteMap(List<String> urls, String postUrl) {
+    private void uploadSiteMap(List<String> urls, Config config, BaiduLink baiduLink) {
+        String postUrl = baiduLink.postUrl(config.getBaiduSite(), config.getBaiduToken());
         int itemsPerUpload = 1000;
         int size = urls.size();
         for (int i = 0; ; i++) {
@@ -106,10 +96,9 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
                 logger.error("SiteMap urls not imported: {}", result.getMessage());
                 return;
             }
-            logger.info("SiteMap urls imported: success={}, remain={}, not same site={}, invalid={}",
-                result.getSuccess(), result.getRemain(), result.getNotSameSite(), result.getNotValid());
+            logger.info("SiteMap urls imported: {}", result);
             urlsForUpload.forEach(url -> dbManager.save(new ActionLog(url), ActionLog.class));
-            if (size == end) {
+            if (size == end || !result.canUpload(baiduLink)) {
                 break;
             }
         }
