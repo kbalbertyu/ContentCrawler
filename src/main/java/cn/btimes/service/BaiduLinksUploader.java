@@ -1,7 +1,7 @@
 package cn.btimes.service;
 
-import cn.btimes.model.baidu.BaiduResult;
 import cn.btimes.model.baidu.BaiduLink;
+import cn.btimes.model.baidu.BaiduResult;
 import cn.btimes.model.baidu.SmartApp;
 import cn.btimes.model.baidu.SmartAppConfig;
 import cn.btimes.model.common.Config;
@@ -19,7 +19,7 @@ import com.amzass.utils.common.RegexUtils.Regex;
 import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
-import com.mailman.model.common.WebApiResult;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -31,17 +31,14 @@ import org.openqa.selenium.WebElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
+import java.io.File;
 import java.util.List;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019/6/10 9:13
  */
-public class BaiduLinksUploader implements ServiceExecutorInterface {
+public class BaiduLinksUploader extends AbstractLinksUploader {
     private final Logger logger = LoggerFactory.getLogger(BaiduLinksUploader.class);
-    @Inject private ApiRequest apiRequest;
     @Inject private WebDriverLauncher webDriverLauncher;
     @Inject private DBManager dbManager;
     private List<SmartAppConfig> smartApps;
@@ -64,7 +61,7 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
             logger.info("Uploading Baidu links of {}", baiduLink.name());
             String fetchUrl = String.format("/article/fetchBaiduSiteMap?dev=%s&only_original=&article_days=%d",
                 baiduLink.type, config.getBaiduDaysBefore());
-            List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
+            List<String> urls = this.fetchLinks(fetchUrl, config, null);
             if (urls == null || urls.size() == 0) {
                 logger.warn("No site map urls found");
                 continue;
@@ -78,19 +75,14 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
         int itemsPerUpload = 1000;
         int size = urls.size();
         for (int i = 0; ; i++) {
-            int start = i * itemsPerUpload;
-            int end = (i + 1) * itemsPerUpload;
-            if (end > size) {
-                end = size;
-            }
-            List<String> urlsForUpload = urls.subList(start, end);
-            if (urlsForUpload.size() == 0) {
-                logger.error("{} siteMap urls are imported.", size);
+            List<String> urlsForUpload = this.urlsSegment(urls, size, i, itemsPerUpload);
+            if (CollectionUtils.isEmpty(urlsForUpload)) {
+                logger.warn("No urls found for Shenma submission");
                 break;
             }
             String data = StringUtils.join(urlsForUpload, StringUtils.LF);
 
-            String body = this.postBaiduSiteMap(postUrl, data);
+            String body = this.postLinks(postUrl, data, BaiduLink.API_HOST);
             BaiduResult result = JSONObject.parseObject(body, BaiduResult.class);
             if (result.getError() != 0) {
                 logger.error("SiteMap urls not imported: {}", result.getMessage());
@@ -98,59 +90,10 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
             }
             logger.info("SiteMap urls imported: {}", result);
             urlsForUpload.forEach(url -> dbManager.save(new ActionLog(url), ActionLog.class));
-            if (size == end || !result.canUpload(baiduLink)) {
+            if (!result.canUpload(baiduLink)) {
                 break;
             }
         }
-    }
-
-    /**
-     * <a href="https://liqita.iteye.com/blog/2221082">Reference</a>
-     */
-    private String postBaiduSiteMap(String postUrl, String data) {
-        StringBuilder result = new StringBuilder();
-        PrintWriter out = null;
-        BufferedReader in = null;
-        try {
-            //建立URL之间的连接
-            URLConnection conn = new URL(postUrl).openConnection();
-            //设置通用的请求属性
-            conn.setRequestProperty("Host","data.zz.baidu.com");
-            conn.setRequestProperty("User-Agent", "curl/7.12.1");
-            conn.setRequestProperty("Content-Length", String.valueOf(data.length()));
-            conn.setRequestProperty("Content-Type", "text/plain");
-
-            //发送POST请求必须设置如下两行
-            conn.setDoInput(true);
-            conn.setDoOutput(true);
-
-            //获取conn对应的输出流
-            out = new PrintWriter(conn.getOutputStream());
-            //发送请求参数
-            out.print(data);
-            //进行输出流的缓冲
-            out.flush();
-            //通过BufferedReader输入流来读取Url的响应
-            in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String line;
-            while ((line = in.readLine()) != null) {
-                result.append(line);
-            }
-        } catch (Exception e) {
-            logger.error("Unable to send out the SiteMap urls.", e);
-        } finally {
-            try {
-                if (out != null) {
-                    out.close();
-                }
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException ex) {
-                logger.error("Unable to close stream.");
-            }
-        }
-        return result.toString();
     }
 
     private void executeSmartApp(Config config) {
@@ -161,7 +104,7 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
                 String fetchUrl = String.format("/article/fetchBaiduSmartAppSiteMap?tag_days=%d&article_days=%d&category=%d",
                     smartAppConfig.getDaysBeforeTag(), smartAppConfig.getDaysBefore(), smartAppConfig.getCategory().id);
 
-                List<String> urls = this.fetchSiteMapUrls(fetchUrl, config);
+                List<String> urls = this.fetchLinks(fetchUrl, config, null);
                 if (urls == null || urls.size() == 0) {
                     logger.warn("No site map urls found: {}", app.name());
                     continue;
@@ -225,26 +168,6 @@ public class BaiduLinksUploader implements ServiceExecutorInterface {
         String numberText = RegexUtils.getMatched(text, "剩余可上传(\\d+)");
         numberText = numberText.replaceAll(Regex.NON_DIGITS.val(), StringUtils.EMPTY);
         return NumberUtils.toInt(numberText);
-    }
-
-    /**
-     * Fetch SiteMap urls for Baidu
-     */
-    private List<String> fetchSiteMapUrls(String fetchUrl, Config config) {
-        WebApiResult result = apiRequest.get(fetchUrl, config);
-        if (result == null || StringUtils.isBlank(result.getData())) {
-            return null;
-        }
-        List<String> urls = JSONObject.parseArray(result.getData(), String.class);
-        if (urls.size() == 0) {
-            return null;
-        }
-
-        urls.removeIf(url -> dbManager.readById(url, ActionLog.class) != null);
-        if (urls.size() == 0) {
-            return null;
-        }
-        return urls;
     }
 
     public static void main(String[] args) {

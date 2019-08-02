@@ -16,6 +16,7 @@ public enum BaiduLink {
         return String.format(POST_URL_FORMAT, site, token, type);
     }
 
+    public static final String API_HOST = "data.zz.baidu.com";
     private static final String POST_URL_FORMAT = "http://data.zz.baidu.com/urls?site=%s&token=%s&type=%s";
     public final String type;
 }

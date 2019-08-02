@@ -10,8 +10,9 @@ import org.apache.commons.lang3.StringUtils;
 public enum Application {
     BTimes(ApplicationContext.getBean(ServiceExecutor.class)),
     Kpopstarz(ApplicationContext.getBean(cn.kpopstarz.service.ServiceExecutor.class)),
-    BaiduLinksUploader(ApplicationContext.getBean(cn.btimes.service.BaiduLinksUploader.class)),
-    TagGenerator(ApplicationContext.getBean(cn.btimes.service.TagGenerator.class)),
+    BaiduLinksUploader(ApplicationContext.getBean(BaiduLinksUploader.class)),
+    ShenmaLinksUploader(ApplicationContext.getBean(ShenmaLinksUploader.class)),
+    TagGenerator(ApplicationContext.getBean(TagGenerator.class)),
     YiQiZeng(ApplicationContext.getBean(YiQiZengCrawler.class)),
     RelatedArticle(ApplicationContext.getBean(RelatedArticleHandler.class));
 
