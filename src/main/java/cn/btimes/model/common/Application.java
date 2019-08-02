@@ -1,6 +1,9 @@
 package cn.btimes.model.common;
 
-import cn.btimes.service.*;
+import cn.btimes.service.RelatedArticleHandler;
+import cn.btimes.service.ServiceExecutor;
+import cn.btimes.service.YiQiZengCrawler;
+import cn.btimes.service.upload.ServiceExecutorInterface;
 import com.amzass.service.common.ApplicationContext;
 import org.apache.commons.lang3.StringUtils;
 
@@ -10,9 +13,9 @@ import org.apache.commons.lang3.StringUtils;
 public enum Application {
     BTimes(ApplicationContext.getBean(ServiceExecutor.class)),
     Kpopstarz(ApplicationContext.getBean(cn.kpopstarz.service.ServiceExecutor.class)),
-    BaiduLinksUploader(ApplicationContext.getBean(BaiduLinksUploader.class)),
-    ShenmaLinksUploader(ApplicationContext.getBean(ShenmaLinksUploader.class)),
-    TagGenerator(ApplicationContext.getBean(TagGenerator.class)),
+    BaiduLinksUploader(ApplicationContext.getBean(cn.btimes.service.upload.BaiduLinksUploader.class)),
+    ShenmaLinksUploader(ApplicationContext.getBean(cn.btimes.service.upload.ShenmaLinksUploader.class)),
+    TagGenerator(ApplicationContext.getBean(cn.btimes.service.TagGenerator.class)),
     YiQiZeng(ApplicationContext.getBean(YiQiZengCrawler.class)),
     RelatedArticle(ApplicationContext.getBean(RelatedArticleHandler.class));
 

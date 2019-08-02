@@ -1,4 +1,4 @@
-package cn.btimes.service;
+package cn.btimes.service.upload;
 
 import cn.btimes.model.common.Config;
 import cn.btimes.model.shenma.ShenmaConfig;

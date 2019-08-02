@@ -3,6 +3,7 @@ package cn.btimes.service;
 import cn.btimes.model.common.BTExceptions.PageEndException;
 import cn.btimes.model.common.Config;
 import cn.btimes.model.yiqizeng.Product;
+import cn.btimes.service.upload.ServiceExecutorInterface;
 import cn.btimes.utils.Common;
 import cn.btimes.utils.PageUtils;
 import com.alibaba.fastjson.JSON;

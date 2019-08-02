@@ -6,6 +6,7 @@ import cn.btimes.model.nlp.Tag;
 import cn.btimes.service.ai.AbstractNLP;
 import cn.btimes.service.ai.BaiduNLP;
 import cn.btimes.service.ai.IFlyNLP;
+import cn.btimes.service.upload.ServiceExecutorInterface;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
