@@ -469,7 +469,7 @@ public abstract class Source {
         }
         if (Tools.contains(timeText, "小时")) {
             minutes *= 60;
-        } else if (!Tools.contains("分钟")) {
+        } else if (!Tools.contains(timeText, "分")) {
             throw new PastDateException("Time text doesn't contain minutes or hours: " + timeText);
         }
 
