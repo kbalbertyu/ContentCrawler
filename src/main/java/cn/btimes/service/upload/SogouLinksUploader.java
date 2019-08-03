@@ -25,7 +25,7 @@ import java.util.List;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019/8/2 12:38
  */
 public class SogouLinksUploader extends AbstractLinksUploader {
-    private final Logger logger = LoggerFactory.getLogger(BaiduLinksUploader.class);
+    private final Logger logger = LoggerFactory.getLogger(SogouLinksUploader.class);
     private static final String URL_ID_PREFIX = "Sogou";
     private static final String UPLOAD_URL = "http://zhanzhang.sogou.com/index.php/sitelink/index";
     @Inject private WebDriverLauncher webDriverLauncher;
@@ -70,7 +70,7 @@ public class SogouLinksUploader extends AbstractLinksUploader {
 
         List<String> urlsForUpload = this.urlsSegment(urls, size, 0, itemsPerUpload);
         if (CollectionUtils.isEmpty(urlsForUpload)) {
-            logger.warn("No urls found for Sogou submission");
+            logger.warn("No {} urls found for Sogou submission", siteType.name());
             return;
         }
         String data = StringUtils.join(urlsForUpload, StringUtils.LF);
@@ -91,10 +91,10 @@ public class SogouLinksUploader extends AbstractLinksUploader {
 
         String body = driver.getPageSource();
         if (StringUtils.contains(body, "success")) {
-            logger.info("Links uploaded successfully");
+            logger.info("{} links uploaded successfully", siteType.name());
             urls.forEach(url -> dbManager.save(new ActionLog(urlId(url, URL_ID_PREFIX)), ActionLog.class));
         } else {
-            logger.error("Unable to upload the links");
+            logger.error("Unable to upload the {} links", siteType.name());
         }
     }
 
