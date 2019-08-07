@@ -353,7 +353,7 @@ public abstract class Source {
             .data("ar_content", article.getContent())
             .data("tex", "")
             .data("ar_cat[]", String.valueOf(article.getCategory().id))
-            .data("ar_keyword", RandomStringUtils.randomNumeric(10))
+            .data("ar_keyword", "")
             .data("ar_newskeyword", article.getTitle())
             .data("ar_youtube", "")
             .data("ar_typology", "1")
@@ -495,7 +495,7 @@ public abstract class Source {
             }
             // If dateFormat without month and day, set today
             if (StringUtils.equals(DateFormat.FULL_MONTH_DAY.format(date), WITHOUT_MONTH_DAY)) {
-                int month = Calendar.getInstance().get(Calendar.MONDAY);
+                int month = Calendar.getInstance().get(Calendar.MONTH);
                 int day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
                 date = DateUtils.setMonths(date, month);
                 date = DateUtils.setDays(date, day);
