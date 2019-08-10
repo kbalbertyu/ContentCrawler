@@ -2,7 +2,6 @@ package cn.btimes.service;
 
 import cn.btimes.model.common.Config;
 import cn.btimes.model.common.TagIndex;
-import cn.btimes.service.upload.ServiceExecutorInterface;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.google.inject.Inject;

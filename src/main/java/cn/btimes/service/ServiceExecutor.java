@@ -3,7 +3,6 @@ package cn.btimes.service;
 import cn.btimes.model.common.Config;
 import cn.btimes.model.common.Messenger;
 import cn.btimes.model.common.Messengers;
-import cn.btimes.service.upload.ServiceExecutorInterface;
 import cn.btimes.source.*;
 import cn.btimes.utils.Common;
 import cn.btimes.utils.PageUtils;

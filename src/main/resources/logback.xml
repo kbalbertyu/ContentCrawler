@@ -34,6 +34,10 @@
         <appender-ref ref="ContentCrawler" />
         <appender-ref ref="console" />
     </logger>
+    <logger name="com.fortis" additivity="false" level="info">
+        <appender-ref ref="ContentCrawler"/>
+        <appender-ref ref="console"/>
+    </logger>
     <logger name="com.kber" additivity="false" level="info">
         <appender-ref ref="ContentCrawler" />
         <appender-ref ref="console" />

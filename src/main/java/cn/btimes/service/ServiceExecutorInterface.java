@@ -1,4 +1,4 @@
-package cn.btimes.service.upload;
+package cn.btimes.service;
 
 import cn.btimes.model.common.Config;
 

@@ -2,6 +2,7 @@ package cn.btimes.service.upload;
 
 import cn.btimes.model.common.Config;
 import cn.btimes.service.ApiRequest;
+import cn.btimes.service.ServiceExecutorInterface;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.model.common.ActionLog;
 import com.google.inject.Inject;

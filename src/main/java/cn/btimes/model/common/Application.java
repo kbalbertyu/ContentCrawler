@@ -3,8 +3,9 @@ package cn.btimes.model.common;
 import cn.btimes.service.RelatedArticleHandler;
 import cn.btimes.service.ServiceExecutor;
 import cn.btimes.service.YiQiZengCrawler;
-import cn.btimes.service.upload.ServiceExecutorInterface;
+import cn.btimes.service.ServiceExecutorInterface;
 import com.amzass.service.common.ApplicationContext;
+import com.fortis.service.AmazonCrawler;
 import org.apache.commons.lang3.StringUtils;
 import cn.btimes.service.upload.BaiduLinksUploader;
 import cn.btimes.service.upload.ShenmaLinksUploader;
@@ -21,7 +22,8 @@ public enum Application {
     SogouLinksUploader(ApplicationContext.getBean(SogouLinksUploader.class)),
     TagGenerator(ApplicationContext.getBean(cn.btimes.service.TagGenerator.class)),
     YiQiZeng(ApplicationContext.getBean(YiQiZengCrawler.class)),
-    RelatedArticle(ApplicationContext.getBean(RelatedArticleHandler.class));
+    RelatedArticle(ApplicationContext.getBean(RelatedArticleHandler.class)),
+    AmazonCrawler(ApplicationContext.getBean(AmazonCrawler.class));
 
     Application(ServiceExecutorInterface executor) {
         this.executor = executor;

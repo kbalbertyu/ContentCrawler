@@ -1,8 +1,12 @@
 package cn.btimes.utils;
 
+import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
+import com.amzass.utils.common.Exceptions.BusinessException;
+import com.amzass.utils.common.JsoupWrapper.WebRequest;
 import com.amzass.utils.common.Tools;
+import org.jsoup.nodes.Document;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -56,5 +60,22 @@ public class PageUtils extends com.amzass.utils.common.PageUtils {
         JavascriptExecutor jse = (JavascriptExecutor) driver;
         jse.executeScript("window.scrollBy(0, " + by + ");");
         WaitTime.Shortest.execute();
+    }
+
+    public static Document getDocumentByJsoup(String url) {
+        BusinessException exception = null;
+        for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
+            try {
+                return new WebRequest(url).submit().document;
+            } catch (Exception e) {
+                exception = new BusinessException(e);
+                LOGGER.error("Failed to load url of: {} -> {}", i + 1, url, e);
+                if (i < Constants.MAX_REPEAT_TIMES - 1) {
+                    PageLoadHelper.WaitTime.Shorter.execute();
+                }
+            }
+        }
+
+        throw exception;
     }
 }

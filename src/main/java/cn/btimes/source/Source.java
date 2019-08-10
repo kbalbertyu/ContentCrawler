@@ -9,16 +9,13 @@ import com.amzass.enums.common.DateFormat;
 import com.amzass.enums.common.Directory;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.sellerhunt.HtmlParser;
-import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.*;
 import com.amzass.utils.common.Exceptions.BusinessException;
-import com.amzass.utils.common.JsoupWrapper.WebRequest;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -140,7 +137,7 @@ public abstract class Source {
     private Document openPage(WebDriver driver, String url) {
         if (this.withoutDriver()) {
             try {
-                return getDocumentByJsoup(url);
+                return cn.btimes.utils.PageUtils.getDocumentByJsoup(url);
             } catch (BusinessException e) {
                 logger.error("Unable to load page via Jsoup, try using WebDriver: {}", url);
             }
@@ -156,23 +153,6 @@ public abstract class Source {
         WaitTime.Normal.execute();
 
         return Jsoup.parse(driver.getPageSource());
-    }
-
-    private Document getDocumentByJsoup(String url) {
-        BusinessException exception = null;
-        for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
-            try {
-                return new WebRequest(url).submit().document;
-            } catch (Exception e) {
-                exception = new BusinessException(e);
-                logger.error("Failed to load url of: {} -> {}", i + 1, url, e.getMessage());
-                if (i < Constants.MAX_REPEAT_TIMES - 1) {
-                    PageLoadHelper.WaitTime.Shorter.execute();
-                }
-            }
-        }
-
-        throw exception;
     }
 
     protected void parseDateTitleSummaryList(List<Article> articles, Elements list) {
