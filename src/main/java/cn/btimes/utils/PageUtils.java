@@ -1,17 +1,21 @@
 package cn.btimes.utils;
 
+import com.amzass.enums.common.Directory;
 import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.JsoupWrapper.WebRequest;
 import com.amzass.utils.common.Tools;
+import org.apache.commons.io.FileUtils;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-11 5:35 AM
@@ -77,5 +81,10 @@ public class PageUtils extends com.amzass.utils.common.PageUtils {
         }
 
         throw exception;
+    }
+
+    public static void savePage(Document doc, String fileName) {
+        File file = FileUtils.getFile(Directory.Tmp.path(), fileName);
+        Tools.writeStringToFile(file, doc.outerHtml());
     }
 }

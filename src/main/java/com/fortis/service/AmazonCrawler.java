@@ -8,6 +8,7 @@ import com.amzass.enums.common.Country;
 import com.amzass.enums.common.Directory;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.common.Exceptions.BusinessException;
+import com.amzass.utils.common.Exceptions.RobotFoundException;
 import com.amzass.utils.common.RegexUtils.Regex;
 import com.amzass.utils.common.Tools;
 import com.fortis.model.AmzHot;
@@ -33,8 +34,8 @@ import java.util.concurrent.CountDownLatch;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019/8/8 9:06
  */
 public class AmazonCrawler implements ServiceExecutorInterface {
-    private static final int MAX_REVIEWS = 100;
-    private static final float MIN_PRICE = 15f;
+    private static final int MAX_REVIEWS = 50;
+    private static final float MIN_PRICE = 12f;
     private static final String LINE_SEPARATOR = "----------------";
     private final Logger logger = LoggerFactory.getLogger(AmazonCrawler.class);
     private static final String[] EXCLUDED_CATEGORIES = {
@@ -44,20 +45,30 @@ public class AmazonCrawler implements ServiceExecutorInterface {
         "Apps & Games",
         "Arts, Crafts & Sewing",
         "Audible Books & Originals",
+        "Automotive",
         "Books",
         "CDs & Vinyl",
+        "Camera & Photo",
+        "Cell Phones & Accessories",
+        "Clothing, Shoes & Jewelry",
         "Collectible Currencies",
+        "Computers & Accessories",
         "Digital Music",
-        "Gift Cards",
+        "Electronics",
+        "Entertainment Collectibles",
         "Grocery & Gourmet Food",
         "Handmade Products",
-        "Industrial & Scientific",
         "Kindle Store",
-        "Magazine Subscriptions",
         "Movies & TV",
-        "Musical Instruments",
+        "Patio, Lawn & Garden",
+        "Prime Pantry",
+        "Toys & Games",
+        "Video Games",
+        "Gift Cards",
         "Software",
-        "Video Games"
+        "Sports Collectibles",
+        "Magazine Subscriptions",
+        "Smart Home"
     };
 
     @Override
@@ -85,6 +96,9 @@ public class AmazonCrawler implements ServiceExecutorInterface {
                     products.put(amzHot, list);
                 } catch (BusinessException e) {
                     logger.error("Unknown exception found in fetching from {}: ", amzHot.name(), e);
+                } catch (RobotFoundException e) {
+                    logger.error("Skip crawling due to captcha detected: ", e);
+                    break;
                 }
             }
         } finally {
@@ -152,16 +166,38 @@ public class AmazonCrawler implements ServiceExecutorInterface {
 
     private Set<Product> crawlFromHotList(Country country, AmzHot amzHot) {
         String url = country.securedBaseUrl() + amzHot.path;
-        Document doc = PageUtils.getDocumentByJsoup(url);
 
-        // Fetch page links of categories
-        Elements rows = doc.select("#zg_browseRoot > ul > li > a");
-        if (rows.size() == 0) {
-            logger.error("Unable to find categories from {} page", amzHot.name());
+        Map<String, String> pageLinks = new HashMap<>();
+        this.fetchPageLinks(url, pageLinks, null);
+
+        if (pageLinks.size() == 0) {
+            logger.error("Unable to find category page links");
             return null;
         }
-        Map<String, String> pageLinks = new HashMap<>();
+        this.fetchSubPageLinks(pageLinks);
+        // Fetch product links from category pages
+        return this.fetchProductsFromCategories(pageLinks);
+    }
+
+    /**
+     * Fetch page links of categories
+     */
+    private void fetchPageLinks(String url, Map<String, String> pageLinks, String parentCategory) {
+        Document doc = PageUtils.getDocumentByJsoup(url);
+        Elements rows = doc.select("#zg_browseRoot ul > li > a");
+        if (rows.size() == 0) {
+            PageUtils.savePage(doc, "html/" + parentCategory + "-" + System.currentTimeMillis() + ".html");
+            logger.error("Unable to find categories from {}", url);
+            if (doc.select("#captchacharacters").size() > 0) {
+                throw new RobotFoundException("Amazon captcha detected.");
+            }
+            return;
+        }
         for (Element row : rows) {
+            if (StringUtils.isNotBlank(parentCategory)) {
+                pageLinks.put(row.attr("href"), parentCategory);
+                continue;
+            }
             String category = row.text().trim();
             if (ArrayUtils.contains(EXCLUDED_CATEGORIES, category)) {
                 logger.warn("Skip category: {}", category);
@@ -169,13 +205,14 @@ public class AmazonCrawler implements ServiceExecutorInterface {
             }
             pageLinks.put(row.attr("href"), category);
         }
+    }
 
-        if (pageLinks.size() == 0) {
-            logger.error("Unable to find category page links");
-            return null;
+    private void fetchSubPageLinks(Map<String, String> pageLinks) {
+        Map<String, String> subPageLinks = new HashMap<>();
+        for (String link : pageLinks.keySet()) {
+            this.fetchPageLinks(link, subPageLinks, pageLinks.get(link));
         }
-        // Fetch product links from category pages
-        return this.fetchProductsFromCategories(pageLinks);
+        pageLinks.putAll(subPageLinks);
     }
 
     private Set<Product> fetchProductsFromCategories(Map<String, String> links) {

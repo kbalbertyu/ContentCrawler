@@ -26,6 +26,8 @@ import java.util.LinkedList;
  */
 public class Common {
 
+    private static final CharSequence DOUBLE_DOT = "..";
+
     public static String toMD5(String text) {
         return DigestUtils.md5Hex(text).toUpperCase();
     }
@@ -65,7 +67,9 @@ public class Common {
             path = sb.toString();
         }
 
-        if (StringUtils.startsWith(url, Constants.FULL_STOP)) {
+        if (StringUtils.startsWith(url, DOUBLE_DOT)) {
+            url = baseUrl + (path.length() == 1 ? "" : path) + Constants.SLASH + url;
+        } else if (StringUtils.startsWith(url, Constants.FULL_STOP)) {
             url = baseUrl + (path.length() == 1 ? "" : path) + StringUtils.substring(url, 1);
         } else if (StringUtils.startsWith(url, Constants.SLASH)) {
             url = baseUrl + url;
