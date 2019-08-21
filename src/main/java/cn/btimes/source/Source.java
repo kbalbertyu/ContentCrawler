@@ -155,6 +155,16 @@ public abstract class Source {
         return Jsoup.parse(driver.getPageSource());
     }
 
+    void parseTitleSummaryList(List<Article> articles, Elements list) {
+        for (Element row : list) {
+            Article article = new Article();
+            this.parseTitle(row, article);
+            this.parseSummary(row, article);
+
+            articles.add(article);
+        }
+    }
+
     protected void parseDateTitleSummaryList(List<Article> articles, Elements list) {
         int i = 0;
         for (Element row : list) {
