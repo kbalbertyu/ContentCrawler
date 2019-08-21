@@ -29,6 +29,7 @@ import java.util.Map;
 public class WebDriverLauncher {
     static final String DOWNLOAD_PATH = System.getProperty("user.dir") + "/downloads";
     private static final boolean USE_HEADLESS_DRIVER = StringUtils.isNotBlank(Tools.getCustomizingValue("USE_HEADLESS_DRIVER"));
+    private static final boolean DISABLE_JS_IMG_ADS = false;
     @Inject private WebDriverManager webDriverManager;
     public static Map<Application, Map<String, String>> adminCookies;
 
@@ -58,6 +59,12 @@ public class WebDriverLauncher {
         HashMap<String, Object> chromePrefs = new HashMap<>();
         chromePrefs.put("profile.default_content_settings.popups", 0);
         chromePrefs.put("download.default_directory", DOWNLOAD_PATH);
+        if (DISABLE_JS_IMG_ADS) {
+            chromePrefs.put("profile.managed_default_content_settings.images", 2);
+            chromePrefs.put("profile.managed_default_content_settings.javascript", 2);
+            chromePrefs.put("profile.managed_default_content_settings.ads", 2);
+        }
+
         ChromeOptions options = new ChromeOptions();
         if (USE_HEADLESS_DRIVER) {
             options.addArguments("--headless");
