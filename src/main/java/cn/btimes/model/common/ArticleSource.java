@@ -44,6 +44,11 @@ public enum ArticleSource {
     Sohu("sohu.com", "搜狐"),
     TechNode("technode.com", "动点科技"),
     STCN("stcn.com", "证券时报网"),
+    ChangJiangTimes("changjiangtimes.com", "长江商报"),
+    BJNews("bjnews.com.cn", "新京报"),
+    TechWeb("techweb.com.cn", "TechWeb"),
+    CaiFuHao("caifuhao.eastmoney.com", "财富号"),
+    EastMoney("finance.eastmoney.com", "东方财富网"),
     Undefined("", "未知来源");
 
     ArticleSource(String domain, String title) {
