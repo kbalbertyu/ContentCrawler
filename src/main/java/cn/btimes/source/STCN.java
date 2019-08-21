@@ -19,6 +19,7 @@ public class STCN extends SourceWithoutDriver {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
+        URLS.put("http://news.stcn.com/", Category.ECONOMY);
         URLS.put("http://company.stcn.com/", Category.COMPANY);
     }
 
