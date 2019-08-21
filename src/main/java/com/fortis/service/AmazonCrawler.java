@@ -2,40 +2,44 @@ package com.fortis.service;
 
 import cn.btimes.model.common.Config;
 import cn.btimes.service.ServiceExecutorInterface;
+import cn.btimes.service.WebDriverLauncher;
 import cn.btimes.utils.Common;
 import cn.btimes.utils.PageUtils;
 import com.amzass.enums.common.Country;
 import com.amzass.enums.common.Directory;
 import com.amzass.service.sellerhunt.HtmlParser;
+import com.amzass.ui.utils.UITools;
+import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.Exceptions.RobotFoundException;
 import com.amzass.utils.common.RegexUtils.Regex;
 import com.amzass.utils.common.Tools;
 import com.fortis.model.AmzHot;
 import com.fortis.model.Product;
+import com.google.inject.Inject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019/8/8 9:06
  */
 public class AmazonCrawler implements ServiceExecutorInterface {
-    private static final int MAX_REVIEWS = 50;
-    private static final float MIN_PRICE = 12f;
+    private static final int MAX_REVIEWS = 150;
+    private static final float MIN_PRICE = 10f;
     private static final String LINE_SEPARATOR = "----------------";
     private final Logger logger = LoggerFactory.getLogger(AmazonCrawler.class);
     private static final String[] EXCLUDED_CATEGORIES = {
@@ -71,6 +75,10 @@ public class AmazonCrawler implements ServiceExecutorInterface {
         "Smart Home"
     };
 
+    @Inject private WebDriverLauncher webDriverLauncher;
+    private WebDriver driver;
+    private Set<String> asins = new HashSet<>();
+
     @Override
     public void execute(Config config) {
         this.crawlFromHotLists();
@@ -81,38 +89,37 @@ public class AmazonCrawler implements ServiceExecutorInterface {
      * Requires: price(>= MIN_PRICE), stars(< MAX_STARS), reviews(< MIN_PRICE)
      */
     private void crawlFromHotLists() {
-        Map<AmzHot, Set<Product>> products = new HashMap<>();
-        try {
-            Country country = Country.US;
-            for (AmzHot amzHot : AmzHot.values()) {
-                logger.info("Crawling from: {}", amzHot.name());
-                try {
-                    Set<Product> list = this.crawlFromHotList(country, amzHot);
-                    if (CollectionUtils.isEmpty(list)) {
-                        logger.warn("No product found from {}", amzHot.name());
-                        continue;
-                    }
-                    logger.info("Found {} products from {}", list.size(), amzHot.name());
-                    products.put(amzHot, list);
-                } catch (BusinessException e) {
-                    logger.error("Unknown exception found in fetching from {}: ", amzHot.name(), e);
-                } catch (RobotFoundException e) {
-                    logger.error("Skip crawling due to captcha detected: ", e);
-                    break;
+        driver = webDriverLauncher.startWithoutLogin(this.getClass().getSimpleName());
+        Country country = Country.US;
+        for (AmzHot amzHot : AmzHot.values()) {
+            Map<AmzHot, Set<Product>> products = new HashMap<>();
+            logger.info("Crawling from: {}", amzHot.name());
+            try {
+                Set<Product> list = this.crawlFromHotList(country, amzHot);
+                if (CollectionUtils.isEmpty(list)) {
+                    logger.warn("No product found from {}", amzHot.name());
+                    continue;
                 }
+                logger.info("Found {} products from {}", list.size(), amzHot.name());
+                products.put(amzHot, list);
+            } catch (BusinessException e) {
+                logger.error("Unknown exception found in fetching from {}: ", amzHot.name(), e);
+            } catch (RobotFoundException e) {
+                logger.error("Skip crawling due to captcha detected: ", e);
+                break;
+            } finally {
+                this.saveLinks(products, amzHot);
             }
-        } finally {
-            this.saveLinks(products);
         }
     }
 
-    private void saveLinks(Map<AmzHot, Set<Product>> products) {
+    private void saveLinks(Map<AmzHot, Set<Product>> products, AmzHot amzHot) {
         if (products.size() == 0) {
             logger.warn("No products found.");
             return;
         }
         String date = DateFormatUtils.format(new Date(), "yyyy-MM-dd-HH-mm");
-        File file = FileUtils.getFile(Directory.Tmp.path(), "amzHot-" + date + ".md");
+        File file = FileUtils.getFile(Directory.Tmp.path(), "amzHot-" + amzHot.name() + "-" + date + ".md");
 
         StringBuilder sb = new StringBuilder();
         for (AmzHot key : products.keySet()) {
@@ -179,19 +186,35 @@ public class AmazonCrawler implements ServiceExecutorInterface {
         return this.fetchProductsFromCategories(pageLinks);
     }
 
+    private Document getDocument(String url) {
+        driver.get(url);
+        WaitTime.Normal.execute();
+        return Jsoup.parse(driver.getPageSource());
+    }
+
     /**
      * Fetch page links of categories
      */
     private void fetchPageLinks(String url, Map<String, String> pageLinks, String parentCategory) {
-        Document doc = PageUtils.getDocumentByJsoup(url);
+        Document doc = this.getDocument(url);
         Elements rows = doc.select("#zg_browseRoot ul > li > a");
         if (rows.size() == 0) {
             PageUtils.savePage(doc, "html/" + parentCategory + "-" + System.currentTimeMillis() + ".html");
             logger.error("Unable to find categories from {}", url);
-            if (doc.select("#captchacharacters").size() > 0) {
-                throw new RobotFoundException("Amazon captcha detected.");
+            if (!UITools.confirmed("Please enter captcha manually.")) {
+                if (doc.select("#captchacharacters").size() > 0) {
+                    throw new RobotFoundException("Amazon captcha detected.");
+                }
+                return;
             }
-            return;
+            doc = this.getDocument(url);
+            rows = doc.select("#zg_browseRoot ul > li > a");
+            if (rows.size() == 0) {
+                if (doc.select("#captchacharacters").size() > 0) {
+                    throw new RobotFoundException("Amazon captcha detected.");
+                }
+                return;
+            }
         }
         for (Element row : rows) {
             if (StringUtils.isNotBlank(parentCategory)) {
@@ -217,6 +240,28 @@ public class AmazonCrawler implements ServiceExecutorInterface {
 
     private Set<Product> fetchProductsFromCategories(Map<String, String> links) {
         Set<Product> products = new HashSet<>();
+        for (String link : links.keySet()) {
+            String category = links.get(link);
+            try {
+                Set<Product> productUrls = crawlFromPage(link);
+                if (CollectionUtils.isEmpty(productUrls)) {
+                    productUrls = crawlFromPage(link);
+                    if (CollectionUtils.isEmpty(productUrls)) {
+                        logger.warn("No product found from link: {}", link);
+                        return null;
+                    }
+                }
+                productUrls.forEach(product -> product.setCategory(category));
+                products.addAll(productUrls);
+            } catch (Exception e) {
+                logger.error("Error occurs in fetching from link {}:", link, e);
+            }
+        }
+        return products;
+    }
+
+    /*private Set<Product> fetchProductsFromCategories(Map<String, String> links) {
+        Set<Product> products = new HashSet<>();
         final CountDownLatch latch = new CountDownLatch(links.size());
         for (String link : links.keySet()) {
             String category = links.get(link);
@@ -226,8 +271,11 @@ public class AmazonCrawler implements ServiceExecutorInterface {
                     try {
                         Set<Product> productUrls = crawlFromPage(link);
                         if (CollectionUtils.isEmpty(productUrls)) {
-                            logger.warn("No product found from link: {}", link);
-                            return null;
+                            productUrls = crawlFromPage(link);
+                            if (CollectionUtils.isEmpty(productUrls)) {
+                                logger.warn("No product found from link: {}", link);
+                                return null;
+                            }
                         }
                         productUrls.forEach(product -> product.setCategory(category));
                         products.addAll(productUrls);
@@ -247,18 +295,18 @@ public class AmazonCrawler implements ServiceExecutorInterface {
             logger.error(Tools.getExceptionMsg(e));
         }
         return products;
-    }
+    }*/
 
     private Set<Product> crawlFromPage(String pageLink) {
         logger.info("Crawling from page 1");
-        Document doc = PageUtils.getDocumentByJsoup(pageLink);
+        Document doc = this.getDocument(pageLink);
 
         Set<Product> urls = this.fetchLinks(doc, pageLink);
         Elements elements = doc.select(".a-pagination > li.a-last > a:contains(Next page)");
         if (elements.size() == 1) {
             logger.info("Crawling from page 2");
             String nextPageUrl = elements.get(0).attr("href");
-            doc = PageUtils.getDocumentByJsoup(nextPageUrl);
+            doc = this.getDocument(nextPageUrl);
             urls.addAll(this.fetchLinks(doc, nextPageUrl));
         } else {
             logger.info("Page 2 not found");
@@ -297,6 +345,14 @@ public class AmazonCrawler implements ServiceExecutorInterface {
                 Product product = new Product();
                 product.setTitle(title);
                 product.setUrl(Common.getAbsoluteUrl(url, pageUrl));
+
+                String asin = product.parseAsin();
+                if (this.asins.contains(asin)) {
+                    continue;
+                } else {
+                    this.asins.add(asin);
+                }
+
                 product.setImage(image);
                 product.setStars(stars);
                 product.setReviews(reviews);
