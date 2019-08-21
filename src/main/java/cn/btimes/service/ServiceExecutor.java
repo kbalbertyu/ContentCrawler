@@ -83,6 +83,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         sources.add(ApplicationContext.getBean(STCN.class));
         sources.add(ApplicationContext.getBean(CNStock.class));
         sources.add(ApplicationContext.getBean(EastMoney.class));
+        sources.add(ApplicationContext.getBean(CaiFuHao.class));
         return sources;
     }
 
