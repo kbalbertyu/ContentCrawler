@@ -1,0 +1,16 @@
+/* product */
+CREATE TABLE IF NOT EXISTS product (
+  asin VARCHAR(12) PRIMARY KEY ON CONFLICT REPLACE NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  url VARCHAR(255) NOT NULL,
+  hot VARCHAR(12) NOT NULL,
+  category VARCHAR(40) NOT NULL,
+  subCategory VARCHAR(40) NULL,
+  image VARCHAR(125) NOT NULL,
+  reviews FLOAT NOT NULL,
+  stars FLOAT NOT NULL,
+  price FLOAT NOT NULL,
+  startDate VARCHAR(10) NOT NULL,
+  modifiedDate VARCHAR(10) NOT NULL,
+  times INT DEFAULT 1
+);
