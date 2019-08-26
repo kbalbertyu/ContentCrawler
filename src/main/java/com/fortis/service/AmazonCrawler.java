@@ -55,6 +55,7 @@ public class AmazonCrawler implements ServiceExecutorInterface {
     private static final String PRODUCT_TABLE = "product";
     private String date = DateFormatUtils.format(new Date(), "yyyy-MM-dd");
     private final Logger logger = LoggerFactory.getLogger(AmazonCrawler.class);
+    private boolean skipBlankTitle = false;
     private static final String[] EXCLUDED_CATEGORIES = {
         "Amazon Devices & Accessories",
         "Amazon Launchpad",
@@ -398,7 +399,17 @@ public class AmazonCrawler implements ServiceExecutorInterface {
                 }
 
                 String url = row.select("a.a-link-normal").first().attr("href");
-                String title = HtmlParser.text(row, ".p13n-sc-truncate");
+                String title = HtmlParser.text(row, ".p13n-sc-truncate", ".p13n-sc-truncated");
+                if (StringUtils.isBlank(title)) {
+                    if (!skipBlankTitle && UITools.confirmed("Title is blank, skip?")) {
+                        skipBlankTitle = true;
+                    }
+                    if (skipBlankTitle) {
+                        logger.warn("Title is blank, skip this product: {}", url);
+                        continue;
+                    }
+                    logger.warn("Title is blank: {}", url);
+                }
                 String image = row.select("img").first().attr("src");
 
                 Product product = new Product();
@@ -460,5 +471,6 @@ public class AmazonCrawler implements ServiceExecutorInterface {
 
     public static void main(String[] args) {
         ApplicationContext.getBean(AmazonCrawler.class).generateFiles();
+        System.exit(0);
     }
 }
