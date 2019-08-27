@@ -23,7 +23,8 @@ public enum Application {
     TagGenerator(ApplicationContext.getBean(cn.btimes.service.TagGenerator.class)),
     YiQiZeng(ApplicationContext.getBean(YiQiZengCrawler.class)),
     RelatedArticle(ApplicationContext.getBean(RelatedArticleHandler.class)),
-    AmazonCrawler(ApplicationContext.getBean(AmazonCrawler.class));
+    AmazonCrawler(ApplicationContext.getBean(AmazonCrawler.class)),
+    RelatedArticleHandler(ApplicationContext.getBean(RelatedArticleHandler.class));
 
     Application(ServiceExecutorInterface executor) {
         this.executor = executor;
