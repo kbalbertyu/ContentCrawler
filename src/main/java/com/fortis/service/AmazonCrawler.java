@@ -13,6 +13,7 @@ import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.ui.utils.UITools;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
+import com.amzass.utils.common.DateHelper;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.Exceptions.RobotFoundException;
 import com.amzass.utils.common.RegexUtils.Regex;
@@ -22,6 +23,7 @@ import com.fortis.model.Link;
 import com.fortis.model.Product;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
+import com.mailman.enums.common.ServiceEnums.DaysInterval;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -53,6 +55,7 @@ public class AmazonCrawler implements ServiceExecutorInterface {
     private static final float MAX_PRICE = 50f;
     private static final String LINE_SEPARATOR = "----------------";
     private static final String PRODUCT_TABLE = "product";
+    private static final boolean AMAZON_GENERATE_FILES_ONLY = StringUtils.isNotBlank(Tools.getCustomizingValue("AMAZON_GENERATE_FILES_ONLY"));
     private String date = DateFormatUtils.format(new Date(), "yyyy-MM-dd");
     private final Logger logger = LoggerFactory.getLogger(AmazonCrawler.class);
     private boolean skipBlankTitle = false;
@@ -95,6 +98,11 @@ public class AmazonCrawler implements ServiceExecutorInterface {
     @Override
     public void execute(Config config) {
         this.initDB();
+        if (AMAZON_GENERATE_FILES_ONLY) {
+            logger.info("Generate amazon files only.");
+            this.generateFiles();
+            return;
+        }
         this.crawlFromHotLists();
     }
 
@@ -138,17 +146,34 @@ public class AmazonCrawler implements ServiceExecutorInterface {
     }
 
     private void generateFiles() {
+        String recordDate = date;
         Cnd cnd = (Cnd) Cnd.NEW()
             .groupBy("category")
-            .having(Cnd.where("modifiedDate", Constants.EQUALS, date));
+            .having(Cnd.where("modifiedDate", Constants.EQUALS, recordDate));
         List<Product> products = dbManager.query(Product.class, cnd);
+        if (products.size() == 0) {
+            logger.warn("No product crawled today.");
+            Date lastDate = DateHelper.daysBefore(DaysInterval.Day);
+            recordDate = DateFormatUtils.format(lastDate, "yyyy-MM-dd");
+            cnd = (Cnd) Cnd.NEW()
+                .groupBy("category")
+                .having(Cnd.where("modifiedDate", Constants.EQUALS, recordDate));
+            products = dbManager.query(Product.class, cnd);
+            if (products.size() == 0) {
+                logger.warn("No product crawled yesterday.");
+            } else {
+                logger.info("Found {} products yesterday.", products.size());
+            }
+        } else {
+            logger.info("Found {} products today.", products.size());
+        }
 
         for (Product product : products) {
-            this.generateFilesByCategory(product.getCategory());
+            this.generateFilesByCategory(product.getCategory(), recordDate);
         }
     }
 
-    private void generateFilesByCategory(String category) {
+    private void generateFilesByCategory(String category, String date) {
         for (AmzHot hot : AmzHot.values()) {
             Cnd cnd = (Cnd) Cnd.NEW()
                 .and("category", Constants.EQUALS, category)
@@ -179,6 +204,9 @@ public class AmazonCrawler implements ServiceExecutorInterface {
             .append(StringUtils.LF);
 
         for (Product product : products) {
+            if (StringUtils.isBlank(product.getTitle())) {
+                continue;
+            }
             sb.append("+ ")
                 .append("[").append(product.getTitle()).append("]")
                 .append("(").append(product.getUrl()).append(")")
