@@ -1,9 +1,6 @@
 package cn.btimes.model.common;
 
-import cn.btimes.service.RelatedArticleHandler;
-import cn.btimes.service.ServiceExecutor;
-import cn.btimes.service.YiQiZengCrawler;
-import cn.btimes.service.ServiceExecutorInterface;
+import cn.btimes.service.*;
 import com.amzass.service.common.ApplicationContext;
 import com.fortis.service.AmazonCrawler;
 import org.apache.commons.lang3.StringUtils;
@@ -24,7 +21,8 @@ public enum Application {
     YiQiZeng(ApplicationContext.getBean(YiQiZengCrawler.class)),
     RelatedArticle(ApplicationContext.getBean(RelatedArticleHandler.class)),
     AmazonCrawler(ApplicationContext.getBean(AmazonCrawler.class)),
-    RelatedArticleHandler(ApplicationContext.getBean(RelatedArticleHandler.class));
+    RelatedArticleHandler(ApplicationContext.getBean(RelatedArticleHandler.class)),
+    DBBackUpHandler(ApplicationContext.getBean(DBBackUpHandler.class));
 
     Application(ServiceExecutorInterface executor) {
         this.executor = executor;
