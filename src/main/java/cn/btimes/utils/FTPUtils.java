@@ -24,9 +24,6 @@ import java.nio.charset.StandardCharsets;
  */
 public class FTPUtils {
     private final Logger logger = LoggerFactory.getLogger(FTPUtils.class);
-    private static final String DB_FILE_NAME = "db.sql.gz";
-    private static final String DB_BACKUP_FILE_NAME = "db_bk.sql.gz";
-    private static final String DOWNLOAD_PATH = "downloads";
     @Inject private FTPClient ftpClient;
 
     public enum DownloadStatus {
@@ -125,7 +122,7 @@ public class FTPUtils {
             if (nowProcess > process) {
                 process = nowProcess;
                 if (process % 10 == 0) {
-                    logger.info("Download progress：" + process);
+                    logger.info("Download progress: " + process);
                 }
             }
         }
@@ -140,17 +137,18 @@ public class FTPUtils {
         }
     }
 
-    public void run() {
+    public void run(String remoteFilePath, String localFilePath) {
         for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
             try {
                 this.connect();
-                this.download(DB_FILE_NAME, DOWNLOAD_PATH + "/" + DB_FILE_NAME);
-                File backFile = FileUtils.getFile(DOWNLOAD_PATH, DB_BACKUP_FILE_NAME);
-                if (backFile.exists()) {
-                    FileUtils.deleteQuietly(backFile);
+                this.download(remoteFilePath, localFilePath);
+
+                File localFile = FileUtils.getFile(localFilePath);
+                File backupFile = FileUtils.getFile(localFile.getParent(), "backup-" + localFile.getName());
+                if (backupFile.exists()) {
+                    FileUtils.deleteQuietly(backupFile);
                 }
-                File file = FileUtils.getFile(DOWNLOAD_PATH, DB_FILE_NAME);
-                FileUtils.moveFile(file, backFile);
+                FileUtils.moveFile(localFile, backupFile);
                 this.disconnect();
                 break;
             } catch (IOException e) {
