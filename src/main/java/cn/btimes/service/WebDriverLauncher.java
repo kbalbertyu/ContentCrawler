@@ -15,6 +15,7 @@ import com.amzass.utils.common.Exceptions.BusinessException;
 import com.amzass.utils.common.PageUtils;
 import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -43,7 +44,26 @@ public class WebDriverLauncher {
     }
 
     public WebDriver startWithoutLogin(String profile) {
-        return this.startDriver(null, false, profile);
+        try {
+            return this.startDriver(null, false, profile);
+        } catch (WebDriverException e) {
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "cannot parse internal JSON template")) {
+                logger.error("Unable to launch Chrome due to error: {}", e.getMessage(), e);
+                deleteLocalProfileFile(profile);
+                logger.info("Deleted local profile files and retry launching Chrome.");
+                return this.startDriver(null, false, profile);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private static void deleteLocalProfileFile(String profile) {
+        File localState = FileUtils.getFile("Profile", profile, "Local State");
+        FileUtils.deleteQuietly(localState);
+
+        File preferences = FileUtils.getFile("Profile", profile, "Preferences");
+        FileUtils.deleteQuietly(preferences);
     }
 
     private WebDriver startDriver(Config config, boolean login, String profile) {
