@@ -91,8 +91,8 @@ public class SogouLinksUploader extends AbstractLinksUploader {
 
         String body = driver.getPageSource();
         if (StringUtils.contains(body, "success")) {
-            logger.info("{} links uploaded successfully", siteType.name());
-            urls.forEach(url -> dbManager.save(new ActionLog(urlId(url, URL_ID_PREFIX)), ActionLog.class));
+            logger.info("{} links uploaded to {} successfully", urlsForUpload.size(), siteType.name());
+            urlsForUpload.forEach(url -> dbManager.save(new ActionLog(urlId(url, URL_ID_PREFIX)), ActionLog.class));
         } else {
             logger.error("Unable to upload the {} links", siteType.name());
         }
