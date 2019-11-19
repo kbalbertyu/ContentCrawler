@@ -9,6 +9,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/24/2018 5:35 AM
  */
@@ -22,19 +24,20 @@ public class ContentCrawler {
         }
         LOGGER.info("Start crawling contents.");
         long totalStart = System.currentTimeMillis();
-        String appName = args.length > 0 ? args[0] : null;
-        Application application = Application.determineApplication(appName);
+        List<Application> applicationList = Application.determineApplications(args);
 
-        LOGGER.info("Running application: {}", application.name());
-        Config config = Common.loadApplicationConfig(application);
-        try {
-            application.executor.execute(config);
-        } catch (Exception e) {
-            LOGGER.error("Unknown error found: ", e);
-        } finally {
-            LOGGER.info("Total execute time: {}", Tools.formatCostTime(totalStart));
-            ProcessCleaner.cleanWebDriver();
-            System.exit(0);
+        for (Application application : applicationList) {
+            LOGGER.info("Running application: {}", application.name());
+            Config config = Common.loadApplicationConfig(application);
+            try {
+                application.executor.execute(config);
+            } catch (Exception e) {
+                LOGGER.error("Unknown error found: ", e);
+            } finally {
+                LOGGER.info("Total execute time: {}", Tools.formatCostTime(totalStart));
+                ProcessCleaner.cleanWebDriver();
+            }
         }
+        System.exit(0);
     }
 }

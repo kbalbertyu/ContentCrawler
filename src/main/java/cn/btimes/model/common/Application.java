@@ -8,6 +8,9 @@ import cn.btimes.service.upload.BaiduLinksUploader;
 import cn.btimes.service.upload.ShenmaLinksUploader;
 import cn.btimes.service.upload.SogouLinksUploader;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-07-12 10:36 AM
  */
@@ -41,4 +44,18 @@ public enum Application {
     }
 
     public ServiceExecutorInterface executor;
+
+    public static List<Application> determineApplications(String[] args) {
+        List<Application> applications = new ArrayList<>();
+        if (args == null || args.length == 0) {
+            Application application = determineApplication(null);
+            applications.add(application);
+        } else {
+            for (String appName : args) {
+                Application application = determineApplication(appName);
+                applications.add(application);
+            }
+        }
+        return applications;
+    }
 }
