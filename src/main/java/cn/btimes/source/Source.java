@@ -108,7 +108,7 @@ public abstract class Source {
         this.parseContent(doc, article);
     }
 
-    void readTitleContent(WebDriver driver, Article article) {
+    protected void readTitleContent(WebDriver driver, Article article) {
         Document doc = this.openArticlePage(driver, article);
 
         this.parseTitle(doc, article);
@@ -437,7 +437,7 @@ public abstract class Source {
             if (StringUtils.containsIgnoreCase(src, "data:image") || StringUtils.containsIgnoreCase(src, "base64")) {
                 continue;
             }
-            contentImages.add(src);
+            contentImages.add(Common.getAbsoluteUrl(src, article.getUrl()));
         }
         article.setContentImages(contentImages);
     }
