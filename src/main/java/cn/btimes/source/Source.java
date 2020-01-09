@@ -238,7 +238,7 @@ public abstract class Source {
         this.fetchContentImages(article, contentElm);
     }
 
-    private void initContext(Config config) {
+    void initContext(Config config) {
         this.adminCookie = WebDriverLauncher.adminCookies.get(config.getApplication());
         this.config = config;
     }
@@ -317,7 +317,7 @@ public abstract class Source {
         }
     }
 
-    private void saveArticle(Article article, WebDriver driver) {
+    void saveArticle(Article article, WebDriver driver) {
         article.validate();
         if (article.hasImages()) {
             ImageUploadResult result = this.uploadImages(article, driver);
