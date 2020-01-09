@@ -77,8 +77,12 @@ public class WeChat extends Source {
                     logger.info("Article saved already: {} -> {}", news.getTitle(), news.getUrl());
                     continue;
                 }
-                this.saveNews(news, item.getUpdateTime());
-                dbManager.save(new ActionLog(logId), ActionLog.class);
+                try {
+                    this.saveNews(news, item.getUpdateTime());
+                    dbManager.save(new ActionLog(logId), ActionLog.class);
+                } catch (BusinessException e) {
+                    logger.error("Unable to save article: {} -> {}", news.getTitle(), news.getUrl(), e);
+                }
             }
         }
     }
