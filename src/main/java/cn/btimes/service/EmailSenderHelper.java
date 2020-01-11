@@ -37,7 +37,7 @@ public class EmailSenderHelper extends ServiceEmailHelper {
         return account;
     }
 
-    void send(String title, String content, String... receiverEMail) {
+    public void send(String title, String content, String... receiverEMail) {
         this.send(title, content, EmailContentType.Html, new Destination().withToAddresses(receiverEMail));
     }
 

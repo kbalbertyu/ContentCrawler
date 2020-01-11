@@ -5,6 +5,7 @@ import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import cn.btimes.model.common.Config;
 import cn.btimes.model.wechat.*;
+import cn.btimes.service.EmailSenderHelper;
 import cn.btimes.utils.Common;
 import cn.btimes.utils.Tools;
 import com.alibaba.fastjson.JSON;
@@ -48,6 +49,7 @@ public class WeChat extends Source {
     private AppConfig wechat;
     private WebDriver driver;
     @Inject private DBManager dbManager;
+    @Inject private EmailSenderHelper emailSenderHelper;
 
     @Override
     public void execute(WebDriver driver, Config config) {
@@ -56,9 +58,16 @@ public class WeChat extends Source {
             this.driver = driver;
             this.loadConfig();
             if (wechat.tokenExpired()) {
+                logger.info("WeChat token expired, request the token.");
                 this.requestToken();
             }
+            logger.info("Fetching WeChat articles.");
             MaterialResult result = this.fetchArticles();
+            logger.info("WeChat articles result: Items={}, Total={}", result.getItemCount(), result.getTotalCount());
+            if (result.getTotalCount() == 0 || result.getItemCount() == 0) {
+                logger.error("WeChat articles not fetched.");
+                return;
+            }
             this.saveArticles(result);
         } catch (BusinessException e) {
             logger.error("Wechat crawler is interrupted", e);
@@ -138,7 +147,14 @@ public class WeChat extends Source {
                 .ignoreContentType(true)
                 .execute().body();
 
+            logger.info("Token result: {}", body);
             Token token = JSON.parseObject(body, Token.class);
+            if (token.invalid()) {
+                String message = String.format("Unable to request the token: %s", token.getErrmsg());
+                this.emailSenderHelper.send("[%s]WeChat token request failed", config.getApplication().name(),
+                    message, config.getDeveloperEmail(), config.getRecipient());
+                throw new BusinessException(message);
+            }
             wechat.updateToken(token);
             File file = FileUtils.getFile(Directory.Customize.path(), WECHAT_CONFIG_FILE);
             Tools.writeStringToFile(file, JSON.toJSONString(wechat));
