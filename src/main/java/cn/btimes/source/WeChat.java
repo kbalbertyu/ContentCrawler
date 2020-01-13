@@ -4,35 +4,25 @@ import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import cn.btimes.model.common.Config;
-import cn.btimes.model.wechat.*;
-import cn.btimes.service.EmailSenderHelper;
+import cn.btimes.model.wechat.Content;
+import cn.btimes.model.wechat.Item;
+import cn.btimes.model.wechat.MaterialResult;
+import cn.btimes.model.wechat.News;
+import cn.btimes.service.ApiRequest;
 import cn.btimes.utils.Common;
-import cn.btimes.utils.Tools;
 import com.alibaba.fastjson.JSON;
-import com.amzass.enums.common.Directory;
 import com.amzass.model.common.ActionLog;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
-import org.apache.commons.io.FileUtils;
+import com.mailman.model.common.WebApiResult;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
-import org.jsoup.Connection.Method;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -42,25 +32,16 @@ import java.util.Map;
  */
 public class WeChat extends Source {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static final String WECHAT_CONFIG_FILE = "wechat.json";
-    private static final String WECHAT_API_ENDPOINT = "https://api.weixin.qq.com/cgi-bin";
-    private static final String WECHAT_TOKEN_PATH = "%s/token?grant_type=client_credential&appid=%s&secret=%s";
-    private static final String WECHAT_ARTICLE_LIST_PATH = "%s/material/batchget_material?access_token=%s";
-    private AppConfig wechat;
     private WebDriver driver;
     @Inject private DBManager dbManager;
-    @Inject private EmailSenderHelper emailSenderHelper;
+    @Inject private ApiRequest apiRequest;
 
     @Override
     public void execute(WebDriver driver, Config config) {
         try {
             this.initContext(config);
             this.driver = driver;
-            this.loadConfig();
-            if (wechat.tokenExpired()) {
-                logger.info("WeChat token expired, request the token.");
-                this.requestToken();
-            }
+
             logger.info("Fetching WeChat articles.");
             MaterialResult result = this.fetchArticles();
             logger.info("WeChat articles result: Items={}, Total={}", result.getItemCount(), result.getTotalCount());
@@ -111,60 +92,12 @@ public class WeChat extends Source {
     }
 
     private MaterialResult fetchArticles() {
-        String url = String.format(WECHAT_ARTICLE_LIST_PATH, WECHAT_API_ENDPOINT, wechat.getToken());
-        String data = "{\"type\":\"news\", \"offset\":0, \"count\":20}";
-        String body = sendHttpPost(url, data);
-        return JSON.parseObject(body, MaterialResult.class);
-    }
-
-    private static String sendHttpPost(String url, String body) {
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.addHeader("Content-Type", "application/json");
-        try {
-            httpPost.setEntity(new StringEntity(body));
-        } catch (UnsupportedEncodingException e) {
-            throw new BusinessException(e);
+        WebApiResult result = apiRequest.get("/article/fetchWeChatArticles", config);
+        if (result == null || StringUtils.isBlank(result.getData())) {
+            throw new BusinessException("Unable to fetch WeChat articles.");
         }
-        try {
-            CloseableHttpResponse response = httpClient.execute(httpPost);
-            HttpEntity entity = response.getEntity();
-            String responseContent = EntityUtils.toString(entity, "UTF-8");
-            response.close();
-            httpClient.close();
-            return responseContent;
-        } catch (IOException e) {
-            throw new BusinessException(e);
-        }
-    }
 
-    private void requestToken() {
-        String url = String.format(WECHAT_TOKEN_PATH, WECHAT_API_ENDPOINT, wechat.getAppId(), wechat.getAppSecret());
-        try {
-            String body = Jsoup.connect(url).method(Method.POST)
-                .ignoreContentType(true)
-                .execute().body();
-
-            logger.info("Token result: {}", body);
-            Token token = JSON.parseObject(body, Token.class);
-            if (token.invalid()) {
-                String message = String.format("Unable to request the token: %s", token.getErrmsg());
-                this.emailSenderHelper.send("[%s]WeChat token request failed", config.getApplication().name(),
-                    message, config.getDeveloperEmail(), config.getRecipient());
-                throw new BusinessException(message);
-            }
-            wechat.updateToken(token);
-            File file = FileUtils.getFile(Directory.Customize.path(), WECHAT_CONFIG_FILE);
-            Tools.writeStringToFile(file, JSON.toJSONString(wechat));
-        } catch (IOException e) {
-            logger.error("Unable to request to the token:", e);
-            throw new BusinessException(e);
-        }
-    }
-
-    private void loadConfig() {
-        String content = Tools.readFileToString(FileUtils.getFile(Directory.Customize.path(), WECHAT_CONFIG_FILE));
-        this.wechat = JSON.parseObject(content, AppConfig.class);
+        return JSON.parseObject(result.getData(), MaterialResult.class);
     }
 
     @Override
