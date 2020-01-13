@@ -87,7 +87,7 @@ public class WeChat extends Source {
                     continue;
                 }
                 try {
-                    this.saveNews(news, item.getUpdateTime());
+                    this.saveNews(news);
                     dbManager.save(new ActionLog(logId), ActionLog.class);
                 } catch (BusinessException e) {
                     logger.error("Unable to save article: {} -> {}", news.getTitle(), news.getUrl(), e);
@@ -96,15 +96,13 @@ public class WeChat extends Source {
         }
     }
 
-    private void saveNews(News news, long updateTime) {
+    private void saveNews(News news) {
         Article article = new Article();
         article.setCategory(Category.General);
         article.setTitle(news.getTitle());
         article.setSummary(news.getDigest());
         article.setUrl(news.getUrl());
-        Date date = new Date();
-        date.setTime(updateTime * 1000);
-        article.setDate(date);
+        article.setDate(new Date());
         String content = StringUtils.replace(news.getContent(), "data-src", "src");
         article.setContent(content);
         Document doc = Jsoup.parse(content);
