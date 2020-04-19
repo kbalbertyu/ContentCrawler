@@ -350,7 +350,7 @@ public abstract class Source {
             .data("ar_tag", "")
             .data("ar_topic", "")
             .data("ar_related", "")
-            .data("arDate", (new SimpleDateFormat("MM/dd/YYYY HH:mm")).format(article.getDate()))
+            .data("arDate", (new SimpleDateFormat("MM/dd/YYYY HH:mm")).format(new Date()))
             .data("ar_reporter", "")
             .data("ar_reporter_email", "")
             .data("ar_originlink", article.getUrl())
