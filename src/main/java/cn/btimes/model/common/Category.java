@@ -18,6 +18,19 @@ public enum Category {
     FUTURE_INDUSTRIES(68, "未来产业"),
     /**  For Kpopstarz.cn **/
     General(1, "新闻"),
+    /**
+     * For Btimes.jp
+     **/
+    GENERAL_JP(3, "総合"),
+    FINANCE_JP(4, "財経"),
+    SOCIETY_JP(5, "社会"),
+    INTL_SCIENCE_JP(6, "国際・科学"),
+    VIDEO_JP(7, "動画"),
+    GENERAL_CN(8, "综合"),
+    FINANCE_CN(9, "财经"),
+    SOCIETY_CN(10, "社会"),
+    INTL_SCIENCE_CN(11, "国际与科学"),
+    VIDEO_CN(12, "视频"),
     /** Undetermined category **/
     BLANK(0, "");
 

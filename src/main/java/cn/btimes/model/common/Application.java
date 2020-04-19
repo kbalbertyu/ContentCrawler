@@ -16,6 +16,7 @@ import java.util.List;
  */
 public enum Application {
     BTimes(ApplicationContext.getBean(ServiceExecutor.class)),
+    BTimesJP(ApplicationContext.getBean(jp.btimes.service.ServiceExecutor.class)),
     Kpopstarz(ApplicationContext.getBean(cn.kpopstarz.service.ServiceExecutor.class)),
     BaiduLinksUploader(ApplicationContext.getBean(BaiduLinksUploader.class)),
     ShenmaLinksUploader(ApplicationContext.getBean(ShenmaLinksUploader.class)),
