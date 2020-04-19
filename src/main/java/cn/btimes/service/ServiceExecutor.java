@@ -20,12 +20,10 @@ import com.mailman.model.common.WebApiResult;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.openqa.selenium.By;
-import org.openqa.selenium.TimeoutException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,6 +92,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         messengers.clear();
         this.statistic(config);
         this.deleteOldArticleLogs();
+        this.deleteTmpFiles();
         this.deleteDownloadedFiles();
         this.syncSavedArticles(config);
         WebDriver driver = webDriverLauncher.start(config);
@@ -107,7 +106,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
             for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
                 try {
                     source.execute(driver, config);
-                } catch (TimeoutException e) {
+                } catch (WebDriverException e) {
                     logger.error("Connection timeout, restart WebDriver and retry fetching: {}", sourceName);
                     ProcessCleaner.cleanWebDriver();
                     driver = webDriverLauncher.start(config);
@@ -126,6 +125,20 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         if (this.messengers.isNotEmpty()) {
             this.sendErrorMessage(config);
         }
+    }
+
+    private void deleteTmpFiles() {
+        String logId = String.format("Delete_Tmp_Files_%s", DateFormatUtils.format(new Date(), "yyyyMMdd"));
+        ActionLog log = dbManager.readById(logId, ActionLog.class);
+        if (log != null) {
+            return;
+        }
+        File path = FileUtils.getFile(SystemUtils.getUserHome(), "AppData", "Local", "Temp");
+        for (File file : path.listFiles()) {
+            FileUtils.deleteQuietly(file);
+        }
+        dbManager.save(new ActionLog(logId), ActionLog.class);
+        logger.info("Temp directory is cleaned: {}", path.getAbsolutePath());
     }
 
     private void updateArticles(Config config, WebDriver driver) {
