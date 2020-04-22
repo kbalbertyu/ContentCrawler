@@ -18,6 +18,7 @@ public class Kanaloco extends Source {
 
     static {
         URLS.put("https://www.kanaloco.jp/news/economy/", Category.FINANCE_JP);
+        URLS.put("https://www.kanaloco.jp/news/government/", Category.SOCIETY_JP);
         URLS.put("https://www.kanaloco.jp/news/international/", Category.INTL_SCIENCE_JP);
         URLS.put("https://www.kanaloco.jp/sports/", Category.GENERAL_JP);
     }
