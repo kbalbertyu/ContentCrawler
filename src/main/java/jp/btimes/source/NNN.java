@@ -19,8 +19,11 @@ public class NNN extends Source {
     static {
         URLS.put("https://www.nnn.co.jp/knews/economics.html", Category.FINANCE_JP);
         URLS.put("https://www.nnn.co.jp/knews/national.html", Category.SOCIETY_JP);
+        URLS.put("https://www.nnn.co.jp/knews/politics.html", Category.SOCIETY_JP);
         URLS.put("https://www.nnn.co.jp/knews/world.html", Category.INTL_SCIENCE_JP);
+        URLS.put("https://www.nnn.co.jp/knews/science.html", Category.INTL_SCIENCE_JP);
         URLS.put("https://www.nnn.co.jp/knews/sports.html", Category.GENERAL_JP);
+        URLS.put("https://www.nnn.co.jp/knews/culture.html", Category.GENERAL_JP);
     }
 
     @Override
