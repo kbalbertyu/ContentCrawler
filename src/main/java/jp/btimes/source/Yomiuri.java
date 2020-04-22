@@ -18,7 +18,9 @@ public class Yomiuri extends Source {
 
     static {
         URLS.put("https://www.yomiuri.co.jp/economy/", Category.FINANCE_JP);
+        URLS.put("https://www.yomiuri.co.jp/politics/", Category.SOCIETY_JP);
         URLS.put("https://www.yomiuri.co.jp/world/", Category.INTL_SCIENCE_JP);
+        URLS.put("https://www.yomiuri.co.jp/olympic/2020/news/", Category.INTL_SCIENCE_JP);
     }
 
     @Override
