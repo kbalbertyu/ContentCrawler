@@ -24,6 +24,8 @@ public class TokyoNp extends Source {
         URLS.put("https://www.tokyo-np.co.jp/article/national/list/", Category.SOCIETY_JP);
         URLS.put("https://www.tokyo-np.co.jp/s/article/culture.html", Category.SOCIETY_JP);
         URLS.put("https://www.tokyo-np.co.jp/article/national/obituaries/index.html", Category.SOCIETY_JP);
+        URLS.put("https://www.tokyo-np.co.jp/s/article/politics.html", Category.SOCIETY_JP);
+        URLS.put("https://www.tokyo-np.co.jp/article/politics/list/", Category.SOCIETY_JP);
         URLS.put("https://www.tokyo-np.co.jp/s/article/world.html", Category.INTL_SCIENCE_JP);
         URLS.put("https://www.tokyo-np.co.jp/article/world/list/", Category.INTL_SCIENCE_JP);
         URLS.put("https://www.tokyo-np.co.jp/s/article/sports.html", Category.GENERAL_JP);
