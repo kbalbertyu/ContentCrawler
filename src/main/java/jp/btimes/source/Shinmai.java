@@ -19,6 +19,7 @@ public class Shinmai extends Source {
     static {
         URLS.put("https://www.shinmai.co.jp/news/nagano/web_keizai_list.html", Category.FINANCE_JP);
         URLS.put("https://www.shinmai.co.jp/news/nagano/web_shakai_list.html", Category.SOCIETY_JP);
+        URLS.put("https://www.shinmai.co.jp/news/nagano/web_seiji_list.html", Category.SOCIETY_JP);
         URLS.put("https://www.shinmai.co.jp/news/nagano/web_sports_list.html", Category.GENERAL_JP);
     }
 
