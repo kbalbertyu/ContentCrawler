@@ -19,6 +19,7 @@ public class Hokkoku extends Source {
     static {
         URLS.put("https://www.hokkoku.co.jp/index.php?genre=keizai", Category.FINANCE_JP);
         URLS.put("https://www.hokkoku.co.jp/index.php?genre=syakai", Category.SOCIETY_JP);
+        URLS.put("https://www.hokkoku.co.jp/index.php?genre=seiji", Category.SOCIETY_JP);
         URLS.put("https://www.hokkoku.co.jp/index.php?genre=kokusai", Category.INTL_SCIENCE_JP);
         URLS.put("https://www.hokkoku.co.jp/index.php?genre=sports", Category.GENERAL_JP);
     }
