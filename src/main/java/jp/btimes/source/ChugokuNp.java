@@ -18,6 +18,7 @@ public class ChugokuNp extends Source {
 
     static {
         URLS.put("https://www.chugoku-np.co.jp/localeco/article/?category_id=113&page=1", Category.FINANCE_JP);
+        URLS.put("https://www.chugoku-np.co.jp/news/article/?category_id=26&page=1", Category.GENERAL_JP);
     }
 
     @Override
