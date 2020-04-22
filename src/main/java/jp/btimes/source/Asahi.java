@@ -19,8 +19,11 @@ public class Asahi extends Source {
     static {
         URLS.put("http://www.asahi.com/business/list/", Category.FINANCE_JP);
         URLS.put("https://www.asahi.com/national/list/", Category.SOCIETY_JP);
+        URLS.put("https://www.asahi.com/politics/list/", Category.SOCIETY_JP);
         URLS.put("http://www.asahi.com/international/list/", Category.INTL_SCIENCE_JP);
         URLS.put("http://www.asahi.com/tech_science/list/", Category.INTL_SCIENCE_JP);
+        URLS.put("http://www.asahi.com/apital/medicalnews/list.html?iref=com_api_med_medicalnewstop", Category.INTL_SCIENCE_JP);
+        URLS.put("http://www.asahi.com/culture/list/?iref=com_cultop_all_list", Category.GENERAL_JP);
     }
 
     @Override
