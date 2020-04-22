@@ -19,7 +19,9 @@ public class Mainichi extends Source {
     static {
         URLS.put("https://mainichi.jp/biz/", Category.FINANCE_JP);
         URLS.put("https://mainichi.jp/shakai/", Category.SOCIETY_JP);
+        URLS.put("https://mainichi.jp/seiji/", Category.SOCIETY_JP);
         URLS.put("https://mainichi.jp/world/", Category.INTL_SCIENCE_JP);
+        URLS.put("https://mainichi.jp/opinion/", Category.INTL_SCIENCE_JP);
     }
 
     @Override
