@@ -19,6 +19,7 @@ public class Chunichi extends Source {
     static {
         URLS.put("https://www.chunichi.co.jp/s/article/economics.html", Category.FINANCE_JP);
         URLS.put("https://www.chunichi.co.jp/s/article/national.html", Category.SOCIETY_JP);
+        URLS.put("https://www.chunichi.co.jp/s/article/politics.html", Category.SOCIETY_JP);
         URLS.put("https://www.chunichi.co.jp/s/article/world.html", Category.INTL_SCIENCE_JP);
         URLS.put("https://www.chunichi.co.jp/s/article/sports.html", Category.GENERAL_JP);
     }
