@@ -18,6 +18,7 @@ public class Agrinews extends Source {
 
     static {
         URLS.put("https://www.agrinews.co.jp/tag_index?tag_id=14", Category.FINANCE_JP);
+        URLS.put("https://www.agrinews.co.jp/tag_index?tag_id=11", Category.SOCIETY_JP);
     }
 
     @Override
