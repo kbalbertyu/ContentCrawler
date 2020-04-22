@@ -18,6 +18,7 @@ public class Sankei extends Source {
 
     static {
         URLS.put("https://www.sankei.com/affairs/affairs.html", Category.SOCIETY_JP);
+        URLS.put("https://www.sankei.com/life/newslist/science-n1.html", Category.INTL_SCIENCE_JP);
         URLS.put("https://news.yahoo.co.jp/categories/sports", Category.GENERAL_JP);
     }
 
