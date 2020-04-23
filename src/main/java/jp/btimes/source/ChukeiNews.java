@@ -30,6 +30,7 @@ public class ChukeiNews extends Source {
         URLS.put("https://www.chukei-news.co.jp/news/area/d005/", Category.GENERAL_JP);
         URLS.put("https://www.chukei-news.co.jp/news/area/d006/", Category.GENERAL_JP);
         URLS.put("https://www.chukei-news.co.jp/news/area/d007/", Category.GENERAL_JP);
+        URLS.put("https://www.chukei-news.co.jp/news/industry/c000/", Category.GENERAL_JP);
     }
 
     @Override
