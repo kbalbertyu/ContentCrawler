@@ -18,6 +18,7 @@ public class JomoNews extends Source {
 
     static {
         URLS.put("https://www.jomo-news.co.jp/sports", Category.GENERAL_JP);
+        URLS.put("https://www.jomo-news.co.jp/life", Category.GENERAL_JP);
     }
 
     @Override
