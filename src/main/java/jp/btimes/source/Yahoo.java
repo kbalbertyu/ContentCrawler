@@ -20,6 +20,8 @@ public class Yahoo extends Source {
         URLS.put("https://news.yahoo.co.jp/categories/business", Category.FINANCE_JP);
         URLS.put("https://news.yahoo.co.jp/categories/life", Category.SOCIETY_JP);
         URLS.put("https://news.yahoo.co.jp/categories/world", Category.INTL_SCIENCE_JP);
+        URLS.put("https://news.yahoo.co.jp/categories/it", Category.INTL_SCIENCE_JP);
+        URLS.put("https://news.yahoo.co.jp/categories/science", Category.INTL_SCIENCE_JP);
         URLS.put("https://news.yahoo.co.jp/categories/sportss", Category.GENERAL_JP);
     }
 
