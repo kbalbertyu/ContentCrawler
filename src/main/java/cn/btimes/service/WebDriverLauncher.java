@@ -40,7 +40,7 @@ public class WebDriverLauncher {
     public static Map<Application, Map<String, String>> adminCookies;
 
     public WebDriver start(Config config) {
-        return this.startDriver(config, true, null);
+        return this.startDriver(config, true, config.getApplication().name());
     }
 
     public WebDriver startWithoutLogin(String profile) {
