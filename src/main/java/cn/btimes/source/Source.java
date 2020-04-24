@@ -506,7 +506,7 @@ public abstract class Source {
         }
     }
 
-    Date parseDateTextWithDay(String timeText, String regex, String dateFormat, int maxPastDays) {
+    protected Date parseDateTextWithDay(String timeText, String regex, String dateFormat, int maxPastDays) {
         try {
             timeText = RegexUtils.getMatched(timeText, regex);
             Date date = DateUtils.parseDate(timeText, Locale.PRC, dateFormat);
