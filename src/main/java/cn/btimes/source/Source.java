@@ -477,19 +477,7 @@ public abstract class Source {
         String timeTextClean = RegexUtils.getMatched(timeText, regex);
         try {
             Date date = DateUtils.parseDate(timeTextClean, Locale.PRC, dateFormat);
-
-            // If dateFormat without year, set as current year
-            if (DateFormat.YEAR.format(date).equals(WITHOUT_YEAR)) {
-                int year = Calendar.getInstance().get(Calendar.YEAR);
-                date = DateUtils.setYears(date, year);
-            }
-            // If dateFormat without month and day, set today
-            if (StringUtils.equals(DateFormat.FULL_MONTH_DAY.format(date), WITHOUT_MONTH_DAY)) {
-                int month = Calendar.getInstance().get(Calendar.MONTH);
-                int day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
-                date = DateUtils.setMonths(date, month);
-                date = DateUtils.setDays(date, day);
-            }
+            date = this.fixDate(date);
 
             this.checkDate(date);
             return date;
@@ -498,6 +486,22 @@ public abstract class Source {
         } catch (PastDateException e) {
             throw new PastDateException(String.format("Time has past limit: %s -> %s.", timeText, timeTextClean));
         }
+    }
+
+    private Date fixDate(Date date) {
+        // If dateFormat without year, set as current year
+        if (DateFormat.YEAR.format(date).equals(WITHOUT_YEAR)) {
+            int year = Calendar.getInstance().get(Calendar.YEAR);
+            date = DateUtils.setYears(date, year);
+        }
+        // If dateFormat without month and day, set today
+        if (StringUtils.equals(DateFormat.FULL_MONTH_DAY.format(date), WITHOUT_MONTH_DAY)) {
+            int month = Calendar.getInstance().get(Calendar.MONTH);
+            int day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
+            date = DateUtils.setMonths(date, month);
+            date = DateUtils.setDays(date, day);
+        }
+        return date;
     }
 
     void checkDate(Date date) {
@@ -510,7 +514,7 @@ public abstract class Source {
         try {
             timeText = RegexUtils.getMatched(timeText, regex);
             Date date = DateUtils.parseDate(timeText, Locale.PRC, dateFormat);
-
+            date = this.fixDate(date);
             if (Days.daysBetween(new DateTime(date), DateTime.now()).getDays() > maxPastDays) {
                 throw new PastDateException();
             }
