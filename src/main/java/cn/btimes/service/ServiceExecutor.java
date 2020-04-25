@@ -88,13 +88,17 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         return sources;
     }
 
-    public void execute(Config config) {
-        messengers.clear();
+    private void preExecute(Config config) {
         this.statistic(config);
         this.deleteOldArticleLogs();
         this.deleteTmpFiles();
         this.deleteDownloadedFiles();
         this.syncSavedArticles(config);
+    }
+
+    public void execute(Config config) {
+        messengers.clear();
+        this.preExecute(config);
         WebDriver driver = webDriverLauncher.start(config);
         for (Source source : this.getSources()) {
             String sourceName = StringUtils.substringAfterLast(source.getClass().getName(), ".");
