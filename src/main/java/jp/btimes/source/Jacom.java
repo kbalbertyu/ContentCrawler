@@ -4,16 +4,16 @@ import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2020/4/23 0:23
  */
 public class Jacom extends Source {
+    private static final int MAX_PAST_DAYS = 1;
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -28,31 +28,40 @@ public class Jacom extends Source {
 
     @Override
     protected String getDateRegex() {
-        return null;
+        return "\\d{4}.\\d{1,2}.\\d{1,2}";
     }
 
     @Override
     protected String getDateFormat() {
-        return null;
+        return "yyyy.MM.dd";
     }
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return null;
+        return new CSSQuery("#listArea > dl > dd", "#detailCts", "a", ".contentTitleLv3 > p",
+            "", "h2.contentTitleLv2");
     }
 
     @Override
     protected int getSourceId() {
-        return 0;
+        return 19;
     }
 
     @Override
     protected List<Article> parseList(Document doc) {
-        return null;
+        List<Article> articles = new ArrayList<>();
+        Elements list = this.readList(doc);
+        this.parseTitleList(articles, list);
+        return articles;
     }
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
+        this.readDateSummaryContent(driver, article);
+    }
 
+    @Override
+    protected Date parseDateText(String timeText) {
+        return this.parseDateTextWithDay(timeText, this.getDateRegex(), this.getDateFormat(), MAX_PAST_DAYS);
     }
 }
