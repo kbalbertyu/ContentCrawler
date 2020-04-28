@@ -186,6 +186,14 @@ public abstract class Source {
         }
     }
 
+    protected void parseTitleList(List<Article> articles, Elements list) {
+        for (Element row : list) {
+            Article article = new Article();
+            this.parseTitle(row, article);
+            articles.add(article);
+        }
+    }
+
     protected void parseDateTitleList(List<Article> articles, Elements list) {
         int i = 0;
         for (Element row : list) {
