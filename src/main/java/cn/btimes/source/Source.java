@@ -93,7 +93,7 @@ public abstract class Source {
         this.parseContent(doc, article);
     }
 
-    void readDateSummaryContent(WebDriver driver, Article article) {
+    protected void readDateSummaryContent(WebDriver driver, Article article) {
         Document doc = this.openArticlePage(driver, article);
 
         this.parseDate(doc, article);
@@ -438,6 +438,7 @@ public abstract class Source {
     }
 
     void fetchContentImages(Article article, Element contentElm) {
+        String content = article.getContent();
         Elements images = contentElm.select("img");
         List<String> contentImages = new ArrayList<>();
         for (Element image : images) {
@@ -445,8 +446,11 @@ public abstract class Source {
             if (StringUtils.containsIgnoreCase(src, "data:image") || StringUtils.containsIgnoreCase(src, "base64")) {
                 continue;
             }
-            contentImages.add(Common.getAbsoluteUrl(src, article.getUrl()));
+            String absSrc = Common.getAbsoluteUrl(src, article.getUrl());
+            content = StringUtils.replace(content, src, absSrc);
+            contentImages.add(absSrc);
         }
+        article.setContent(content);
         article.setContentImages(contentImages);
     }
 
