@@ -3,9 +3,12 @@ package jp.btimes.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,31 +34,39 @@ public class Hokkoku extends Source {
 
     @Override
     protected String getDateRegex() {
-        return null;
+        return "\\d{1,2}/\\d{1,2} \\d{1,2}:\\d{1,2}";
     }
 
     @Override
     protected String getDateFormat() {
-        return null;
+        return "MM/dd HH:mm";
     }
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return null;
+        return new CSSQuery(".newstop > li", ".tp_sub_detailarea_body", "a", "",
+            "", "a");
     }
 
     @Override
     protected int getSourceId() {
-        return 0;
+        return 17;
     }
 
     @Override
     protected List<Article> parseList(Document doc) {
-        return null;
+        List<Article> articles = new ArrayList<>();
+        Elements list = this.readList(doc);
+        this.parseDateTitleList(articles, list);
+        articles.forEach(article -> {
+            String title = StringUtils.removePattern(article.getTitle(), "\\(\\d{1,2}/\\d{1,2} \\d{1,2}:\\d{1,2}\\)");
+            article.setTitle(title.trim());
+        });
+        return articles;
     }
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-
+        this.readContent(driver, article);
     }
 }

@@ -15,6 +15,7 @@ public class ServiceExecutor extends cn.btimes.service.ServiceExecutor {
     @Override
     protected List<Source> getSources() {
         List<Source> sources = new ArrayList<>();
+        sources.add(ApplicationContext.getBean(Hokkoku.class));
         sources.add(ApplicationContext.getBean(GifuNp.class));
         sources.add(ApplicationContext.getBean(Fukuishimbun.class));
         sources.add(ApplicationContext.getBean(Chunichi.class));
