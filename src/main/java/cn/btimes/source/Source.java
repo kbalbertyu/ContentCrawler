@@ -532,7 +532,8 @@ public abstract class Source {
             }
             return date;
         } catch (ParseException e) {
-            throw new BusinessException(String.format("Unable to parse date: %s", timeText));
+            logger.error(String.format("Unable to parse date: %s", timeText));
+            throw new PastDateException();
         }
     }
 
