@@ -19,11 +19,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.BasicHttpContext;
 import org.joda.time.DateTime;
@@ -59,6 +61,7 @@ public abstract class Source {
     private final Logger logger = LoggerFactory.getLogger(Source.class);
     private static final String DOWNLOAD_PATH = "downloads";
     private static final List<String[]> sources = readSources();
+    private static final String PROXY = Tools.getCustomizingValue("PROXY");
     @Inject private DBManager dbManager;
     @Inject Messengers messengers;
     private Map<String, String> adminCookie;
@@ -734,7 +737,7 @@ public abstract class Source {
         String prefix = Tools.startWithAny(url, Constants.HTTP) ? StringUtils.EMPTY : Constants.HTTP + ":";
         url = prefix + url;
         HttpGet get = HttpUtils.prepareHttpGet(prefix + url);
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+        CloseableHttpClient httpClient = this.initHttpClient();
         BasicHttpContext localContext = new BasicHttpContext();
         localContext.setAttribute(HttpClientContext.COOKIE_STORE, PageUtils.getCookieStore(driver));
 
@@ -774,6 +777,16 @@ public abstract class Source {
             }
         }
         throw new BusinessException(String.format("Failed to execute %s file download request after retried.", fileName));
+    }
+
+    private CloseableHttpClient initHttpClient() {
+        if (StringUtils.isBlank(PROXY)) {
+            return HttpClients.createDefault();
+        }
+        logger.info("Using proxy in http request: {}", PROXY);
+        String[] hostPort = StringUtils.split(PROXY, ":");
+        HttpHost proxy = new HttpHost(hostPort[0], NumberUtils.toInt(hostPort[1]));
+        return HttpClientBuilder.create().setProxy(proxy).build();
     }
 
     private File makeDownloadFile(String fileName) {
