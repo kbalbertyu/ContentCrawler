@@ -10,6 +10,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.amzass.enums.common.Country;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
+import com.amzass.ui.utils.UITools;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.ProcessCleaner;
@@ -44,6 +45,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
     @Inject private ApiRequest apiRequest;
     @Inject private DBManager dbManager;
     @Inject private TagGenerator tagGenerator;
+    private static final boolean PAUSE_DRIVER = StringUtils.isNotBlank(Tools.getCustomizingValue("PAUSE_DRIVER"));
 
     protected String[] allowedSources() {
         String text = StringUtils.trim(Tools.getCustomizingValue("ALLOWED_SOURCES"));
@@ -100,6 +102,9 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         messengers.clear();
         this.preExecute(config);
         WebDriver driver = webDriverLauncher.start(config);
+        if (PAUSE_DRIVER) {
+            UITools.confirm("Paused");
+        }
         for (Source source : this.getSources()) {
             String sourceName = StringUtils.substringAfterLast(source.getClass().getName(), ".");
             String[] allowedSources = this.allowedSources();

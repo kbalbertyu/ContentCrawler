@@ -5,7 +5,7 @@ import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import com.amzass.utils.common.Constants;
-import org.apache.commons.lang3.StringUtils;
+import com.amzass.utils.common.Exceptions.BusinessException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -77,6 +77,8 @@ public class Fukuishimbun extends Source {
                 }
                 logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
                 break;
+            } catch (BusinessException e) {
+                logger.error("Error: ", e);
             }
         }
         return articles;
@@ -90,11 +92,7 @@ public class Fukuishimbun extends Source {
     @Override
     protected void readArticle(WebDriver driver, Article article) {
         this.readContent(driver, article);
-        List<String> images = article.getContentImages();
-
-        List<String> newImages = new ArrayList<>();
-        images.forEach(image -> newImages.add(StringUtils.replace(image, "/300m/", "/750m/")));
-        article.setContentImages(newImages);
+        this.resizeContentImage(article, new String[] {"/\\d+m/", "\\d+h" }, new String[] {"/750m/", "/600h/" });
     }
 
     @Override
