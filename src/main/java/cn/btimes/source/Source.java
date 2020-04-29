@@ -494,7 +494,7 @@ public abstract class Source {
             this.checkDate(date);
             return date;
         } catch (ParseException e) {
-            throw new BusinessException(String.format("Unable to parse date: %s -> %s", timeText, timeTextClean));
+            throw new PastDateException(String.format("Unable to parse date: %s -> %s", timeText, timeTextClean));
         } catch (PastDateException e) {
             throw new PastDateException(String.format("Time has past limit: %s -> %s.", timeText, timeTextClean));
         }
