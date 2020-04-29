@@ -217,7 +217,10 @@ public abstract class Source {
     public void parseTitle(Element doc, Article article) {
         CSSQuery cssQuery = this.getCSSQuery();
         this.checkTitleExistence(doc, cssQuery.getTitle());
-        Element linkElm = doc.select(cssQuery.getTitle()).get(0);
+        Element linkElm = doc.select(cssQuery.getTitle()).first();
+        if (linkElm == null) {
+            throw new BusinessException("Unable to find article title.");
+        }
         if (StringUtils.isBlank(article.getUrl())) {
             article.setUrl(linkElm.attr("href"));
         }
