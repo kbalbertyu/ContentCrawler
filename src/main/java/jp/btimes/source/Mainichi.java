@@ -4,8 +4,11 @@ import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,31 +34,44 @@ public class Mainichi extends Source {
 
     @Override
     protected String getDateRegex() {
-        return null;
+        return "\\d{4}年\\d{1,2}月\\d{1,2}日 \\d{1,2}:\\d{1,2}";
     }
 
     @Override
     protected String getDateFormat() {
-        return null;
+        return "yyyy'年'MM'月'dd'日' HH:mm";
     }
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return null;
+        return new CSSQuery(".list-typeD > li", ".main-text", "a:first-child", "",
+            "", "time");
     }
 
     @Override
     protected int getSourceId() {
-        return 0;
+        return 26;
     }
 
     @Override
     protected List<Article> parseList(Document doc) {
-        return null;
+        List<Article> articles = new ArrayList<>();
+        Elements list = this.readList(doc);
+        this.parseTitleList(articles, list);
+        return articles;
     }
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
+        this.readContent(driver, article);
+    }
 
+    @Override
+    protected String cleanHtml(Element dom) {
+        Elements elements = dom.select(".ad, .no-print");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
+        return super.cleanHtml(dom);
     }
 }
