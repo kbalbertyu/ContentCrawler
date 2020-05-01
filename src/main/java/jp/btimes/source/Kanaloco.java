@@ -101,4 +101,13 @@ public class Kanaloco extends Source {
         Document doc = Jsoup.parse(driver.getPageSource());
         this.parseContent(doc, article);
     }
+
+    @Override
+    protected String cleanHtml(Element dom) {
+        Elements elements = dom.select("#modal-photo-gallery, script");
+        if (elements.size() > 0) {
+            elements.remove();
+        }
+        return super.cleanHtml(dom);
+    }
 }
