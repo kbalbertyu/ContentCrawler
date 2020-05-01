@@ -43,6 +43,10 @@ public class WebDriverLauncher {
         return this.startDriver(config, true, config.getApplication().name());
     }
 
+    public void close(WebDriver driver) {
+        webDriverManager.closeDriver(driver);
+    }
+
     public WebDriver startWithoutLogin(String profile) {
         try {
             return this.startDriver(null, false, profile);

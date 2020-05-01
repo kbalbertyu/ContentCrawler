@@ -116,8 +116,8 @@ public class ServiceExecutor implements ServiceExecutorInterface {
                 try {
                     source.execute(driver, config);
                 } catch (WebDriverException e) {
-                    logger.error("Connection timeout, restart WebDriver and retry fetching: {}", sourceName);
-                    ProcessCleaner.cleanWebDriver();
+                    logger.error("Connection timeout, restart WebDriver and retry fetching: {}", sourceName, e);
+                    webDriverLauncher.close(driver);
                     driver = webDriverLauncher.start(config);
                     continue;
                 } catch (Exception e) {
