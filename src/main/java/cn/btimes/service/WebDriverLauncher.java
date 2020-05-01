@@ -40,7 +40,8 @@ public class WebDriverLauncher {
     public static Map<Application, Map<String, String>> adminCookies;
 
     public WebDriver start(Config config) {
-        return this.startDriver(config, true, config.getApplication().name());
+        String profile = config.isUseProfile() ? config.getApplication().name() : null;
+        return this.startDriver(config, true, profile);
     }
 
     public void close(WebDriver driver) {
