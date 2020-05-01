@@ -460,6 +460,22 @@ public abstract class Source {
         article.setContentImages(contentImages);
     }
 
+    protected void resizeContentImage(Article article, String[] from, String[] to) {
+        List<String> newImages = new ArrayList<>();
+
+        String content = article.getContent();
+        for (String image : article.getContentImages()) {
+            String newSrc = image;
+            for (int i = 0; i < from.length; i++) {
+                newSrc = StringUtils.replacePattern(newSrc, from[i], to[i]);
+            }
+            newImages.add(newSrc);
+            content = StringUtils.replace(content, image, newSrc);
+        }
+        article.setContent(content);
+        article.setContentImages(newImages);
+    }
+
     protected void parseDate(Element doc, Article article) {
         CSSQuery cssQuery = this.getCSSQuery();
         this.checkDateTextExistence(doc, cssQuery.getTime());
