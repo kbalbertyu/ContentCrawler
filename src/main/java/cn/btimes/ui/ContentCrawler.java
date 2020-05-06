@@ -6,10 +6,13 @@ import cn.btimes.utils.Common;
 import com.amzass.utils.common.ProcessCleaner;
 import com.amzass.utils.common.Tools;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 12/24/2018 5:35 AM
@@ -29,6 +32,10 @@ public class ContentCrawler {
         for (Application application : applicationList) {
             LOGGER.info("Running application: {}", application.name());
             Config config = Common.loadApplicationConfig(application);
+            if (StringUtils.isNotBlank(config.getTimezone())) {
+                TimeZone timeZone = TimeZone.getTimeZone(config.getTimezone());
+                TimeZone.setDefault(timeZone);
+            }
             try {
                 application.executor.execute(config);
             } catch (Exception e) {

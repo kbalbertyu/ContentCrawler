@@ -25,6 +25,7 @@ public class Config {
     private String baiduToken;
     private int baiduDaysBefore = 3;
     private boolean useProfile;
+    private String timezone;
 
     public void init() {
         this.maxPastHours = this.maxPastMinutes / 60;
