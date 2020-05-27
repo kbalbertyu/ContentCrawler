@@ -124,7 +124,7 @@ public class Sina extends Source {
      */
     @Override
     protected String cleanHtml(Element dom) {
-        Elements elements = dom.select("[id^=ad], [class^=survey], [id^=quote_], script, .article-editor, p:contains(本文来自于), p:contains(原题为), p:contains(责任编辑), span[style*=KaiTi_GB2312], p:contains(来源：), p:contains(免责声明：), '.appendQr_wrap");
+        Elements elements = dom.select("[id^=ad], [class^=survey], [id^=quote_], script, .article-editor, p:contains(本文来自于), p:contains(原题为), p:contains(责任编辑), span[style*=KaiTi_GB2312], p:contains(来源：), p:contains(免责声明：), .appendQr_wrap");
         if (elements.size() > 0) {
             elements.remove();
         }
