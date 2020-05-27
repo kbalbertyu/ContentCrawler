@@ -2,6 +2,8 @@ package cn.btimes.model.common;
 
 import lombok.Data;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-11 9:42 AM
  */
@@ -26,6 +28,7 @@ public class Config {
     private int baiduDaysBefore = 3;
     private boolean useProfile;
     private String timezone;
+    private Map<Category, Integer> categories;
 
     public void init() {
         this.maxPastHours = this.maxPastMinutes / 60;
