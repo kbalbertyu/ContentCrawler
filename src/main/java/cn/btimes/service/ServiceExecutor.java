@@ -13,7 +13,6 @@ import com.amzass.service.common.ApplicationContext;
 import com.amzass.ui.utils.UITools;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
-import com.amzass.utils.common.ProcessCleaner;
 import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
@@ -24,7 +23,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
+import org.openqa.selenium.WebElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +58,10 @@ public class ServiceExecutor implements ServiceExecutorInterface {
     }
 
     protected List<Source> getSources() {
+        return this.getBTCNSources();
+    }
+
+    protected List<Source> getBTCNSources() {
         List<Source> sources = new ArrayList<>();
         sources.add(ApplicationContext.getBean(Sina.class));
         sources.add(ApplicationContext.getBean(SinaFinance.class));

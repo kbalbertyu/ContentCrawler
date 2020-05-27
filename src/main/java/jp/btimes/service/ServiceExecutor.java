@@ -4,7 +4,6 @@ import cn.btimes.source.Source;
 import com.amzass.service.common.ApplicationContext;
 import jp.btimes.source.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -14,7 +13,10 @@ public class ServiceExecutor extends cn.btimes.service.ServiceExecutor {
 
     @Override
     protected List<Source> getSources() {
-        List<Source> sources = new ArrayList<>();
+        // Sources for CN edition, borrow from BTCN
+        List<Source> sources = this.getBTCNSources();
+
+        // Sources for JP edition
         sources.add(ApplicationContext.getBean(KyotoNP.class));
         sources.add(ApplicationContext.getBean(Fukuishimbun.class));
         sources.add(ApplicationContext.getBean(Kanaloco.class));

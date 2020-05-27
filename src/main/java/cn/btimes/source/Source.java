@@ -344,6 +344,7 @@ public abstract class Source {
         this.cleanThirdPartyImages(article);
         article.validate();
 
+        int cateId = config.getCategories().get(article.getCategory());
         Connection conn = this.createWebConnection(config.getArticleSaveUrl(), adminCookie)
             .data("getstring", "")
             .data("mb_no", "")
@@ -356,7 +357,7 @@ public abstract class Source {
             .data("ar_summary", article.getSummary())
             .data("ar_content", article.getContent())
             .data("tex", "")
-            .data("ar_cat[]", String.valueOf(article.getCategory().id))
+            .data("ar_cat[]", String.valueOf(cateId))
             .data("ar_keyword", "")
             .data("ar_newskeyword", article.getTitle())
             .data("ar_youtube", "")
