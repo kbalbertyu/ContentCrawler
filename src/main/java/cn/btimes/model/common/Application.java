@@ -26,7 +26,8 @@ public enum Application {
     RelatedArticle(ApplicationContext.getBean(RelatedArticleHandler.class)),
     AmazonCrawler(ApplicationContext.getBean(AmazonCrawler.class)),
     RelatedArticleHandler(ApplicationContext.getBean(RelatedArticleHandler.class)),
-    DBBackUpHandler(ApplicationContext.getBean(DBBackUpHandler.class));
+    DBBackUpHandler(ApplicationContext.getBean(DBBackUpHandler.class)),
+    NewsFlowCrawler(ApplicationContext.getBean(NewsFlowCrawler.class));
 
     Application(ServiceExecutorInterface executor) {
         this.executor = executor;
