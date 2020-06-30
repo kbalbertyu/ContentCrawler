@@ -5,6 +5,7 @@ import cn.btimes.model.news.NewsFlow;
 import cn.btimes.model.news.NewsFlowSource;
 import cn.btimes.utils.Common;
 import cn.btimes.utils.PageUtils;
+import cn.btimes.utils.Tools;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
@@ -44,11 +45,7 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
         this.syncSavedLogs(config);
         WebDriver driver = webDriverLauncher.startWithoutLogin(config.getApplication().name());
         Document doc = this.loadSourcePage(driver);
-        List<NewsFlow> items = this.crawlItems(doc);
-        if (CollectionUtils.isEmpty(items)) {
-            return;
-        }
-        this.saveItems(items, config);
+        this.crawlItems(doc, config);
     }
 
     private void saveItems(List<NewsFlow> items, Config config) {
@@ -56,19 +53,19 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
         System.out.println(result.getData());
     }
 
-    private List<NewsFlow> crawlItems(Document doc) {
+    private void crawlItems(Document doc, Config config) {
         Elements groups = doc.select(".ushk-flash__group");
         if (groups.size() == 0) {
-            return null;
+            return;
         }
 
         Calendar c = Calendar.getInstance();
         int year = c.get(Calendar.YEAR);
 
-        List<NewsFlow> items = new ArrayList<>();
         String source = NewsFlowSource.USHK.source;
 
         for (Element group : groups) {
+            List<NewsFlow> items = new ArrayList<>();
             String day = HtmlParser.text(group, ".ushk-flash__date > dl > dt");
             String month = HtmlParser.text(group, ".ushk-flash__date > dl > dd");
             month = StringUtils.remove(month, "月");
@@ -76,10 +73,14 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
 
             Elements rows = group.select(".ushk-flash_item");
             for (Element row : rows) {
-                String title = HtmlParser.text(row, ".ushk-flash_text-box");
-                String time = HtmlParser.text(row, ".ushk-flash_time");
+                String title = StringUtils.trim(HtmlParser.text(row, ".ushk-flash_text-box"));
+                String time = StringUtils.trim(HtmlParser.text(row, ".ushk-flash_time"));
                 String dateTime = date + " " + time;
                 if (this.logExists(source, dateTime)) {
+                    continue;
+                }
+
+                if (!Tools.isNotBlank(title, dateTime)) {
                     continue;
                 }
 
@@ -89,9 +90,9 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
                 flow.setDate(dateTime);
                 items.add(flow);
             }
-        }
 
-        return items;
+            this.saveItems(items, config);
+        }
     }
 
     private boolean logExists(String source, String dateTime) {
