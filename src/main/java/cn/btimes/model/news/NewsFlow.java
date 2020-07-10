@@ -10,4 +10,6 @@ public class NewsFlow {
     private String title;
     private String date;
     private String source;
+    private boolean important;
+    private boolean bold;
 }

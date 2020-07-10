@@ -14,8 +14,8 @@ import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
 import com.mailman.model.common.WebApiResult;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -35,6 +35,7 @@ import java.util.List;
 public class NewsFlowCrawler implements ServiceExecutorInterface {
     private static final String SOURCE_URL = "https://www.ushknews.com/";
     private static final String SOURCE = NewsFlowSource.USHK.source;
+    private static final String TEST_MODE = Tools.getCustomizingValue("TEST_MODE");
     private final Logger logger = LoggerFactory.getLogger(TagGenerator.class);
     @Inject private ApiRequest apiRequest;
     @Inject private DBManager dbManager;
@@ -49,7 +50,7 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
     }
 
     private void saveItems(List<NewsFlow> items, Config config) {
-        WebApiResult result = apiRequest.post("/article/importNewsFlowItems", JSONObject.toJSONString(items), config);
+        WebApiResult result = apiRequest.post("/article/importNewsFlowItems?test_mode=" + TEST_MODE, JSONObject.toJSONString(items), config);
         System.out.println(result.getData());
     }
 
@@ -73,14 +74,14 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
 
             Elements rows = group.select(".ushk-flash_item");
             for (Element row : rows) {
+                boolean important = row.hasClass("important");
+                boolean bold = row.select("b").size() > 0;
                 String title = StringUtils.trim(HtmlParser.text(row, ".ushk-flash_text-box"));
                 String time = StringUtils.trim(HtmlParser.text(row, ".ushk-flash_time"));
                 String dateTime = date + " " + time;
-                if (this.logExists(source, dateTime)) {
-                    continue;
-                }
-
-                if (!Tools.isNotBlank(title, dateTime)) {
+                if (this.logExists(source, dateTime) ||
+                    !Tools.isNotBlank(title, dateTime) ||
+                    row.select("img, .ushk-icon_remark-link").size() > 0) {
                     continue;
                 }
 
@@ -88,6 +89,8 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
                 flow.setTitle(title);
                 flow.setSource(SOURCE);
                 flow.setDate(dateTime);
+                flow.setImportant(important);
+                flow.setBold(bold);
                 items.add(flow);
             }
 
@@ -104,6 +107,7 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
     private Document loadSourcePage(WebDriver driver) {
         driver.get(SOURCE_URL);
         WaitTime.Normal.execute();
+        int pastDays = NumberUtils.toInt(Tools.getCustomizingValue("PAST_DAYS"));
 
         while (true) {
             PageUtils.scrollToBottom(driver);
@@ -112,7 +116,7 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
 
             Document doc = Jsoup.parse(driver.getPageSource());
             Elements rows = doc.select(".ushk-flash__group");
-            if (rows.size() >= 4) {
+            if (rows.size() >= pastDays) {
                 break;
             }
         }
@@ -121,7 +125,7 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
     }
 
     private void syncSavedLogs(Config config) {
-        String url = String.format("/article/fetchRecentNewsFlowItems?source=%s", SOURCE);
+        String url = String.format("/article/fetchRecentNewsFlowItems?source=%s&test_mode=%s", SOURCE, TEST_MODE);
         WebApiResult result = apiRequest.get(url, config);
         if (StringUtils.equals(result.getCode(), "0")) {
             logger.error("Unable to fetch news flow: {}", result.getMessage());
