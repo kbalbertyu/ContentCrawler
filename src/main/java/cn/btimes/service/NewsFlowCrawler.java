@@ -36,7 +36,7 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
     private static final String SOURCE_URL = "https://www.ushknews.com/";
     private static final String SOURCE = NewsFlowSource.USHK.source;
     private static final String TEST_MODE = Tools.getCustomizingValue("TEST_MODE");
-    private final Logger logger = LoggerFactory.getLogger(TagGenerator.class);
+    private final Logger logger = LoggerFactory.getLogger(NewsFlowCrawler.class);
     @Inject private ApiRequest apiRequest;
     @Inject private DBManager dbManager;
     @Inject private WebDriverLauncher webDriverLauncher;
@@ -51,7 +51,7 @@ public class NewsFlowCrawler implements ServiceExecutorInterface {
 
     private void saveItems(List<NewsFlow> items, Config config) {
         WebApiResult result = apiRequest.post("/article/importNewsFlowItems?test_mode=" + TEST_MODE, JSONObject.toJSONString(items), config);
-        System.out.println(result.getData());
+        logger.info(result.getData());
     }
 
     private void crawlItems(Document doc, Config config) {
