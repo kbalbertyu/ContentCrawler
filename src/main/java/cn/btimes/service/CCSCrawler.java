@@ -21,8 +21,9 @@ import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Chinese Concept Stocks crawler
@@ -45,12 +46,13 @@ public class CCSCrawler implements ServiceExecutorInterface {
         }
         Document doc = Jsoup.parse(driver.getPageSource());
 
-        List<String> links = this.parseLinks(doc);
+        Map<String, String> links = this.parseLinks(doc);
         this.crawlLinks(driver, links, config);
     }
 
-    private void crawlLinks(WebDriver driver, List<String> links, Config config) {
-        for (String link : links) {
+    private void crawlLinks(WebDriver driver, Map<String, String> links, Config config) {
+        for (String label : links.keySet()) {
+            String link = links.get(label);
             driver.get(link);
             if (!PageLoadHelper.present(driver, By.id("app"), WaitTime.Normal)) {
                 continue;
@@ -62,6 +64,7 @@ public class CCSCrawler implements ServiceExecutorInterface {
                     logger.error("Invalid entity: {}", JSON.toJSONString(ccsEntity));
                     continue;
                 }
+                ccsEntity.setLabel(label);
                 ccsEntity.setLink(link);
                 this.save(ccsEntity, config);
             } catch (BusinessException e) {
@@ -174,11 +177,11 @@ public class CCSCrawler implements ServiceExecutorInterface {
         ccsEntity.setStockCode(StringUtils.substringAfter(codes, ":"));
     }
 
-    private List<String> parseLinks(Document doc) {
+    private Map<String, String> parseLinks(Document doc) {
         Elements linkElms = doc.select(".StockName_Text a");
-        List<String> links = new ArrayList<>();
+        Map<String, String> links = new HashMap<>();
         for (Element linkElm : linkElms) {
-            links.add(linkElm.attr("href"));
+            links.put(linkElm.text(), linkElm.attr("href"));
         }
         return links;
     }

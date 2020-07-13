@@ -33,6 +33,12 @@ public class PDFExtractor {
             int pageCount = doc.getNumberOfPages();
             PDFRenderer pdfRenderer = new PDFRenderer(doc);
             for (int pageIndex=0; pageIndex<pageCount; pageIndex++) {
+                if (pageIndex != 365) {
+                    continue;
+                }
+                if (pageIndex == 366) {
+                    break;
+                }
                 BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, 600, ImageType.RGB);
                 File imageFilePath = FileUtils.getFile(imageFileDir, (pageIndex + 1) + ".jpg");
                 ImageIO.write(image, "jpg", imageFilePath);

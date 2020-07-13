@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 @Data
 public class CCSEntity {
+    private String label;
     private String title;
     private String stockClass;
     private String stockCode;
