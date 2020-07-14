@@ -1,6 +1,7 @@
 package cn.btimes.model.common;
 
 import com.amzass.utils.common.Exceptions.BusinessException;
+import com.google.common.base.Objects;
 import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -41,5 +42,18 @@ public class Article {
         if (StringUtils.isBlank(content)) {
             throw new BusinessException(String.format("Article content is blank: %s -> %s", title, url));
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Article article = (Article) o;
+        return Objects.equal(url, article.url);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(url);
     }
 }
