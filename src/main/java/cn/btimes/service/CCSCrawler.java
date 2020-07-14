@@ -149,9 +149,11 @@ public class CCSCrawler implements ServiceExecutorInterface {
             } else if (StringUtils.equals(title, "52周最低")) {
                 ccsEntity.setWeek52BottomUnitPrice(NumberUtils.toFloat(value));
             } else if (StringUtils.equals(title, "总市值")) {
-                ccsEntity.setTotalMarketValue(NumberUtils.toFloat(value));
+                ccsEntity.setTotalMarketValueText(value);
+                String cleanValue = value.replaceAll("[^0-9,.-]", "");
+                ccsEntity.setTotalMarketValue(NumberUtils.toFloat(cleanValue));
             } else if (StringUtils.equals(title, "总股本")) {
-                ccsEntity.setTotalStocks(NumberUtils.toInt(value));
+                ccsEntity.setTotalStocks(NumberUtils.toLong(value));
             } else if (StringUtils.equals(title, "市盈率")) {
                 ccsEntity.setPriceEarningRatio(NumberUtils.toFloat(value));
             }

@@ -24,7 +24,7 @@ public class CCSEntity {
     private float week52BottomUnitPrice;
     private float totalMarketValue;
     private String totalMarketValueText;
-    private int totalStocks;
+    private long totalStocks;
     private float priceEarningRatio;
     private String intro;
     private String nameCN;
