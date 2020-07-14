@@ -33,6 +33,7 @@ import java.util.Map;
  */
 public class WebDriverLauncher {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private static final boolean TEST_MODE = StringUtils.isNotBlank(Tools.getCustomizingValue("TEST_MODE"));
     static final String DOWNLOAD_PATH = System.getProperty("user.dir") + "/downloads";
     private static final boolean USE_HEADLESS_DRIVER = StringUtils.isNotBlank(Tools.getCustomizingValue("USE_HEADLESS_DRIVER"));
     private static final boolean DISABLE_JS_IMG_ADS = false;
@@ -81,6 +82,12 @@ public class WebDriverLauncher {
         WebDriver driver = webDriverManager.initCustomChromeDriver(chromeDriverVersion, Constants.DEFAULT_DRIVER_TIME_OUT, dCaps);
         if (login && config != null && (adminCookies == null || adminCookies.getOrDefault(config.getApplication(), null) == null)) {
             this.fetchAdminCookies(driver, config);
+            if (TEST_MODE) {
+                Application app = config.getApplication();
+                Map<String, String> cookies = adminCookies.get(app);
+                cookies.put("test", "1");
+                adminCookies.put(app, cookies);
+            }
         }
         return driver;
     }

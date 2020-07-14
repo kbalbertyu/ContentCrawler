@@ -47,7 +47,9 @@ public class ServiceExecutor implements ServiceExecutorInterface {
     @Inject private ApiRequest apiRequest;
     @Inject private DBManager dbManager;
     @Inject private TagGenerator tagGenerator;
+    private static final boolean TEST_MODE = StringUtils.isNotBlank(Tools.getCustomizingValue("TEST_MODE"));
     private static final boolean PAUSE_DRIVER = StringUtils.isNotBlank(Tools.getCustomizingValue("PAUSE_DRIVER"));
+    private static final String FETCH_CRAWLED_LINKS_PAST_HOURS = Tools.getCustomizingValue("FETCH_CRAWLED_LINKS_PAST_HOURS");
 
     protected String[] allowedSources() {
         String text = StringUtils.trim(Tools.getCustomizingValue("ALLOWED_SOURCES"));
@@ -63,6 +65,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
 
     protected List<Source> getBTCNSources() {
         List<Source> sources = new ArrayList<>();
+        sources.add(ApplicationContext.getBean(PRNAsia.class));
         sources.add(ApplicationContext.getBean(Sina.class));
         sources.add(ApplicationContext.getBean(SinaFinance.class));
         sources.add(ApplicationContext.getBean(ThePaper.class));
@@ -108,6 +111,9 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         messengers.clear();
         this.preExecute(config);
         WebDriver driver = webDriverLauncher.start(config);
+        if (TEST_MODE) {
+            this.enterTestMode(driver, config);
+        }
         if (PAUSE_DRIVER) {
             UITools.confirm("Paused");
         }
@@ -140,6 +146,12 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         if (this.messengers.isNotEmpty()) {
             this.sendErrorMessage(config);
         }
+    }
+
+    private void enterTestMode(WebDriver driver, Config config) {
+        driver.get(config.getFrontUrl() + "/mode.php");
+        PageUtils.click(driver, By.id("enable"));
+        PageUtils.click(driver, By.cssSelector("input[type=submit]"));
     }
 
     private void deleteTmpFiles() {
@@ -237,7 +249,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
      * save to DB in action_log table if not exists.
      */
     private void syncSavedArticles(Config config) {
-        WebApiResult result = apiRequest.get("/article/fetchCrawledLinks", config);
+        WebApiResult result = apiRequest.get("/article/fetchCrawledLinks?hours=" + FETCH_CRAWLED_LINKS_PAST_HOURS, config);
         if (StringUtils.equals(result.getCode(), "0")) {
             logger.error("Unable to fetch articles: {}", result.getMessage());
             return;
