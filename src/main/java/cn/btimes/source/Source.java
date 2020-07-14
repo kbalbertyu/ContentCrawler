@@ -4,6 +4,7 @@ import cn.btimes.model.common.*;
 import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.service.WebDriverLauncher;
 import cn.btimes.utils.Common;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.enums.common.DateFormat;
 import com.amzass.enums.common.Directory;
@@ -44,10 +45,7 @@ import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -66,6 +64,7 @@ public abstract class Source {
     @Inject Messengers messengers;
     private Map<String, String> adminCookie;
     protected Config config;
+    Set<Article> relatedArticles = new HashSet<>();
 
     protected abstract Map<String, Category> getUrls();
 
@@ -259,6 +258,7 @@ public abstract class Source {
 
     public void execute(WebDriver driver, Config config) {
         this.initContext(config);
+        this.relatedArticles.clear();
         List<Article> articles = new ArrayList<>();
         Map<String, Category> urls = this.getUrls();
         for (String url : urls.keySet()) {
@@ -279,6 +279,8 @@ public abstract class Source {
                 logger.error("Error found in parsing list, skip current list: ", e);
             }
         }
+
+        articles = this.mergeRelatedArticles(articles);
 
         logger.info("Found {} articles from list.", articles.size());
         if (articles.size() == 0) {
@@ -324,11 +326,42 @@ public abstract class Source {
             dbManager.save(new ActionLog(logIdTitle), ActionLog.class);
         }
 
+        this.saveRelatedArticles();
+
         if (articles.size() > 0) {
             Messenger messenger = new Messenger(this.getClass().getName(),
                 String.format("%d of %d articles are saved.", saved, articles.size()));
             this.messengers.add(messenger);
         }
+    }
+
+    private File getRelatedArticlesFile() {
+        String fileName = String.format("related/%s.json", this.getClass().getSimpleName());
+        return FileUtils.getFile(fileName);
+    }
+
+    private void saveRelatedArticles() {
+        if (this.relatedArticles.size() == 0) {
+            return;
+        }
+        Tools.writeStringToFile(this.getRelatedArticlesFile(), JSON.toJSONString(this.relatedArticles));
+        this.relatedArticles.clear();
+    }
+
+    private List<Article> mergeRelatedArticles(List<Article> articles) {
+        File relatedFile = this.getRelatedArticlesFile();
+        if (!relatedFile.exists()) {
+            return articles;
+        }
+        String text = Tools.readFileToString(relatedFile);
+        List<Article> articleList = JSON.parseArray(text, Article.class);
+        if (articleList.size() == 0) {
+            return articles;
+        }
+        articles.addAll(articleList);
+        Set<Article> articleSet = new HashSet<>(articles);
+        relatedFile.deleteOnExit();
+        return new ArrayList<>(articleSet);
     }
 
     void saveArticle(Article article, WebDriver driver) {
@@ -348,7 +381,7 @@ public abstract class Source {
         Connection conn = this.createWebConnection(config.getArticleSaveUrl(), adminCookie)
             .data("getstring", "")
             .data("mb_no", "")
-            .data("ar_status", "1")
+            .data("ar_status", this.getStatus())
             .data("ar_status_old", "")
             .data("ar_copy_edited_finished", "")
             .data("use_article_all_table", "")
@@ -407,6 +440,10 @@ public abstract class Source {
         }
         throw new BusinessException(String.format("Unable to save the article: [%s]%s -> %s",
             article.getSource(), article.getTitle(), article.getUrl()));
+    }
+
+    String getStatus() {
+        return "1";
     }
 
     private void checkArticleListExistence(Element doc, String cssQuery) {
@@ -617,7 +654,8 @@ public abstract class Source {
             .data("unique_key", Common.toMD5(String.valueOf(System.currentTimeMillis())))
             .data("field", "image_hidden")
             .data("func", "photo_image_content")
-            .data("request_from", "ContentCrawler");
+            .data("request_from", "ContentCrawler")
+            .timeout(0).maxBodySize(0);
         if (cookies != null) {
             conn.cookies(cookies);
         }
@@ -654,7 +692,7 @@ public abstract class Source {
         if (!article.hasImages()) {
             return null;
         }
-        Connection conn = this.createWebConnection(config.getFileUploadUrl(), null);
+        Connection conn = this.createWebConnection(config.getFileUploadUrl(), adminCookie);
 
         int i = 0;
         for (String imageUrl : article.getContentImages()) {
@@ -753,7 +791,7 @@ public abstract class Source {
 
         String prefix = Tools.startWithAny(url, Constants.HTTP) ? StringUtils.EMPTY : Constants.HTTP + ":";
         url = prefix + url;
-        HttpGet get = HttpUtils.prepareHttpGet(prefix + url);
+        HttpGet get = HttpUtils.prepareHttpGet(cn.btimes.utils.Tools.encodeUrl(url));
         CloseableHttpClient httpClient = this.initHttpClient();
         BasicHttpContext localContext = new BasicHttpContext();
         localContext.setAttribute(HttpClientContext.COOKIE_STORE, PageUtils.getCookieStore(driver));
