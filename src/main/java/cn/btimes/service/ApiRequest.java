@@ -8,6 +8,7 @@ import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.mailman.model.common.WebApiResult;
 import com.mailman.service.common.WebApiRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Connection.Method;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
@@ -35,7 +36,11 @@ public class ApiRequest extends WebApiRequest {
     }
 
     private static String getFullUrl(String path, Config config) {
-        return config.getFrontUrl() + WEB_API_ENDPOINT + path;
+        String url = config.getFrontUrl() + WEB_API_ENDPOINT + path;
+        if (!config.isTestMode()) {
+            return url;
+        }
+        return url + (StringUtils.contains(url, "?") ? "&test_mode=1" : "?test_mode=1");
     }
 
     private WebApiResult send(Config config, String path, Method method, String dataText) {
