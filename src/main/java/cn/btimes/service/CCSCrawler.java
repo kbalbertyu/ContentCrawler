@@ -2,6 +2,7 @@ package cn.btimes.service;
 
 import cn.btimes.model.ccs.CCSEntity;
 import cn.btimes.model.common.Config;
+import cn.btimes.utils.PageUtils;
 import cn.btimes.utils.Tools;
 import com.alibaba.fastjson.JSON;
 import com.amzass.service.sellerhunt.HtmlParser;
@@ -66,11 +67,70 @@ public class CCSCrawler implements ServiceExecutorInterface {
                 }
                 ccsEntity.setLabel(label);
                 ccsEntity.setLink(link);
+                this.fixIntroWithBaidu(driver, ccsEntity);
                 this.save(ccsEntity, config);
             } catch (BusinessException e) {
                 logger.error("Unable to parse entity: ", e);
             }
         }
+    }
+
+    /**
+     * Fetch CCS intro from Baidu Baike.
+     * Replace the current one if better one found.
+     */
+    private void fixIntroWithBaidu(WebDriver driver, CCSEntity ccsEntity) {
+        String url = String.format("https://www.baidu.com/s?ie=utf-8&wd=%s&rsv_pq=d9d39339000e6613&rqlang=cn", ccsEntity.getTitle());
+        driver.get(url);
+        if (!PageLoadHelper.present(driver, By.className("c-container"), WaitTime.Normal)) {
+            logger.error("Baidu results page not loaded, skip current fetching: {} -> {}", ccsEntity.getLabel(), ccsEntity.getTitle());
+            return;
+        }
+
+        for (int page = 1; page < 4; page++) {
+            Document doc = Jsoup.parse(driver.getPageSource());
+            String link = this.parseLinkFromBaiduResultRow(doc);
+            if (StringUtils.isBlank(link)) {
+                PageUtils.click(driver, By.cssSelector(".page-inner > a:last-child"));
+                continue;
+            }
+            driver.get(link);
+            if (!PageLoadHelper.present(driver, By.cssSelector(".lemma-summary > .para"), WaitTime.Normal)) {
+                logger.error("Baidu Baike page is not loaded: {}", link);
+                continue;
+            }
+            doc = Jsoup.parse(driver.getPageSource());
+            String intro = this.parseBaiduBaikeIntro(doc, ccsEntity);
+            if (StringUtils.length(ccsEntity.getIntro()) < StringUtils.length(intro)) {
+                ccsEntity.setIntro(intro);
+            }
+            return;
+        }
+    }
+
+    private String parseBaiduBaikeIntro(Document doc, CCSEntity ccsEntity) {
+        doc.select(".sup--normal, .sup-anchor").remove();
+        String body = doc.text();
+        String cleanLabel = StringUtils.substringBefore(ccsEntity.getLabel(), "-");
+        if (!Tools.containsAny(body, ccsEntity.getTitle(), cleanLabel)) {
+            return "";
+        }
+        String text = StringUtils.trim(HtmlParser.texts(doc, ".lemma-summary > .para"));
+        text = StringUtils.replacePattern(text, "\\[[0-9\\-]+\\]", "");
+        return StringUtils.replacePattern(text, "[ ]+", " ");
+
+    }
+
+    private String parseLinkFromBaiduResultRow(Document doc) {
+        Elements rows = doc.select(".c-container");
+        for (Element row : rows) {
+            Element linkElm = row.select("h3 > a").first();
+            if (!StringUtils.contains(linkElm.text(), "百度百科")) {
+                continue;
+            }
+            return linkElm.attr("href");
+        }
+        return null;
     }
 
     private void save(CCSEntity ccsEntity, Config config) {
