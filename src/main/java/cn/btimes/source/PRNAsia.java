@@ -8,6 +8,8 @@ import com.amzass.enums.common.Country;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.DateHelper;
+import com.amzass.utils.common.Exceptions.BusinessException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -99,6 +101,9 @@ public class PRNAsia extends Source {
     protected void readArticle(WebDriver driver, Article article) {
         this.readSummaryContent(driver, article);
         this.parseRelatedArticles(driver);
+        if (CollectionUtils.isEmpty(article.getContentImages())) {
+            throw new BusinessException("Only article with image is allowed.");
+        }
     }
 
     private void parseRelatedArticles(WebDriver driver) {
