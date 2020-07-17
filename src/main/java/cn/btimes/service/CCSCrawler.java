@@ -88,18 +88,22 @@ public class CCSCrawler implements ServiceExecutorInterface {
         }
 
         for (int page = 1; page < 4; page++) {
-            Document doc = Jsoup.parse(driver.getPageSource());
-            String link = this.parseLinkFromBaiduResultRow(doc);
-            if (StringUtils.isBlank(link)) {
-                PageUtils.click(driver, By.cssSelector(".page-inner > a:last-child"));
-                continue;
+            String link = driver.getCurrentUrl();
+            if (!StringUtils.containsIgnoreCase(link, "baike.baidu.com")) {
+                Document listDoc = Jsoup.parse(driver.getPageSource());
+                link = this.parseLinkFromBaiduResultRow(listDoc);
+                if (StringUtils.isBlank(link)) {
+                    PageUtils.scrollToBottom(driver);
+                    PageUtils.click(driver, By.cssSelector(".page-inner > a:last-child"));
+                    continue;
+                }
             }
             driver.get(link);
             if (!PageLoadHelper.present(driver, By.cssSelector(".lemma-summary > .para"), WaitTime.Normal)) {
                 logger.error("Baidu Baike page is not loaded: {}", link);
                 continue;
             }
-            doc = Jsoup.parse(driver.getPageSource());
+            Document doc = Jsoup.parse(driver.getPageSource());
             String intro = this.parseBaiduBaikeIntro(doc, ccsEntity);
             if (StringUtils.length(ccsEntity.getIntro()) < StringUtils.length(intro)) {
                 ccsEntity.setIntro(intro);
