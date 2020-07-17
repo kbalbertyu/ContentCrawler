@@ -53,18 +53,10 @@ public class PinChain extends SourceWithoutDriver {
         Elements list = this.readList(doc);
         int i = 0;
         for (Element row : list) {
-            try {
-                Article article = new Article();
-                this.parseTitle(row, article);
-                this.parseSummary(row, article);
-                articles.add(article);
-            } catch (PastDateException e) {
-                if (i++ < Constants.MAX_REPEAT_TIMES) {
-                    continue;
-                }
-                logger.warn("Article that past {} minutes detected, complete the list fetching: ", config.getMaxPastMinutes(), e);
-                break;
-            }
+            Article article = new Article();
+            this.parseTitle(row, article);
+            this.parseSummary(row, article);
+            articles.add(article);
         }
         return articles;
     }
