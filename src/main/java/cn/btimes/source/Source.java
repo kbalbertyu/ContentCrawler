@@ -494,6 +494,9 @@ public abstract class Source {
             content = StringUtils.replace(content, src, absSrc);
             contentImages.add(absSrc);
         }
+        if (contentImages.size() == 0) {
+            throw new BusinessException("This article is skipped due to having no images: " + article.getTitle());
+        }
         article.setContent(content);
         article.setContentImages(contentImages);
     }
