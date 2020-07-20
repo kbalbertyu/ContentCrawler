@@ -368,10 +368,12 @@ public abstract class Source {
         article.validate();
         if (article.hasImages()) {
             ImageUploadResult result = this.uploadImages(article, driver);
-            if (result != null) {
+            if (result != null && result.hasFiles()) {
                 List<SavedImage> savedImages = this.saveImages(article, result);
                 this.deleteDownloadedImages(savedImages);
                 this.replaceImages(article, savedImages);
+            } else {
+                throw new BusinessException("This article is skipped due to having no images: " + article.getTitle());
             }
         }
         this.cleanThirdPartyImages(article);
