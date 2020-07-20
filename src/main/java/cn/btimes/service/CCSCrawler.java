@@ -129,7 +129,7 @@ public class CCSCrawler implements ServiceExecutorInterface {
         Elements rows = doc.select(".c-container");
         for (Element row : rows) {
             Element linkElm = row.select("h3 > a").first();
-            if (!StringUtils.contains(linkElm.text(), "百度百科")) {
+            if (linkElm == null || !StringUtils.contains(linkElm.text(), "百度百科")) {
                 continue;
             }
             return linkElm.attr("href");
