@@ -24,10 +24,10 @@ public class NewsCN extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
+        URLS.put("http://www.news.cn/money/jrlb.htm", Category.FINANCE);
         URLS.put("http://www.news.cn/tech/qqbb.htm", Category.TECH);
         URLS.put("http://www.news.cn/auto/jsxx.htm", Category.AUTO);
         URLS.put("http://www.xinhuanet.com/house/24xsjx.htm", Category.REALESTATE);
-        URLS.put("http://www.news.cn/money/jrlb.htm", Category.FINANCE);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class NewsCN extends Source {
         int i = 0;
         for (Element row : list) {
             if (row.hasClass("moreBtn")) {
-                continue;
+                break;
             }
             try {
                 Article article = new Article();
