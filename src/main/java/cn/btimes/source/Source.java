@@ -265,13 +265,18 @@ public abstract class Source {
             Document doc = this.openPage(driver, url);
             try {
                 List<Article> articlesNew = this.parseList(doc);
-                if (articlesNew.size() == 0) {
+                int size = articlesNew.size();
+                Category category = urls.get(url);
+                if (size == 0) {
                     String fileName = this.getClass().getSimpleName() + System.currentTimeMillis();
                     logger.warn(fileName + ": " + url);
                     PageUtils.savePage4ErrorHandling(driver, fileName, "parseList");
+                    continue;
                 }
+                logger.info("Found {} articles in {}", size, category.name());
+
                 articlesNew.forEach(article -> {
-                    article.setCategory(urls.get(url));
+                    article.setCategory(category);
                     article.setUrl(Common.getAbsoluteUrl(article.getUrl(), url));
                 });
                 articles.addAll(articlesNew);
