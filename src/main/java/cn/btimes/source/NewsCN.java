@@ -26,6 +26,8 @@ public class NewsCN extends Source {
     static {
         URLS.put("http://www.news.cn/tech/qqbb.htm", Category.TECH);
         URLS.put("http://www.news.cn/auto/jsxx.htm", Category.AUTO);
+        URLS.put("http://www.xinhuanet.com/house/24xsjx.htm", Category.REALESTATE);
+        URLS.put("http://www.news.cn/money/jrlb.htm", Category.FINANCE);
     }
 
     @Override
