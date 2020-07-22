@@ -47,6 +47,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
     @Inject private ApiRequest apiRequest;
     @Inject private DBManager dbManager;
     @Inject private TagGenerator tagGenerator;
+    private static final boolean NO_DELETE_TMP_FILES = StringUtils.isNotBlank(Tools.getCustomizingValue("NO_DELETE_TMP_FILES"));
     private static final boolean TEST_MODE = StringUtils.isNotBlank(Tools.getCustomizingValue("TEST_MODE"));
     private static final boolean PAUSE_DRIVER = StringUtils.isNotBlank(Tools.getCustomizingValue("PAUSE_DRIVER"));
     private static final String FETCH_CRAWLED_LINKS_PAST_HOURS = Tools.getCustomizingValue("FETCH_CRAWLED_LINKS_PAST_HOURS");
@@ -157,6 +158,9 @@ public class ServiceExecutor implements ServiceExecutorInterface {
     }
 
     private void deleteTmpFiles() {
+        if (NO_DELETE_TMP_FILES) {
+            return;
+        }
         String logId = String.format("Delete_Tmp_Files_%s", DateFormatUtils.format(new Date(), "yyyyMMdd"));
         ActionLog log = dbManager.readById(logId, ActionLog.class);
         if (log != null) {
