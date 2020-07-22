@@ -102,6 +102,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
     }
 
     private void preExecute(Config config) {
+        this.deleteTmpFiles();
         // this.statistic(config);
         this.deleteOldArticleLogs();
         this.deleteDownloadedFiles();
