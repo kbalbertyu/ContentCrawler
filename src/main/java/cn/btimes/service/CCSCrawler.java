@@ -94,7 +94,11 @@ public class CCSCrawler implements ServiceExecutorInterface {
                 link = this.parseLinkFromBaiduResultRow(listDoc);
                 if (StringUtils.isBlank(link)) {
                     PageUtils.scrollToBottom(driver);
-                    PageUtils.click(driver, By.cssSelector(".page-inner > a:last-child"));
+                    By nextBy = By.cssSelector(".page-inner > a:last-child");
+                    if (!PageLoadHelper.clickable(driver, nextBy, WaitTime.Shortest)) {
+                        return;
+                    }
+                    PageUtils.click(driver, nextBy);
                     continue;
                 }
             }
