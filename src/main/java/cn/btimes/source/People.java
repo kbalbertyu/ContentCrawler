@@ -72,4 +72,9 @@ public class People extends Source {
     protected int getSourceId() {
         return 33;
     }
+
+    @Override
+    String getStatus() {
+        return "3";
+    }
 }
