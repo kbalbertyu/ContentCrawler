@@ -26,6 +26,7 @@ public class Article {
     private List<String> contentImages;
     private int[] imageIds;
     private Category category;
+    private String coverImage;
 
     public boolean hasImages() {
         return CollectionUtils.isNotEmpty(contentImages);

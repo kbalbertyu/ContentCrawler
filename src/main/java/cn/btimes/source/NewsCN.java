@@ -5,6 +5,7 @@ import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import com.amzass.utils.common.Constants;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -74,6 +75,7 @@ public class NewsCN extends Source {
                 Article article = new Article();
                 this.parseTitle(row, article);
                 this.parseDate(row, article);
+                this.parseCoverImage(row, article);
                 articles.add(article);
             } catch (PastDateException e) {
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
@@ -84,6 +86,12 @@ public class NewsCN extends Source {
             }
         }
         return articles;
+    }
+
+    private void parseCoverImage(Element row, Article article) {
+        Element imageElm = row.select("img").first();
+        if (imageElm == null) return;
+        article.setCoverImage(imageElm.attr("src"));
     }
 
     @Override
@@ -103,5 +111,10 @@ public class NewsCN extends Source {
     @Override
     protected void readArticle(WebDriver driver, Article article) {
         this.readContent(driver, article);
+        if (!article.hasImages() && StringUtils.isNotBlank(article.getCoverImage())) {
+            List<String> images = new ArrayList<>();
+            images.add(article.getCoverImage());
+            article.setContentImages(images);
+        }
     }
 }
