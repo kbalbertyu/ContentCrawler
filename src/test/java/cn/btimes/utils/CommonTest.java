@@ -28,4 +28,12 @@ public class CommonTest {
         Common.convertImageFileType(url, path, ImageType.DEFAULT_TYPE);
         assertEquals(ImageType.DEFAULT_TYPE, Common.determineImageFileType(path));
     }
+
+    @Test
+    public void getAbsoluteUrl() {
+        String pageUrl = "https://xueqiu.com/hq#exchange=US&industry=3_3&firstName=3";
+        String url = "/S/HMI";
+        String absUrl = Common.getAbsoluteUrl(url, pageUrl);
+        assertEquals(absUrl, "https://xueqiu.com/S/HMI");
+    }
 }

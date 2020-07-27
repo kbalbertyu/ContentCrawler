@@ -76,7 +76,7 @@ public class CCSCrawler implements ServiceExecutorInterface {
     }
 
     /**
-     * Fetch CCS intro from Baidu Baike.
+     * Fetch CCSData intro from Baidu Baike.
      * Replace the current one if better one found.
      */
     private void fixIntroWithBaidu(WebDriver driver, CCSEntity ccsEntity) {
@@ -144,7 +144,7 @@ public class CCSCrawler implements ServiceExecutorInterface {
     private void save(CCSEntity ccsEntity, Config config) {
         WebApiResult result = apiRequest.post("/article/importCCSEntity?test_mode=" + TEST_MODE, JSON.toJSONString(ccsEntity), config);
         if (result == null) {
-            logger.error("Unable to upload CCS entity of: {}", ccsEntity.getLabel());
+            logger.error("Unable to upload CCSData entity of: {}", ccsEntity.getLabel());
         } else {
             logger.info("CCSEntity is saved: {}", ccsEntity.getLabel());
         }

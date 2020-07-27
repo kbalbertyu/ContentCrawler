@@ -1,12 +1,13 @@
 package cn.btimes.model.common;
 
 import cn.btimes.service.*;
-import com.amzass.service.common.ApplicationContext;
-import com.fortis.service.AmazonCrawler;
-import org.apache.commons.lang3.StringUtils;
 import cn.btimes.service.upload.BaiduLinksUploader;
 import cn.btimes.service.upload.ShenmaLinksUploader;
 import cn.btimes.service.upload.SogouLinksUploader;
+import com.amzass.service.common.ApplicationContext;
+import com.amzass.utils.common.Exceptions.BusinessException;
+import com.fortis.service.AmazonCrawler;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,7 @@ public enum Application {
     RelatedArticleHandler(ApplicationContext.getBean(RelatedArticleHandler.class)),
     DBBackUpHandler(ApplicationContext.getBean(DBBackUpHandler.class)),
     NewsFlowCrawler(ApplicationContext.getBean(NewsFlowCrawler.class)),
-    CCSCrawler(ApplicationContext.getBean(CCSCrawler.class));
+    XueQiuCrawler(ApplicationContext.getBean(XueQiuCrawler.class));
 
     Application(ServiceExecutorInterface executor) {
         this.executor = executor;
@@ -43,7 +44,7 @@ public enum Application {
                 return application;
             }
         }
-        return BTimes;
+        throw new IllegalArgumentException("Unable to determine the application");
     }
 
     public ServiceExecutorInterface executor;
@@ -55,8 +56,11 @@ public enum Application {
             applications.add(application);
         } else {
             for (String appName : args) {
-                Application application = determineApplication(appName);
-                applications.add(application);
+                try {
+                    Application application = determineApplication(appName);
+                    applications.add(application);
+                } catch (BusinessException ignored) {
+                }
             }
         }
         return applications;

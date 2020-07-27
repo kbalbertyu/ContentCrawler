@@ -30,6 +30,7 @@ public class Config {
     private String timezone;
     private Map<Category, Integer> categories;
     private boolean testMode;
+    private String[] args;
 
     public void init() {
         this.maxPastHours = this.maxPastMinutes / 60;

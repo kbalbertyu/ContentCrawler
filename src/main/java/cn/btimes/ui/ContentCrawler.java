@@ -32,6 +32,7 @@ public class ContentCrawler {
         for (Application application : applicationList) {
             LOGGER.info("Running application: {}", application.name());
             Config config = Common.loadApplicationConfig(application);
+            config.setArgs(args);
             if (StringUtils.isNotBlank(config.getTimezone())) {
                 TimeZone timeZone = TimeZone.getTimeZone(config.getTimezone());
                 TimeZone.setDefault(timeZone);
