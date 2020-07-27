@@ -67,7 +67,7 @@ public class ApiRequest extends WebApiRequest {
                     WaitTime.Short.execute();
                 }
             } catch (JSONException e) {
-                LOGGER.error("Invalid json response: {}", url);
+                LOGGER.error("Invalid json response: {}", url, e);
             } catch (Exception e) {
                 LOGGER.error("Unexpected exception occurred while uploading record: {}", url, e);
                 return null;
