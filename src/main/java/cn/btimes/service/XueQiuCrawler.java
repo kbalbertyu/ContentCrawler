@@ -7,17 +7,32 @@ import cn.btimes.model.ccs.CCSInfo;
 import cn.btimes.model.common.Config;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
+import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Exceptions.BusinessException;
+import com.amzass.utils.common.HttpUtils;
 import com.amzass.utils.common.PageUtils;
 import com.amzass.utils.common.RegexUtils.Regex;
+import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
 import com.mailman.model.common.WebApiResult;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.protocol.BasicHttpContext;
+import org.jsoup.Connection;
+import org.jsoup.Connection.Method;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -29,6 +44,10 @@ import org.openqa.selenium.WebElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 /**
@@ -37,6 +56,9 @@ import java.util.*;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2020/7/23 17:15
  */
 public class XueQiuCrawler implements ServiceExecutorInterface {
+    private static final String CHART_SOURCE_URL = "https://q.stock.sohu.com/us/%s.html";
+    private static final String DOWNLOAD_PATH = "downloads";
+    private static final String CHARTS_UPLOAD_URL = "/article/uploadCCSCharts";
     private final Logger logger = LoggerFactory.getLogger(XueQiuCrawler.class);
     @Inject private ApiRequest apiRequest;
     @Inject private WebDriverLauncher webDriverLauncher;
@@ -50,11 +72,11 @@ public class XueQiuCrawler implements ServiceExecutorInterface {
         if (!PageLoadHelper.present(driver, By.id("stockList"), WaitTime.Normal)) {
             throw new BusinessException("Unable to load the page.");
         }
-        Set<CCSData> ccsDataSet = this.crawlList(driver);
 
         if (ArrayUtils.contains(config.getArgs(), "CCSData")) {
+            Set<CCSData> ccsDataSet = this.crawlList(driver);
             for (CCSData ccsData : ccsDataSet) {
-                Document doc = this.loadEntityPage(driver, ccsData);
+                Document doc = this.loadEntityPage(driver, ccsData.getStockCode());
                 if (doc == null) {
                     continue;
                 }
@@ -63,17 +85,148 @@ public class XueQiuCrawler implements ServiceExecutorInterface {
             }
         }
 
-        if (ArrayUtils.contains(config.getArgs(), "CCSInfo")) {
-            for (CCSData ccsData : ccsDataSet) {
-                Document doc = this.loadEntityPage(driver, ccsData);
+        if (ArrayUtils.contains(config.getArgs(), "CCSDataUpdate")) {
+            List<String> stockCodes = this.fetchStockCodes(config);
+            for (String stockCode : stockCodes) {
+                Document doc = this.loadEntityPage(driver, stockCode);
                 if (doc == null) {
                     continue;
                 }
-                CCSInfo ccsInfo = this.crawlCCSInfo(driver, doc, ccsData.getStockCode());
+                CCSData ccsData = new CCSData();
+                ccsData.setStockCode(stockCode);
+
+                this.crawlCCSData(doc, ccsData);
+                this.uploadCCSData(ccsData, config);
+            }
+        }
+
+        if (ArrayUtils.contains(config.getArgs(), "CCSInfo")) {
+            List<String> stockCodes = this.fetchStockCodes(config);
+            for (String stockCode : stockCodes) {
+                Document doc = this.loadEntityPage(driver, stockCode);
+                if (doc == null) {
+                    continue;
+                }
+                CCSInfo ccsInfo = this.crawlCCSInfo(driver, doc, stockCode);
                 this.uploadCCSInfo(ccsInfo, config);
             }
         }
-        System.out.println(ccsDataSet);
+
+        if (ArrayUtils.contains(config.getArgs(), "CCSChart")) {
+            List<String> stockCodes = this.fetchStockCodes(config);
+            if (CollectionUtils.isNotEmpty(stockCodes)) {
+                for (String stockCode : stockCodes) {
+                    this.crawlCharts(stockCode, config, driver);
+                }
+            }
+        }
+    }
+
+    private void crawlCharts(String stockCode, Config config, WebDriver driver) {
+        String url = String.format(CHART_SOURCE_URL, stockCode);
+        driver.get(url);
+        if (!PageLoadHelper.present(driver, By.id("mlineImg"), WaitTime.Normal)) {
+            return;
+        }
+
+        PageUtils.click(driver, By.id("yline"));
+        WaitTime.Shortest.execute();
+        PageUtils.click(driver, By.id("kline"));
+        WaitTime.Shortest.execute();
+
+        Document doc = Jsoup.parse(driver.getPageSource());
+        Elements imageElms = doc.select("#hqimg > img");
+        Set<File> files = new HashSet<>();
+        for (Element imageElm : imageElms) {
+            String id = imageElm.id();
+            String src = "https:" + imageElm.attr("src");
+
+            File file = this.makeDownloadFile(stockCode, id);
+            try {
+                this.download(src, file);
+                files.add(file);
+            } catch (BusinessException e) {
+                logger.error("Unable to download the file: {}", src);
+            }
+        }
+
+        this.uploadCharts(files, config);
+    }
+
+    private void uploadCharts(Set<File> files, Config config) {
+        Connection conn = Jsoup.connect(ApiRequest.getFullUrl(CHARTS_UPLOAD_URL, config))
+            .validateTLSCertificates(false)
+            .userAgent("Mozilla")
+            .method(Method.POST)
+            .timeout(0).maxBodySize(0);
+        int i = 0;
+        for (File file : files) {
+            try {
+                FileInputStream fs = new FileInputStream(file);
+                conn.data("files[" + i + "]", file.getAbsolutePath(), fs);
+                i++;
+            } catch (IOException e) {
+                String message = String.format("Unable to download file: %s", file.getName());
+                logger.error(message, e);
+            }
+        }
+
+        try {
+            String body = conn.execute().body();
+            logger.info("File uploaded: {}", body);
+        } catch (IOException e) {
+            logger.error("Unable to upload ccs chart files: ", e);
+        }
+    }
+
+    private void download(String url, File file) {
+        HttpGet get = HttpUtils.prepareHttpGet(cn.btimes.utils.Tools.encodeUrl(url));
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        BasicHttpContext localContext = new BasicHttpContext();
+
+        for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
+            CloseableHttpResponse resp = null;
+            InputStream is = null;
+            try {
+                resp = httpClient.execute(get, localContext);
+                int status = resp.getStatusLine().getStatusCode();
+                if (status == HttpStatus.SC_OK) {
+                    is = resp.getEntity().getContent();
+                    FileUtils.copyInputStreamToFile(is, file);
+                    return;
+                }
+                String message = String.format("Failed to execute file download request: fileName=%s, url=%s, status=%s.", file.getName(), url, status);
+                logger.error(message);
+            } catch (Exception ex) {
+                String message = String.format("Failed to download file of %s： %s", url, Tools.getExceptionMsg(ex));
+                logger.error(message);
+            } finally {
+                get.releaseConnection();
+                IOUtils.closeQuietly(is);
+                IOUtils.closeQuietly(resp);
+            }
+        }
+        throw new BusinessException(String.format("Failed to execute %s file download request after retried.", url));
+    }
+
+    private File makeDownloadFile(String stockCode, String id) {
+        File file = FileUtils.getFile(DOWNLOAD_PATH, "ccs", stockCode + "-" + id + ".png");
+        if (file.exists()) {
+            FileUtils.deleteQuietly(file);
+            file = FileUtils.getFile(DOWNLOAD_PATH, "ccs", stockCode + "-" + id + ".png");
+        }
+        if (!file.canWrite()) {
+            file.setWritable(true);
+        }
+        return file;
+    }
+
+    private List<String> fetchStockCodes(Config config) {
+        WebApiResult result = apiRequest.get("/article/fetchCCSCodes", config);
+        if (result == null) {
+            return null;
+        }
+        return JSONObject.parseArray(result.getData(), String.class);
     }
 
     private void uploadCCSInfo(CCSInfo ccsInfo, Config config) {
@@ -96,11 +249,11 @@ public class XueQiuCrawler implements ServiceExecutorInterface {
         }
     }
 
-    private Document loadEntityPage(WebDriver driver, CCSData ccsData) {
-        String url = Common.getAbsoluteUrl("/S/" + ccsData.getStockCode(), SOURCE_URL);
+    private Document loadEntityPage(WebDriver driver, String stockCode) {
+        String url = Common.getAbsoluteUrl("/S/" + stockCode, SOURCE_URL);
         driver.get(url);
         if (!PageLoadHelper.present(driver, By.className("stock-name"), WaitTime.Normal)) {
-            logger.error("Unable to load the page of: " + ccsData.getStockCode());
+            logger.error("Unable to load the page of: " + stockCode);
             return null;
         }
 

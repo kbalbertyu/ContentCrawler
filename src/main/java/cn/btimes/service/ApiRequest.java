@@ -35,7 +35,7 @@ public class ApiRequest extends WebApiRequest {
         return this.send(config, path, Method.POST, dataText);
     }
 
-    private static String getFullUrl(String path, Config config) {
+    public static String getFullUrl(String path, Config config) {
         String url = config.getFrontUrl() + WEB_API_ENDPOINT + path;
         if (!config.isTestMode()) {
             return url;
