@@ -59,7 +59,7 @@ public enum Application {
                 try {
                     Application application = determineApplication(appName);
                     applications.add(application);
-                } catch (BusinessException ignored) {
+                } catch (IllegalArgumentException ignored) {
                 }
             }
         }
