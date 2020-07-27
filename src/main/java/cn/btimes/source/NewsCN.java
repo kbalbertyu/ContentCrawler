@@ -1,6 +1,7 @@
 package cn.btimes.source;
 
 import cn.btimes.model.common.Article;
+import cn.btimes.model.common.BTExceptions.ArticleNoImageException;
 import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
@@ -21,7 +22,7 @@ import java.util.*;
 public class NewsCN extends Source {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static final int MAX_PAST_DAYS = 1;
+    private static final int MAX_PAST_DAYS = 2;
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -110,11 +111,14 @@ public class NewsCN extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readContent(driver, article);
-        if (!article.hasImages() && StringUtils.isNotBlank(article.getCoverImage())) {
-            List<String> images = new ArrayList<>();
-            images.add(article.getCoverImage());
-            article.setContentImages(images);
+        try {
+            this.readContent(driver, article);
+        } catch (ArticleNoImageException e) {
+            if (!article.hasImages() && StringUtils.isNotBlank(article.getCoverImage())) {
+                List<String> images = new ArrayList<>();
+                images.add(article.getCoverImage());
+                article.setContentImages(images);
+            }
         }
     }
 }

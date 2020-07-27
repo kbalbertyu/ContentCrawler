@@ -24,4 +24,12 @@ public class BTExceptions {
             super(errorMsg);
         }
     }
+
+    public static class ArticleNoImageException extends RuntimeException {
+        private static final long serialVersionUID = 2342184321240567438L;
+
+        public ArticleNoImageException(String errorMsg) {
+            super(errorMsg);
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package cn.btimes.source;
 
 import cn.btimes.model.common.*;
+import cn.btimes.model.common.BTExceptions.ArticleNoImageException;
 import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.service.WebDriverLauncher;
 import cn.btimes.utils.Common;
@@ -502,7 +503,7 @@ public abstract class Source {
             contentImages.add(absSrc);
         }
         if (contentImages.size() == 0) {
-            throw new BusinessException("This article is skipped due to having no images: " + article.getTitle());
+            throw new ArticleNoImageException("This article is skipped due to having no images: " + article.getTitle());
         }
         article.setContent(content);
         article.setContentImages(contentImages);
