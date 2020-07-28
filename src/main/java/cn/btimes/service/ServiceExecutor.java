@@ -70,7 +70,12 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         sources.add(ApplicationContext.getBean(NewsCN.class));
         sources.add(ApplicationContext.getBean(People.class));
         sources.add(ApplicationContext.getBean(PRNAsia.class));
-        /*sources.add(ApplicationContext.getBean(Sina.class));
+        return sources;
+    }
+
+    protected List<Source> getBTCNUsedSources() {
+        List<Source> sources = new ArrayList<>();
+        sources.add(ApplicationContext.getBean(Sina.class));
         sources.add(ApplicationContext.getBean(SinaFinance.class));
         sources.add(ApplicationContext.getBean(ThePaper.class));
         sources.add(ApplicationContext.getBean(IFengTravel.class));
@@ -99,7 +104,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         sources.add(ApplicationContext.getBean(CaiFuHao.class));
         sources.add(ApplicationContext.getBean(TechWeb.class));
         sources.add(ApplicationContext.getBean(BJNews.class));
-        sources.add(ApplicationContext.getBean(ChangJiangTimes.class));*/
+        sources.add(ApplicationContext.getBean(ChangJiangTimes.class));
         return sources;
     }
 

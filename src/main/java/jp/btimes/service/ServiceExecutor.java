@@ -15,6 +15,8 @@ public class ServiceExecutor extends cn.btimes.service.ServiceExecutor {
     protected List<Source> getSources() {
         // Sources for CN edition, borrow from BTCN
         List<Source> sources = this.getBTCNSources();
+        List<Source> usedSources = this.getBTCNUsedSources();
+        sources.addAll(usedSources);
 
         // Sources for JP edition
         sources.add(ApplicationContext.getBean(KyotoNP.class));
