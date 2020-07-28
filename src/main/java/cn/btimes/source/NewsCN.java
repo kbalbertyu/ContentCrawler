@@ -114,10 +114,13 @@ public class NewsCN extends Source {
         try {
             this.readContent(driver, article);
         } catch (ArticleNoImageException e) {
-            if (!article.hasImages() && StringUtils.isNotBlank(article.getCoverImage())) {
+            String cover = article.getCoverImage();
+            if (!article.hasImages() && StringUtils.isNotBlank(cover)) {
                 List<String> images = new ArrayList<>();
-                images.add(article.getCoverImage());
+                images.add(cover);
                 article.setContentImages(images);
+            } else {
+                throw e;
             }
         }
     }

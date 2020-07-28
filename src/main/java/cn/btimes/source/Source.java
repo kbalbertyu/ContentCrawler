@@ -310,6 +310,8 @@ public abstract class Source {
                 this.readArticle(driver, article);
                 this.saveArticle(article, driver);
                 saved++;
+            } catch (ArticleNoImageException e) {
+                logger.error(e.getMessage() + ": " + article.getUrl(), e);
             } catch (PastDateException e) {
                 logger.error("Article publish date has past {} minutes: {}",
                     config.getMaxPastMinutes(), article.getUrl(), e);
