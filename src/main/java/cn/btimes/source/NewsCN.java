@@ -1,15 +1,17 @@
 package cn.btimes.source;
 
 import cn.btimes.model.common.Article;
-import cn.btimes.model.common.BTExceptions.ArticleNoImageException;
 import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
+import cn.btimes.utils.Common;
+import cn.btimes.utils.PageUtils;
+import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
-import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,11 @@ public class NewsCN extends Source {
         URLS.put("http://www.news.cn/tech/qqbb.htm", Category.TECH);
         URLS.put("http://www.news.cn/auto/jsxx.htm", Category.AUTO);
         URLS.put("http://www.xinhuanet.com/house/24xsjx.htm", Category.REALESTATE);
+        URLS.put("http://www.xinhuanet.com/fortune/gd.htm", Category.ECONOMY);
+        URLS.put("http://www.xinhuanet.com/fortune/", Category.ECONOMY);
+        URLS.put("http://www.xinhuanet.com/house/index.htm", Category.REALESTATE);
+        URLS.put("http://www.xinhuanet.com/tech/index.htm", Category.TECH);
+        URLS.put("http://www.xinhuanet.com/money/index.htm", Category.FINANCE);
     }
 
     @Override
@@ -89,10 +96,21 @@ public class NewsCN extends Source {
         return articles;
     }
 
+    @Override
+    void loadMoreList(WebDriver driver) {
+        By by = By.id("dataMoreBtn");
+        PageUtils.scrollToElement(driver, by);
+        WaitTime.Shortest.execute();
+        PageUtils.scrollBy(driver, 100L);
+        WaitTime.Shortest.execute();
+        PageUtils.click(driver, by);
+    }
+
     private void parseCoverImage(Element row, Article article) {
         Element imageElm = row.select("img").first();
         if (imageElm == null) return;
-        article.setCoverImage(imageElm.attr("src"));
+        String src = imageElm.attr("src");
+        article.setCoverImage(Common.getAbsoluteUrl(src, driver.getCurrentUrl()));
     }
 
     @Override
@@ -102,7 +120,7 @@ public class NewsCN extends Source {
 
     @Override
     protected String cleanHtml(Element dom) {
-        Elements elements = dom.select(".tadd, .p-tags");
+        Elements elements = dom.select(".tadd, .p-tags, iframe, .lb, .zan-wap");
         if (elements.size() > 0) {
             elements.remove();
         }
@@ -111,17 +129,6 @@ public class NewsCN extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        try {
-            this.readContent(driver, article);
-        } catch (ArticleNoImageException e) {
-            String cover = article.getCoverImage();
-            if (!article.hasImages() && StringUtils.isNotBlank(cover)) {
-                List<String> images = new ArrayList<>();
-                images.add(cover);
-                article.setContentImages(images);
-            } else {
-                throw e;
-            }
-        }
+        this.readContent(driver, article);
     }
 }

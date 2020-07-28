@@ -9,9 +9,7 @@ import com.amzass.utils.common.JsoupWrapper.WebRequest;
 import com.amzass.utils.common.Tools;
 import org.apache.commons.io.FileUtils;
 import org.jsoup.nodes.Document;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebDriverException;
+import org.openqa.selenium.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,9 +58,19 @@ public class PageUtils extends com.amzass.utils.common.PageUtils {
         }
     }
 
-    private static void scrollBy(WebDriver driver, long by) {
+    public static void scrollBy(WebDriver driver, long by) {
         JavascriptExecutor jse = (JavascriptExecutor) driver;
         jse.executeScript("window.scrollBy(0, " + by + ");");
+        WaitTime.Shortest.execute();
+    }
+
+    public static void scrollToElement(WebDriver driver, By by) {
+        WebElement element = PageLoadHelper.findElement(driver, by, WaitTime.Shortest);
+        if (element == null) {
+            return;
+        }
+        JavascriptExecutor jse = (JavascriptExecutor) driver;
+        jse.executeScript("arguments[0].scrollIntoView(true);", element);
         WaitTime.Shortest.execute();
     }
 

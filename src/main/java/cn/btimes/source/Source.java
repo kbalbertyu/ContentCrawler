@@ -66,6 +66,7 @@ public abstract class Source {
     private Map<String, String> adminCookie;
     protected Config config;
     Set<Article> relatedArticles = new HashSet<>();
+    WebDriver driver;
 
     protected abstract Map<String, Category> getUrls();
 
@@ -134,10 +135,10 @@ public abstract class Source {
     }
 
     private Document openArticlePage(WebDriver driver, Article article) {
-        return this.openPage(driver, article.getUrl());
+        return this.openPage(driver, article.getUrl(), false);
     }
 
-    private Document openPage(WebDriver driver, String url) {
+    private Document openPage(WebDriver driver, String url, boolean loadMore) {
         if (this.withoutDriver()) {
             try {
                 return cn.btimes.utils.PageUtils.getDocumentByJsoup(url);
@@ -153,9 +154,16 @@ public abstract class Source {
 
         // Scroll to bottom to make sure latest content are loaded
         PageUtils.scrollToBottom(driver);
+        if (loadMore) {
+            this.loadMoreList(driver);
+        }
         WaitTime.Normal.execute();
 
         return Jsoup.parse(driver.getPageSource());
+    }
+
+    void loadMoreList(WebDriver driver) {
+
     }
 
     void parseTitleSummaryList(List<Article> articles, Elements list) {
@@ -259,11 +267,12 @@ public abstract class Source {
 
     public void execute(WebDriver driver, Config config) {
         this.initContext(config);
+        this.driver = driver;
         this.relatedArticles.clear();
         List<Article> articles = new ArrayList<>();
         Map<String, Category> urls = this.getUrls();
         for (String url : urls.keySet()) {
-            Document doc = this.openPage(driver, url);
+            Document doc = this.openPage(driver, url, true);
             try {
                 List<Article> articlesNew = this.parseList(doc);
                 int size = articlesNew.size();
@@ -504,8 +513,13 @@ public abstract class Source {
             content = StringUtils.replace(content, src, absSrc);
             contentImages.add(absSrc);
         }
+        String cover = article.getCoverImage();
         if (contentImages.size() == 0) {
-            throw new ArticleNoImageException("This article is skipped due to having no images: " + article.getTitle());
+            if (StringUtils.isNotBlank(cover)) {
+                contentImages.add(cover);
+            } else {
+                throw new ArticleNoImageException("This article is skipped due to having no images: " + article.getTitle());
+            }
         }
         article.setContent(content);
         article.setContentImages(contentImages);
