@@ -134,7 +134,7 @@ public abstract class Source {
         this.parseContent(doc, article);
     }
 
-    private Document openArticlePage(WebDriver driver, Article article) {
+    Document openArticlePage(WebDriver driver, Article article) {
         return this.openPage(driver, article.getUrl(), false);
     }
 

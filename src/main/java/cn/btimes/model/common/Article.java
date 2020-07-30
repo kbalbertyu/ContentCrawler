@@ -20,7 +20,7 @@ public class Article {
     private String title;
     private Date date;
     private String summary = StringUtils.EMPTY;
-    private String content;
+    private String content = StringUtils.EMPTY;
     private String reporter = StringUtils.EMPTY;
     private String source = StringUtils.EMPTY;
     private List<Image> contentImages;
@@ -40,7 +40,7 @@ public class Article {
         if (StringUtils.isBlank(title)) {
             throw new BusinessException(String.format("Article title is blank: %s", url));
         }
-        if (StringUtils.isBlank(content)) {
+        if (StringUtils.isBlank(content) && this.getContentImages().size() == 0) {
             throw new BusinessException(String.format("Article content is blank: %s -> %s", title, url));
         }
     }

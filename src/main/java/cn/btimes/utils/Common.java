@@ -179,6 +179,10 @@ public class Common {
         return parts[parts.length - 1].toLowerCase();
     }
 
+    public static String trim(String text) {
+        return StringUtils.trim(StringUtils.removePattern(text, "^[　*| *| *|//s*]*"));
+    }
+
     public static void main(String[] args) {
         String text1 = "纽约时装周";
         String text2 = "伦敦时装周活动";
