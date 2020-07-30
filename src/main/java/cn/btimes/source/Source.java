@@ -57,6 +57,7 @@ import java.util.*;
 public abstract class Source {
     private static final String WITHOUT_YEAR = "1970";
     private static final String WITHOUT_MONTH_DAY = "01/01";
+    private static final String GALLERY_TYPOLOGY = "2";
     private final Logger logger = LoggerFactory.getLogger(Source.class);
     private static final String DOWNLOAD_PATH = "downloads";
     private static final List<String[]> sources = readSources();
@@ -428,8 +429,10 @@ public abstract class Source {
             int length = article.getImageIds().length;
             for (int i = 0; i < length; i++) {
                 String imageId = String.valueOf(article.getImageIds()[i]);
-                conn.data("imghidden_" + imageId, "")
-                    .data("ar_image_hide[" + i + "]", imageId);
+                if (!GALLERY_TYPOLOGY.equals(this.getTypology())) {
+                    conn.data("imghidden_" + imageId, "")
+                        .data("ar_image_hide[" + i + "]", imageId);
+                }
                 sb.append(imageId);
                 if (i != length - 1) {
                     sb.append(Constants.COMMA);
