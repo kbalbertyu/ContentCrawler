@@ -4,6 +4,7 @@ import cn.btimes.model.common.Article;
 import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
+import cn.btimes.model.common.Image;
 import cn.btimes.utils.Common;
 import com.amzass.utils.common.Constants;
 import org.apache.commons.lang3.StringUtils;
@@ -98,11 +99,13 @@ public class Asahi extends Source {
         if (imageElms.size() == 0) {
             return;
         }
-        List<String> images = article.getContentImages();
+        List<Image> images = article.getContentImages();
         for (Element imageElm : imageElms) {
             String src = imageElm.attr("src");
             src = StringUtils.replace(src, "L.", ".");
-            images.add(Common.getAbsoluteUrl(src, article.getUrl()));
+            String absSrc = Common.getAbsoluteUrl(src, article.getUrl());
+            Image image = new Image(absSrc, "");
+            images.add(image);
         }
     }
 }

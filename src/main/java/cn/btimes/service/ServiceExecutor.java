@@ -61,7 +61,9 @@ public class ServiceExecutor implements ServiceExecutorInterface {
     }
 
     protected List<Source> getSources() {
-        return this.getBTCNSources();
+        List<Source> sources = this.getBTCNSources();
+        sources.add(ApplicationContext.getBean(ChinaNetPhoto.class));
+        return sources;
     }
 
     protected List<Source> getBTCNSources() {

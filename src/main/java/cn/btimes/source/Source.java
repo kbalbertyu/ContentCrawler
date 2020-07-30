@@ -386,7 +386,7 @@ public abstract class Source {
         if (article.hasImages()) {
             ImageUploadResult result = this.uploadImages(article, driver);
             if (result != null && result.hasFiles()) {
-                List<SavedImage> savedImages = this.saveImages(article, result);
+                List<SavedImage> savedImages = this.saveImages(article, result.getFiles());
                 this.deleteDownloadedImages(savedImages);
                 this.replaceImages(article, savedImages);
             } else {
@@ -413,7 +413,7 @@ public abstract class Source {
             .data("ar_keyword", "")
             .data("ar_newskeyword", article.getTitle())
             .data("ar_youtube", "")
-            .data("ar_typology", "1")
+            .data("ar_typology", this.getTypology())
             .data("ar_tag", "")
             .data("ar_topic", "")
             .data("ar_related", "")
@@ -465,6 +465,10 @@ public abstract class Source {
         return "1";
     }
 
+    String getTypology() {
+        return "1";
+    }
+
     private void checkArticleListExistence(Element doc, String cssQuery) {
         this.checkElementExistence(doc, cssQuery, "Article list");
     }
@@ -503,7 +507,7 @@ public abstract class Source {
     void fetchContentImages(Article article, Element contentElm) {
         String content = article.getContent();
         Elements images = contentElm.select("img");
-        List<String> contentImages = new ArrayList<>();
+        List<Image> contentImages = new ArrayList<>();
         for (Element image : images) {
             String src = image.attr("src");
             if (StringUtils.containsIgnoreCase(src, "data:image") || StringUtils.containsIgnoreCase(src, "base64")) {
@@ -511,12 +515,14 @@ public abstract class Source {
             }
             String absSrc = Common.getAbsoluteUrl(src, article.getUrl());
             content = StringUtils.replace(content, src, absSrc);
-            contentImages.add(absSrc);
+            Image imageObj = new Image(absSrc, "");
+            contentImages.add(imageObj);
         }
         String cover = article.getCoverImage();
         if (contentImages.size() == 0) {
             if (StringUtils.isNotBlank(cover)) {
-                contentImages.add(cover);
+                Image imageObj = new Image(cover, "");
+                contentImages.add(imageObj);
             } else {
                 throw new ArticleNoImageException("This article is skipped due to having no images: " + article.getTitle());
             }
@@ -526,19 +532,22 @@ public abstract class Source {
     }
 
     protected void resizeContentImage(Article article, String[] from, String[] to) {
-        List<String> newImages = new ArrayList<>();
-
         String content = article.getContent();
-        for (String image : article.getContentImages()) {
-            String newSrc = image;
+
+        List<Image> images = article.getContentImages();
+        Iterator<Image> it = images.iterator();
+        while (it.hasNext()) {
+            Image image = it.next();
+            String newUrl = image.getUrl();
             for (int i = 0; i < from.length; i++) {
-                newSrc = StringUtils.replacePattern(newSrc, from[i], to[i]);
+                newUrl = StringUtils.replacePattern(newUrl, from[i], to[i]);
             }
-            newImages.add(newSrc);
-            content = StringUtils.replace(content, image, newSrc);
+            content = StringUtils.replace(content, image.getUrl(), newUrl);
+            image.setUrl(newUrl);
         }
+
         article.setContent(content);
-        article.setContentImages(newImages);
+        article.setContentImages(images);
     }
 
     protected void parseDate(Element doc, Article article) {
@@ -692,12 +701,12 @@ public abstract class Source {
     private void replaceImages(Article article, List<SavedImage> savedImages) {
         String content = article.getContent();
         int[] imageIds = new int[savedImages.size()];
-        for (String contentImage : article.getContentImages()) {
-            String hex = Common.toMD5(contentImage);
+        for (Image image : article.getContentImages()) {
+            String hex = Common.toMD5(image.getUrl());
             for (SavedImage savedImage : savedImages) {
                 if (StringUtils.startsWith(savedImage.getOriginalFile(), hex)) {
                     String newImage = config.getCdnUrl() + config.getDataImagesFull() + savedImage.getPath();
-                    content = StringUtils.replace(content, contentImage, newImage);
+                    content = StringUtils.replace(content, image.getUrl(), newImage);
                     break;
                 }
             }
@@ -722,12 +731,12 @@ public abstract class Source {
         Connection conn = this.createWebConnection(config.getFileUploadUrl(), adminCookie);
 
         int i = 0;
-        for (String imageUrl : article.getContentImages()) {
+        for (Image contentImage : article.getContentImages()) {
             DownloadResult downloadResult;
             try {
-                downloadResult = this.downloadFile(imageUrl, driver);
+                downloadResult = this.downloadFile(contentImage.getUrl(), driver);
             } catch (BusinessException e) {
-                String message = String.format("Unable to download image: %s", imageUrl);
+                String message = String.format("Unable to download image: %s", contentImage.getUrl());
                 logger.error(message);
                 Messenger messenger = new Messenger(this.getClass().getName(), message + ": " + e.getMessage());
                 this.messengers.add(messenger);
@@ -775,13 +784,15 @@ public abstract class Source {
     /**
      * Save uploaded images to DB, and move out of the temp directory
      */
-    private List<SavedImage> saveImages(Article article, ImageUploadResult result) {
+    private List<SavedImage> saveImages(Article article, List<UploadedImage> files) {
         Connection conn = this.createWebConnection(config.getFileSaveUrl(), adminCookie);
+        List<Image> contentImages = article.getContentImages();
 
         int i = 0;
-        for (UploadedImage imageFile : result.getFiles()) {
+        for (UploadedImage imageFile : files) {
+            this.assignImageContent(imageFile, contentImages);
             conn.data("im_title[" + i + "]", article.getTitle())
-                .data("im_content[" + i + "]", "")
+                .data("im_content[" + i + "]", imageFile.getContent())
                 .data("im_credit[" + i + "]", article.getSource())
                 .data("im_link[" + i + "]", article.getUrl())
                 .data("im_reporter[" + i + "]", article.getReporter())
@@ -805,6 +816,15 @@ public abstract class Source {
             }
         }
         return null;
+    }
+
+    private void assignImageContent(UploadedImage imageFile, List<Image> contentImages) {
+        for (Image image : contentImages) {
+            if (StringUtils.startsWithIgnoreCase(imageFile.getOriginalFile(), Common.toMD5(image.getUrl()))) {
+                imageFile.setContent(image.getContent());
+                return;
+            }
+        }
     }
 
     /**

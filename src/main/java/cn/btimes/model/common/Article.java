@@ -23,7 +23,7 @@ public class Article {
     private String content;
     private String reporter = StringUtils.EMPTY;
     private String source = StringUtils.EMPTY;
-    private List<String> contentImages;
+    private List<Image> contentImages;
     private int[] imageIds;
     private Category category;
     private String coverImage;
