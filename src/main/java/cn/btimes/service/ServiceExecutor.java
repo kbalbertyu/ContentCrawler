@@ -11,6 +11,7 @@ import com.amzass.enums.common.Country;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.common.ApplicationContext;
 import com.amzass.ui.utils.UITools;
+import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Tools;
@@ -63,6 +64,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
     protected List<Source> getSources() {
         List<Source> sources = this.getBTCNSources();
         sources.add(ApplicationContext.getBean(ChinaNetPhoto.class));
+        sources.add(ApplicationContext.getBean(BTimes.class));
         return sources;
     }
 
@@ -156,6 +158,19 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         }
         if (this.messengers.isNotEmpty()) {
             // this.sendErrorMessage(config);
+        }
+    }
+
+    private void flushArticleCaches(WebDriver driver, Config config) {
+        String ids = "521941,521940,521939,521938,521936,521937,521935,521934,521931,521932,521990,521989,521982,521970,521969,521965,521959,521958,521957,521956,521955,521953,521952,521949,521947,521946,521945,521944,521943,521942";
+        String[] idArr = StringUtils.split(ids, ",");
+        for (String id : idArr) {
+            String url = config.getAdminUrl() + "/pages/publish/publish/form.php?w=u&ar_id=" + id;
+            driver.get(url);
+            WaitTime.Shortest.execute();
+            PageUtils.click(driver, By.cssSelector("button.btn-info.article_submit"));
+            PageLoadHelper.present(driver, By.id("flist"), WaitTime.Normal);
+            logger.info("Updated: " + id);
         }
     }
 
