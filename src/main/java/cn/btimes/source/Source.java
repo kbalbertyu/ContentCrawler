@@ -3,6 +3,7 @@ package cn.btimes.source;
 import cn.btimes.model.common.*;
 import cn.btimes.model.common.BTExceptions.ArticleNoImageException;
 import cn.btimes.model.common.BTExceptions.PastDateException;
+import cn.btimes.service.ApiRequest;
 import cn.btimes.service.WebDriverLauncher;
 import cn.btimes.utils.Common;
 import com.alibaba.fastjson.JSON;
@@ -16,6 +17,7 @@ import com.amzass.utils.common.*;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
+import com.mailman.model.common.WebApiResult;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -64,6 +66,7 @@ public abstract class Source {
     private static final String PROXY = Tools.getCustomizingValue("PROXY");
     @Inject private DBManager dbManager;
     @Inject Messengers messengers;
+    @Inject private ApiRequest apiRequest;
     private Map<String, String> adminCookie;
     protected Config config;
     Set<Article> relatedArticles = new HashSet<>();
@@ -305,16 +308,20 @@ public abstract class Source {
 
         int saved = 0;
         for (Article article : articles) {
-            String logId = Common.toMD5(article.getUrl());
-            String logIdTitle = Common.toMD5(this.getClass() + article.getTitle());
-            ActionLog log = dbManager.readById(logId, ActionLog.class);
+            String logId = null;
+            String logIdTitle = null;
+            if (article.getId() == 0) {
+                logId = Common.toMD5(article.getUrl());
+                logIdTitle = Common.toMD5(this.getClass() + article.getTitle());
+                ActionLog log = dbManager.readById(logId, ActionLog.class);
 
-            if (log == null) {
-                log = dbManager.readById(logIdTitle, ActionLog.class);
-            }
-            if (log != null) {
-                logger.info("Article saved already: {} -> {}", article.getTitle(), article.getUrl());
-                continue;
+                if (log == null) {
+                    log = dbManager.readById(logIdTitle, ActionLog.class);
+                }
+                if (log != null) {
+                    logger.info("Article saved already: {} -> {}", article.getTitle(), article.getUrl());
+                    continue;
+                }
             }
             try {
                 this.readArticle(driver, article);
@@ -340,8 +347,10 @@ public abstract class Source {
                 this.messengers.add(messenger);
                 continue;
             }
-            dbManager.save(new ActionLog(logId), ActionLog.class);
-            dbManager.save(new ActionLog(logIdTitle), ActionLog.class);
+            if (article.getId() == 0) {
+                dbManager.save(new ActionLog(logId), ActionLog.class);
+                dbManager.save(new ActionLog(logIdTitle), ActionLog.class);
+            }
         }
 
         this.saveRelatedArticles();
@@ -396,6 +405,11 @@ public abstract class Source {
         }
         this.cleanThirdPartyImages(article);
         article.validate();
+
+        if (article.getId() > 0) {
+            this.updateArticle(article);
+            return;
+        }
 
         int cateId = config.getCategories().get(article.getCategory());
         Connection conn = this.createWebConnection(config.getArticleSaveUrl(), adminCookie)
@@ -462,6 +476,12 @@ public abstract class Source {
         }
         throw new BusinessException(String.format("Unable to save the article: [%s]%s -> %s",
             article.getSource(), article.getTitle(), article.getUrl()));
+    }
+
+    private void updateArticle(Article article) {
+        String dataText = JSON.toJSONString(article);
+        WebApiResult result = apiRequest.post("/article/updateArticleImages", dataText, config);
+        System.out.println(result);
     }
 
     String getStatus() {
@@ -643,7 +663,9 @@ public abstract class Source {
         Element dom = Jsoup.parse(article.getContent()).body();
         boolean hasRemoval = false;
         for (Element image : dom.select("img")) {
-            if (StringUtils.containsIgnoreCase(image.attr("src"), config.getCdnUrl())) {
+            String src = image.attr("src");
+            if (StringUtils.startsWithIgnoreCase(src, "/data/images") ||
+                StringUtils.containsIgnoreCase(src, config.getCdnUrl())) {
                 this.justifyImage(image);
                 continue;
             }
@@ -708,7 +730,7 @@ public abstract class Source {
             String hex = Common.toMD5(image.getUrl());
             for (SavedImage savedImage : savedImages) {
                 if (StringUtils.startsWith(savedImage.getOriginalFile(), hex)) {
-                    String newImage = config.getCdnUrl() + config.getDataImagesFull() + savedImage.getPath();
+                    String newImage = config.getDataImagesFull() + savedImage.getPath();
                     content = StringUtils.replace(content, image.getUrl(), newImage);
                     break;
                 }

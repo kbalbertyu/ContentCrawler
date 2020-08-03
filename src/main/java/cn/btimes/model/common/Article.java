@@ -1,5 +1,6 @@
 package cn.btimes.model.common;
 
+import com.alibaba.fastjson.annotation.JSONField;
 import com.amzass.utils.common.Exceptions.BusinessException;
 import com.google.common.base.Objects;
 import lombok.Data;
@@ -15,11 +16,14 @@ import java.util.List;
  */
 @Data
 public class Article {
+    @JSONField(name = "ar_id")
     private int id;
-    private String url;
+    private String url = StringUtils.EMPTY;
+    @JSONField(name = "ar_title")
     private String title;
     private Date date;
     private String summary = StringUtils.EMPTY;
+    @JSONField(name = "ar_content")
     private String content = StringUtils.EMPTY;
     private String reporter = StringUtils.EMPTY;
     private String source = StringUtils.EMPTY;
@@ -37,6 +41,9 @@ public class Article {
     }
 
     public void validate() {
+        if (id > 0) {
+            return;
+        }
         if (StringUtils.isBlank(title)) {
             throw new BusinessException(String.format("Article title is blank: %s", url));
         }
