@@ -819,7 +819,7 @@ public abstract class Source {
             conn.data("im_title[" + i + "]", article.getTitle())
                 .data("im_content[" + i + "]", imageFile.getContent())
                 .data("im_credit[" + i + "]", article.getSource())
-                .data("im_link[" + i + "]", article.getUrl())
+                .data("im_link[" + i + "]", imageFile.getImLink())
                 .data("im_reporter[" + i + "]", article.getReporter())
                 .data("im_x_pos[" + i + "]", "50")
                 .data("im_y_pos[" + i + "]", "40")
@@ -847,8 +847,38 @@ public abstract class Source {
         for (Image image : contentImages) {
             if (StringUtils.startsWithIgnoreCase(imageFile.getOriginalFile(), Common.toMD5(image.getUrl()))) {
                 imageFile.setContent(image.getContent());
+                imageFile.setImLink(image.getUrl());
                 return;
             }
+        }
+    }
+
+    public void saveFile(BufferedInputStream bufferedInputStream, String savePath) {
+        byte[] buffer = new byte[1024];
+        int readLength;
+        FileOutputStream fileOutputStream;
+        try {
+            fileOutputStream = new FileOutputStream(new File(savePath));
+        } catch (FileNotFoundException e) {
+            throw new BusinessException(String.format("Unable to download file: %s", savePath));
+        }
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+
+        while (true) {
+            try {
+                if ((readLength = bufferedInputStream.read(buffer, 0, 1024)) == -1) break;
+                bufferedOutputStream.write(buffer, 0, readLength);
+            } catch (IOException e) {
+                throw new BusinessException(String.format("Unable to save file: %s", savePath));
+            }
+        }
+
+        try {
+            bufferedOutputStream.close();
+            fileOutputStream.close();
+            bufferedInputStream.close();
+        } catch (IOException e) {
+            logger.error("Unable to close the file: {}", savePath, e);
         }
     }
 
@@ -880,11 +910,16 @@ public abstract class Source {
                     FileUtils.copyInputStreamToFile(is, file);
                     String path = file.getAbsolutePath();
 
+                    if (file.length() <= 100) {
+                        throw new BusinessException(String.format("Image download is skipped due to too small: {} -> {}.",
+                            file.length(), url));
+                    }
+                    String size = FileUtils.byteCountToDisplaySize(file.length());
                     DownloadResult result = this.makeDownloadResult(url, originalUrl, path);
                     logger.info("{} file downloaded, time costs {}. Size:{}, path:{}",
                         result.getFileName(),
                         Tools.formatCostTime(start),
-                        FileUtils.byteCountToDisplaySize(file.length()), result.getFullPath());
+                        size, result.getFullPath());
                     return result;
                 }
                 String message = String.format("Failed to execute file download request: fileName=%s, url=%s, status=%s.", fileName, originalUrl, status);

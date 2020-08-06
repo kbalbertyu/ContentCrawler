@@ -13,4 +13,5 @@ public class UploadedImage {
     private String size;
     private String error;
     private String content = StringUtils.EMPTY;
+    private String imLink;
 }
