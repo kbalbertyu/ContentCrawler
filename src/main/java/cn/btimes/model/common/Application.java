@@ -28,7 +28,8 @@ public enum Application {
     RelatedArticleHandler(ApplicationContext.getBean(RelatedArticleHandler.class)),
     DBBackUpHandler(ApplicationContext.getBean(DBBackUpHandler.class)),
     NewsFlowCrawler(ApplicationContext.getBean(NewsFlowCrawler.class)),
-    XueQiuCrawler(ApplicationContext.getBean(XueQiuCrawler.class));
+    XueQiuCrawler(ApplicationContext.getBean(XueQiuCrawler.class)),
+    BTContentFixHandler(ApplicationContext.getBean(BTContentFixHandler.class));
 
     Application(ServiceExecutorInterface executor) {
         this.executor = executor;
