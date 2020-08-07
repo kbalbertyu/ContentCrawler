@@ -43,7 +43,8 @@ public class Common {
     private static final String DOUBLE_DASH = "//";
 
     public static String getAbsoluteUrl(String url, String pageUrl) {
-        if (StringUtils.startsWith(StringUtils.lowerCase(url), Constants.HTTP)) {
+        if (StringUtils.isBlank(pageUrl) ||
+            StringUtils.startsWith(StringUtils.lowerCase(url), Constants.HTTP)) {
             return url;
         }
 
@@ -122,9 +123,14 @@ public class Common {
         return parts[1];
     }
 
-    public static void convertImageFileType(String originalUrl, String path, ImageType targetType) throws IOException {
-        FileUtils.deleteQuietly(FileUtils.getFile(path));
-        BufferedImage im = ImageIO.read(new URL(originalUrl));
+    public static void convertImageFileTypeFromUrl(String url, String path, ImageType targetType) throws IOException {
+        BufferedImage im = ImageIO.read(new URL(url));
+        ImageIO.write(im, targetType.toExt(), FileUtils.getFile(path));
+    }
+
+    public static void convertImageFileType(String path, ImageType targetType) throws IOException {
+        FileUtils.moveFile(FileUtils.getFile(path), FileUtils.getFile(path));
+        BufferedImage im = ImageIO.read(FileUtils.getFile(path));
         ImageIO.write(im, targetType.toExt(), FileUtils.getFile(path));
     }
 

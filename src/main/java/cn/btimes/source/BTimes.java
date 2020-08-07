@@ -27,7 +27,7 @@ public class BTimes extends Source {
     @Inject private ApiRequest apiRequest;
 
     static {
-        URLS.put("http://caifuhao.eastmoney.com/cfh/222804", Category.ECONOMY);
+        URLS.put("", Category.ECONOMY);
     }
 
     @Override

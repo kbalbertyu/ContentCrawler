@@ -143,6 +143,9 @@ public abstract class Source {
     }
 
     private Document openPage(WebDriver driver, String url, boolean loadMore) {
+        if (StringUtils.isBlank(url)) {
+            return new Document("");
+        }
         if (this.withoutDriver()) {
             try {
                 return cn.btimes.utils.PageUtils.getDocumentByJsoup(url);
@@ -533,7 +536,10 @@ public abstract class Source {
         List<Image> contentImages = new ArrayList<>();
         for (Element image : images) {
             String src = image.attr("src");
-            if (StringUtils.containsIgnoreCase(src, "data:image") || StringUtils.containsIgnoreCase(src, "base64")) {
+            if (StringUtils.containsIgnoreCase(src, "data:image") ||
+                StringUtils.containsIgnoreCase(src, "base64") ||
+                StringUtils.containsIgnoreCase(src, "/data/images") ||
+                Tools.containsAny(src, "businesstimes")) {
                 continue;
             }
             String absSrc = Common.getAbsoluteUrl(src, article.getUrl());
@@ -547,7 +553,9 @@ public abstract class Source {
                 Image imageObj = new Image(cover, "");
                 contentImages.add(imageObj);
             } else {
-                throw new ArticleNoImageException("This article is skipped due to having no images: " + article.getTitle());
+                String message = String.format("This article is skipped due to having no images: %d -> %s",
+                    article.getId(), article.getTitle());
+                throw new ArticleNoImageException(message);
             }
         }
         article.setContent(content);
@@ -890,6 +898,7 @@ public abstract class Source {
         url = Common.getAbsoluteUrl(url, driver.getCurrentUrl());
         String fileName = Common.extractFileNameFromUrl(url);
         File file = this.makeDownloadFile(fileName);
+        String path = file.getAbsolutePath();
 
         String prefix = Tools.startWithAny(url, Constants.HTTP) ? StringUtils.EMPTY : Constants.HTTP + ":";
         url = prefix + url;
@@ -908,27 +917,34 @@ public abstract class Source {
                 if (status == HttpStatus.SC_OK) {
                     is = resp.getEntity().getContent();
                     FileUtils.copyInputStreamToFile(is, file);
-                    String path = file.getAbsolutePath();
-
-                    if (file.length() <= 100) {
-                        throw new BusinessException(String.format("Image download is skipped due to too small: {} -> {}.",
-                            file.length(), url));
+                } else {
+                    // Download image with ImageIO
+                    String ext = Common.getFileExtension(url);
+                    ImageType type = ImageType.findByExt(ext);
+                    if (!type.allowed()) {
+                        type = ImageType.DEFAULT_TYPE;
                     }
-                    String size = FileUtils.byteCountToDisplaySize(file.length());
-                    DownloadResult result = this.makeDownloadResult(url, originalUrl, path);
-                    logger.info("{} file downloaded, time costs {}. Size:{}, path:{}",
-                        result.getFileName(),
-                        Tools.formatCostTime(start),
-                        size, result.getFullPath());
-                    return result;
+                    Common.convertImageFileTypeFromUrl(url, path, type);
                 }
-                String message = String.format("Failed to execute file download request: fileName=%s, url=%s, status=%s.", fileName, originalUrl, status);
-                logger.error(message);
-                Messenger messenger = new Messenger(this.getClass().getName(), message);
-                this.messengers.add(messenger);
+
+                String size = FileUtils.byteCountToDisplaySize(file.length());
+                if (file.length() <= 100) {
+                    String message = String.format("Failed to execute file download request: fileName=%s, url=%s, status=%s.", fileName, originalUrl, status);
+                    logger.error(message);
+                    Messenger messenger = new Messenger(this.getClass().getName(), message);
+                    this.messengers.add(messenger);
+                    throw new BusinessException(String.format("Image download is skipped due to too small: %s -> %s.",
+                        file.length(), url));
+                }
+                DownloadResult result = this.makeDownloadResult(url, originalUrl, path);
+                logger.info("{} file downloaded, time costs {}. Size:{}, path:{}",
+                    result.getFileName(),
+                    Tools.formatCostTime(start),
+                    size, result.getFullPath());
+                return result;
             } catch (Exception ex) {
                 String message = String.format("Failed to download file of %s： %s", fileName, Tools.getExceptionMsg(ex));
-                logger.error(message);
+                logger.error(message, ex);
                 Messenger messenger = new Messenger(this.getClass().getName(), message);
                 this.messengers.add(messenger);
             } finally {
@@ -969,8 +985,13 @@ public abstract class Source {
     private DownloadResult makeDownloadResult(String url, String originalUrl, String path) throws IOException {
         ImageType type = Common.determineImageFileType(path);
         if (!type.allowed()) {
-            type = ImageType.DEFAULT_TYPE;
-            Common.convertImageFileType(url, path, type);
+            if (type == ImageType.WEBP) {
+                type = ImageType.PNG;
+                Common.convertImageFileTypeFromUrl(url, path, type);
+            } else {
+                type = ImageType.DEFAULT_TYPE;
+                Common.convertImageFileType(path, type);
+            }
         }
         String fileNameNew = Common.toMD5(originalUrl) + "." + type.toExt();
 

@@ -2,6 +2,7 @@ package cn.btimes.model.common;
 
 import com.amzass.utils.common.Exceptions.BusinessException;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-10 4:51 PM
@@ -31,6 +32,19 @@ public enum ImageType {
             }
         }
         throw new BusinessException(String.format("Unknown file type from hex: %s", hex));
+    }
+
+    public static ImageType findByExt(String ext) {
+        if (StringUtils.equalsIgnoreCase(ext, "jpg")) {
+            return JPEG;
+        }
+        for (ImageType type : ImageType.values()) {
+            if (StringUtils.equalsIgnoreCase(type.toExt(), ext)) {
+                return type;
+            }
+        }
+
+        return DEFAULT_TYPE;
     }
 
     public String toExt() {
