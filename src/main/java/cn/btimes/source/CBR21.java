@@ -66,6 +66,11 @@ public class CBR21 extends Source {
     }
 
     @Override
+    boolean ignorePastDateException() {
+        return true;
+    }
+
+    @Override
     protected void readArticle(WebDriver driver, Article article) {
         this.readContent(driver, article);
     }

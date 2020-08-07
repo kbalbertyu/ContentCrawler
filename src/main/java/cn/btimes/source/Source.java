@@ -222,6 +222,9 @@ public abstract class Source {
 
                 articles.add(article);
             } catch (PastDateException e) {
+                if (this.ignorePastDateException()) {
+                    continue;
+                }
                 if (i++ < Constants.MAX_REPEAT_TIMES) {
                     continue;
                 }
@@ -230,6 +233,10 @@ public abstract class Source {
                 break;
             }
         }
+    }
+
+    boolean ignorePastDateException() {
+        return false;
     }
 
     public void parseTitle(Element doc, Article article) {
@@ -264,7 +271,11 @@ public abstract class Source {
         }
         Element contentElm = contentElms.first();
         article.setContent(this.cleanHtml(contentElm));
+        this.parseCoverImageFromContent(doc, article);
         this.fetchContentImages(article, contentElm);
+    }
+
+    void parseCoverImageFromContent(Document doc, Article article) {
     }
 
     void initContext(Config config) {
