@@ -3,7 +3,6 @@ package cn.btimes.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
-import cn.btimes.utils.Common;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -46,6 +45,11 @@ public class CYZone extends Source {
     }
 
     @Override
+    String getCoverSelector() {
+        return ".pic-a > img";
+    }
+
+    @Override
     protected int getSourceId() {
         return 1379;
     }
@@ -60,20 +64,13 @@ public class CYZone extends Source {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
         for (Element row : list) {
-            Article article = this.parseDataTitleWithTimeText(row);
+            Article article = this.parseDateTitleWithTimeText(row);
             if (article == null) break;
-            this.parseCoverImage(row, article);
+            this.parseCover(row, article);
 
             articles.add(article);
         }
         return articles;
-    }
-
-    private void parseCoverImage(Element row, Article article) {
-        Element imageElm = row.select(".pic-a > img").first();
-        if (imageElm == null) return;
-        String src = imageElm.attr("src");
-        article.setCoverImage(Common.getAbsoluteUrl(src, driver.getCurrentUrl()));
     }
 
     @Override

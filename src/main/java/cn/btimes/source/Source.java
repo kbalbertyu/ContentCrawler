@@ -208,12 +208,12 @@ public abstract class Source {
         for (Element row : list) {
             Article article = new Article();
             this.parseTitle(row, article);
+            this.parseCover(row, article);
             articles.add(article);
         }
     }
 
-
-    Article parseDataTitleWithTimeText(Element row) {
+    Article parseDateTitleWithTimeText(Element row) {
         String dateTextCssQuery = this.getCSSQuery().getTime();
         this.checkDateTextExistence(row, dateTextCssQuery);
         String timeText = HtmlParser.text(row, dateTextCssQuery);
@@ -234,6 +234,7 @@ public abstract class Source {
                 Article article = new Article();
                 this.parseDate(row, article);
                 this.parseTitle(row, article);
+                this.parseCover(row, article);
 
                 articles.add(article);
             } catch (PastDateException e) {
@@ -291,6 +292,22 @@ public abstract class Source {
     }
 
     void parseCoverImageFromContent(Document doc, Article article) {
+    }
+
+    void parseCover(Element row, Article article) {
+        String coverSelector = this.getCoverSelector();
+        if (StringUtils.isBlank(coverSelector)) {
+            return;
+        }
+
+        Element imageElm = row.select(coverSelector).first();
+        if (imageElm == null) return;
+        String src = imageElm.attr("src");
+        article.setCoverImage(Common.getAbsoluteUrl(src, driver.getCurrentUrl()));
+    }
+
+    String getCoverSelector() {
+        return null;
     }
 
     void initContext(Config config) {

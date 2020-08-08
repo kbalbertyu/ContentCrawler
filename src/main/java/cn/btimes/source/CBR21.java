@@ -43,6 +43,11 @@ public class CBR21 extends Source {
     }
 
     @Override
+    String getCoverSelector() {
+        return ".pic img";
+    }
+
+    @Override
     protected int getSourceId() {
         return 1873;
     }

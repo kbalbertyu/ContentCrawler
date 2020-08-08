@@ -8,8 +8,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +18,6 @@ import java.util.Map;
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2020/8/7 21:14
  */
 public class ZNFinNews extends Source {
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
@@ -63,7 +60,7 @@ public class ZNFinNews extends Source {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
         for (Element row : list) {
-            Article article = this.parseDataTitleWithTimeText(row);
+            Article article = this.parseDateTitleWithTimeText(row);
             if (article == null) break;
 
             String title = HtmlParser.text(row, "div.title");
