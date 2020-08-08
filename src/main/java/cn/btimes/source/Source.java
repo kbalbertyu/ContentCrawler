@@ -6,6 +6,8 @@ import cn.btimes.model.common.BTExceptions.PastDateException;
 import cn.btimes.service.ApiRequest;
 import cn.btimes.service.WebDriverLauncher;
 import cn.btimes.utils.Common;
+import cn.btimes.utils.PageUtils;
+import cn.btimes.utils.Tools;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.amzass.enums.common.DateFormat;
@@ -13,25 +15,20 @@ import com.amzass.enums.common.Directory;
 import com.amzass.model.common.ActionLog;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.PageLoadHelper.WaitTime;
-import com.amzass.utils.common.*;
+import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.Exceptions.BusinessException;
+import com.amzass.utils.common.RegexUtils;
 import com.google.inject.Inject;
 import com.kber.commons.DBManager;
 import com.mailman.model.common.WebApiResult;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.protocol.BasicHttpContext;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.Minutes;
@@ -48,7 +45,9 @@ import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -810,7 +809,7 @@ public abstract class Source {
         for (Image contentImage : article.getContentImages()) {
             DownloadResult downloadResult;
             try {
-                downloadResult = this.downloadFile(contentImage.getUrl(), driver);
+                downloadResult = this.downloadFile(contentImage.getUrl());
             } catch (BusinessException e) {
                 String message = String.format("Unable to download image: %s", contentImage.getUrl());
                 logger.error(message);
@@ -904,99 +903,38 @@ public abstract class Source {
         }
     }
 
-    public void saveFile(BufferedInputStream bufferedInputStream, String savePath) {
-        byte[] buffer = new byte[1024];
-        int readLength;
-        FileOutputStream fileOutputStream;
-        try {
-            fileOutputStream = new FileOutputStream(new File(savePath));
-        } catch (FileNotFoundException e) {
-            throw new BusinessException(String.format("Unable to download file: %s", savePath));
-        }
-        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-
-        while (true) {
-            try {
-                if ((readLength = bufferedInputStream.read(buffer, 0, 1024)) == -1) break;
-                bufferedOutputStream.write(buffer, 0, readLength);
-            } catch (IOException e) {
-                throw new BusinessException(String.format("Unable to save file: %s", savePath));
-            }
-        }
-
-        try {
-            bufferedOutputStream.close();
-            fileOutputStream.close();
-            bufferedInputStream.close();
-        } catch (IOException e) {
-            logger.error("Unable to close the file: {}", savePath, e);
-        }
-    }
-
     /**
      * Download image from its url
      */
-    private DownloadResult downloadFile(String url, WebDriver driver) {
+    private DownloadResult downloadFile(String url) {
+        long start = System.currentTimeMillis();
         String originalUrl = url;
         url = Common.getAbsoluteUrl(url, driver.getCurrentUrl());
         String fileName = Common.extractFileNameFromUrl(url);
         File file = this.makeDownloadFile(fileName);
         String path = file.getAbsolutePath();
-
         String prefix = Tools.startWithAny(url, Constants.HTTP) ? StringUtils.EMPTY : Constants.HTTP + ":";
         url = prefix + url;
-        HttpGet get = HttpUtils.prepareHttpGet(cn.btimes.utils.Tools.encodeUrl(url));
-        CloseableHttpClient httpClient = this.initHttpClient();
-        BasicHttpContext localContext = new BasicHttpContext();
-        localContext.setAttribute(HttpClientContext.COOKIE_STORE, PageUtils.getCookieStore(driver));
 
-        for (int i = 0; i < Constants.MAX_REPEAT_TIMES; i++) {
-            long start = System.currentTimeMillis();
-            CloseableHttpResponse resp = null;
-            InputStream is = null;
-            try {
-                resp = httpClient.execute(get, localContext);
-                int status = resp.getStatusLine().getStatusCode();
-                if (status == HttpStatus.SC_OK) {
-                    is = resp.getEntity().getContent();
-                    FileUtils.copyInputStreamToFile(is, file);
-                } else {
-                    // Download image with ImageIO
-                    String ext = Common.getFileExtension(url);
-                    ImageType type = ImageType.findByExt(ext);
-                    if (!type.allowed()) {
-                        type = ImageType.DEFAULT_TYPE;
-                    }
-                    Common.convertImageFileTypeFromUrl(url, path, type);
-                }
-
-                String size = FileUtils.byteCountToDisplaySize(file.length());
-                if (file.length() <= 100) {
-                    String message = String.format("Failed to execute file download request: fileName=%s, url=%s, status=%s.", fileName, originalUrl, status);
-                    logger.error(message);
-                    Messenger messenger = new Messenger(this.getClass().getName(), message);
-                    this.messengers.add(messenger);
-                    throw new BusinessException(String.format("Image download is skipped due to too small: %s -> %s.",
-                        file.length(), url));
-                }
-                DownloadResult result = this.makeDownloadResult(url, originalUrl, path);
-                logger.info("{} file downloaded, time costs {}. Size:{}, path:{}",
-                    result.getFileName(),
-                    Tools.formatCostTime(start),
-                    size, result.getFullPath());
-                return result;
-            } catch (Exception ex) {
-                String message = String.format("Failed to download file of %s： %s", fileName, Tools.getExceptionMsg(ex));
-                logger.error(message, ex);
-                Messenger messenger = new Messenger(this.getClass().getName(), message);
-                this.messengers.add(messenger);
-            } finally {
-                get.releaseConnection();
-                IOUtils.closeQuietly(is);
-                IOUtils.closeQuietly(resp);
-                file.deleteOnExit();
-            }
+        file = Tools.downloadFile(url, path);
+        String size = FileUtils.byteCountToDisplaySize(file.length());
+        if (file.length() <= 100) {
+            throw new BusinessException(String.format("Image download is skipped due to too small: %s -> %s.",
+                file.length(), url));
         }
+        try {
+            DownloadResult result = this.makeDownloadResult(url, originalUrl, path);
+            logger.info("{} file downloaded, time costs {}. Size:{}, path:{}",
+                result.getFileName(),
+                Tools.formatCostTime(start),
+                size, result.getFullPath());
+            return result;
+        } catch (IOException e) {
+            logger.error("Unable to download file {}", url);
+        } finally {
+            file.deleteOnExit();
+        }
+
         throw new BusinessException(String.format("Failed to execute %s file download request after retried.", fileName));
     }
 
@@ -1039,6 +977,11 @@ public abstract class Source {
         String fileNameNew = Common.toMD5(originalUrl) + "." + type.toExt();
 
         File fileNew = this.makeDownloadFile(fileNameNew);
+        if (fileNew.exists()) {
+            String fileNewPath = fileNew.getAbsolutePath();
+            FileUtils.deleteQuietly(fileNew);
+            fileNew = FileUtils.getFile(fileNewPath);
+        }
         FileUtils.moveFile(FileUtils.getFile(path), fileNew);
         path = fileNew.getAbsolutePath();
 
