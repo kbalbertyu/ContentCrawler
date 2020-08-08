@@ -212,6 +212,21 @@ public abstract class Source {
         }
     }
 
+
+    Article parseDataTitleWithTimeText(Element row) {
+        String dateTextCssQuery = this.getCSSQuery().getTime();
+        this.checkDateTextExistence(row, dateTextCssQuery);
+        String timeText = HtmlParser.text(row, dateTextCssQuery);
+        if (!cn.btimes.utils.Tools.containsAny(timeText, "小时", "分", "秒", "今")) {
+            logger.warn("Skip past date article: {}", timeText);
+            return null;
+        }
+
+        Article article = new Article();
+        this.parseTitle(row, article);
+        return article;
+    }
+
     protected void parseDateTitleList(List<Article> articles, Elements list) {
         int i = 0;
         for (Element row : list) {

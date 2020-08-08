@@ -3,13 +3,11 @@ package cn.btimes.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
-import com.amzass.service.sellerhunt.HtmlParser;
+import cn.btimes.utils.Common;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,14 +15,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2020/8/7 21:14
+ * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2020/8/7 23:16
  */
-public class ZNFinNews extends Source {
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+public class CYZone extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("https://www.znfinnews.com/", Category.ECONOMY);
+        URLS.put("https://www.cyzone.cn/", Category.ECONOMY);
     }
 
     @Override
@@ -44,13 +41,13 @@ public class ZNFinNews extends Source {
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return new CSSQuery(".page-index-left-feeds > div", ".article-detail-body", "a", "",
+        return new CSSQuery(".m-article-list", ".article-content", "a.item-title", "",
             "", ".time");
     }
 
     @Override
     protected int getSourceId() {
-        return 635;
+        return 1379;
     }
 
     @Override
@@ -65,24 +62,22 @@ public class ZNFinNews extends Source {
         for (Element row : list) {
             Article article = this.parseDataTitleWithTimeText(row);
             if (article == null) break;
-
-            String title = HtmlParser.text(row, "div.title");
-            article.setTitle(title);
+            this.parseCoverImage(row, article);
 
             articles.add(article);
         }
         return articles;
     }
 
-    @Override
-    protected void readArticle(WebDriver driver, Article article) {
-        this.readContent(driver, article);
+    private void parseCoverImage(Element row, Article article) {
+        Element imageElm = row.select(".pic-a > img").first();
+        if (imageElm == null) return;
+        String src = imageElm.attr("src");
+        article.setCoverImage(Common.getAbsoluteUrl(src, driver.getCurrentUrl()));
     }
 
     @Override
-    void parseCoverImageFromContent(Document doc, Article article) {
-        Element imageElm = doc.select("img.article-detail-cover").first();
-        if (imageElm == null) return;
-        article.setCoverImage(imageElm.attr("src"));
+    protected void readArticle(WebDriver driver, Article article) {
+        this.readContent(driver, article);
     }
 }
