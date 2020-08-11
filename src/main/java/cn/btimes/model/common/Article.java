@@ -8,6 +8,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class Article {
     private String content = StringUtils.EMPTY;
     private String reporter = StringUtils.EMPTY;
     private String source = StringUtils.EMPTY;
-    private List<Image> contentImages;
+    private List<Image> contentImages = new ArrayList<>();
     private int[] imageIds;
     private Category category;
     private String coverImage;

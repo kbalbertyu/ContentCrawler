@@ -294,6 +294,10 @@ public abstract class Source {
     void parseCoverImageFromContent(Document doc, Article article) {
     }
 
+    boolean allowArticleWithoutImage() {
+        return false;
+    }
+
     void parseCover(Element row, Article article) {
         String coverSelector = this.getCoverSelector();
         if (StringUtils.isBlank(coverSelector)) {
@@ -576,7 +580,7 @@ public abstract class Source {
     void fetchContentImages(Article article, Element contentElm) {
         String content = article.getContent();
         Elements images = contentElm.select("img");
-        List<Image> contentImages = new ArrayList<>();
+        List<Image> contentImages = article.getContentImages();
         for (Element image : images) {
             String src = image.attr("src");
             if (StringUtils.containsIgnoreCase(src, "data:image") ||
@@ -591,7 +595,7 @@ public abstract class Source {
             contentImages.add(imageObj);
         }
         String cover = article.getCoverImage();
-        if (contentImages.size() == 0) {
+        if (contentImages.size() == 0 && !this.allowArticleWithoutImage()) {
             if (StringUtils.isNotBlank(cover)) {
                 Image imageObj = new Image(cover, "");
                 contentImages.add(imageObj);
