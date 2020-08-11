@@ -14,13 +14,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2020/8/7 23:16
+ * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2020/8/11 10:57
  */
-public class CYZone extends Source {
+public class ZhiTongCaiJing extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("https://www.cyzone.cn/", Category.ECONOMY);
+        URLS.put("https://www.zhitongcaijing.com/content/recommend.html", Category.ECONOMY);
+        URLS.put("https://www.zhitongcaijing.com/focus.html", Category.ECONOMY);
+        URLS.put("https://www.zhitongcaijing.com/company.html", Category.ECONOMY);
+        URLS.put("https://www.zhitongcaijing.com/shares.html", Category.ECONOMY);
+        URLS.put("https://www.zhitongcaijing.com/market.html", Category.ECONOMY);
+        URLS.put("https://www.zhitongcaijing.com/announcement.html", Category.ECONOMY);
+        URLS.put("https://www.zhitongcaijing.com/research.html", Category.ECONOMY);
+        URLS.put("https://www.zhitongcaijing.com/content/read.html", Category.ECONOMY);
+        URLS.put("https://www.zhitongcaijing.com/content/meigu.html", Category.ECONOMY);
+        URLS.put("https://www.zhitongcaijing.com/chance.html", Category.ECONOMY);
     }
 
     @Override
@@ -40,18 +49,19 @@ public class CYZone extends Source {
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return new CSSQuery(".m-article-list", ".article-content", "a.item-title", "",
-            "", ".time");
+        return new CSSQuery(".list-art > dl", "article", "h2 > a", "",
+            "", ".format-time");
     }
+
 
     @Override
     String getCoverSelector() {
-        return ".pic-a > img";
+        return "dt > a > img";
     }
 
     @Override
     protected int getSourceId() {
-        return 1379;
+        return 984;
     }
 
     @Override
@@ -74,5 +84,12 @@ public class CYZone extends Source {
     @Override
     protected void readArticle(WebDriver driver, Article article) {
         this.readContent(driver, article);
+    }
+
+    @Override
+    protected String cleanHtml(Element dom) {
+        Elements elements = dom.select(".type, h1, .h-30, #author_external");
+        if (elements.size() > 0) elements.remove();
+        return super.cleanHtml(dom);
     }
 }

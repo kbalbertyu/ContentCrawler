@@ -223,6 +223,7 @@ public abstract class Source {
 
         Article article = new Article();
         this.parseTitle(row, article);
+        this.parseCover(row, article);
         return article;
     }
 
