@@ -15,11 +15,11 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019/8/21 12:00
  */
-public class TechWeb extends SourceWithoutDriver {
+public class TechWeb extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("http://www.techweb.com.cn/it/", Category.TECH);
+        URLS.put("http://www.techweb.com.cn", Category.ECONOMY);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class TechWeb extends SourceWithoutDriver {
 
     @Override
     protected String getDateRegex() {
-        return "\\d{4}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2}:\\d{2}";
+        return "\\d{4}\\.\\d{1,2}\\.\\d{1,2} \\d{1,2}:\\d{1,2}:\\d{1,2}";
     }
 
     @Override
@@ -39,8 +39,13 @@ public class TechWeb extends SourceWithoutDriver {
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return new CSSQuery(".list_con > .picture_text", "#content", "> .text > a:first-child", "> .text > p",
-            "", ".infos > .time");
+        return new CSSQuery(".con_box_l > .news_article", "#content", "h3 > a", "",
+            "", ".article_info > .infos > .time");
+    }
+
+    @Override
+    String getCoverSelector() {
+        return ".na_pic > img";
     }
 
     @Override
@@ -49,10 +54,15 @@ public class TechWeb extends SourceWithoutDriver {
     }
 
     @Override
+    String getStatus() {
+        return "3";
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
-        this.parseTitleSummaryList(articles, list);
+        this.parseTitleList(articles, list);
         return articles;
     }
 
