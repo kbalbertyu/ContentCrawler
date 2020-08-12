@@ -56,6 +56,11 @@ public class ZNFinNews extends Source {
     }
 
     @Override
+    String getCoverSelector() {
+        return ".cover";
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
