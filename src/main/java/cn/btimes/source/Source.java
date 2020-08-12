@@ -493,7 +493,7 @@ public abstract class Source {
             int length = article.getImageIds().length;
             for (int i = 0; i < length; i++) {
                 String imageId = String.valueOf(article.getImageIds()[i]);
-                if (!GALLERY_TYPOLOGY.equals(this.getTypology())) {
+                if (!GALLERY_TYPOLOGY.equals(this.getTypology()) && article.isHideTopImages()) {
                     conn.data("imghidden_" + imageId, "")
                         .data("ar_image_hide[" + i + "]", imageId);
                 }

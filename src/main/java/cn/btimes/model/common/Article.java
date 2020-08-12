@@ -32,6 +32,7 @@ public class Article {
     private int[] imageIds;
     private Category category;
     private String coverImage;
+    private boolean hideTopImages = true;
 
     public boolean hasImages() {
         return CollectionUtils.isNotEmpty(contentImages);
