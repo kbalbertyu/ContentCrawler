@@ -56,6 +56,11 @@ public class CSCOMCN extends Source {
     }
 
     @Override
+    String getStatus() {
+        return "3";
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
