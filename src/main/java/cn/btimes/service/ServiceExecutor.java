@@ -82,6 +82,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         sources.add(ApplicationContext.getBean(People.class));
         sources.add(ApplicationContext.getBean(PRNAsia.class));
         sources.add(ApplicationContext.getBean(CSCOMCN.class));
+        sources.add(ApplicationContext.getBean(CECN.class));
         return sources;
     }
 
@@ -107,7 +108,6 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         sources.add(ApplicationContext.getBean(KR36.class));
         sources.add(ApplicationContext.getBean(HuanQiu.class));
         sources.add(ApplicationContext.getBean(STDaily.class));
-        sources.add(ApplicationContext.getBean(CECN.class));
         sources.add(ApplicationContext.getBean(TechNode.class));
         sources.add(ApplicationContext.getBean(STCN.class));
         sources.add(ApplicationContext.getBean(CNStock.class));

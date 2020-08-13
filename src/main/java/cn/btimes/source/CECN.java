@@ -4,7 +4,6 @@ import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 
@@ -16,11 +15,11 @@ import java.util.Map;
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-03-27 2:23 PM
  */
-public class CECN extends SourceWithoutDriver {
+public class CECN extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("http://www.ce.cn/cysc/fdc/fc/", Category.REALESTATE);
+        URLS.put("http://www.ce.cn", Category.ECONOMY);
     }
 
     @Override
@@ -30,18 +29,18 @@ public class CECN extends SourceWithoutDriver {
 
     @Override
     protected String getDateRegex() {
-        return "\\d{2}/\\d{2} \\d{2}:\\d{2}";
+        return "\\d{4}年\\d{2}月\\d{2}日 \\d{2}:\\d{2}";
     }
 
     @Override
     protected String getDateFormat() {
-        return "MM/dd HH:mm";
+        return "yyyy'年'MM'月'dd'日' HH:mm";
     }
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return new CSSQuery("ul.con > li", ".TRS_Editor", ".f1 > a", "",
-            "", ".f2");
+        return new CSSQuery(".hotnews ul > li, .w_360:contains(国内经济) > ul.triangle > li, .w_360:contains(国际经济) > ul.triangle > li",
+            "#articleText > .TRS_Editor", "a", "", "", "#articleTime");
     }
 
     @Override
@@ -50,24 +49,20 @@ public class CECN extends SourceWithoutDriver {
     }
 
     @Override
+    String getStatus() {
+        return "3";
+    }
+
+    @Override
     protected List<Article> parseList(Document doc) {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
-        this.parseDateTitleList(articles, list);
+        this.parseTitleList(articles, list);
         return articles;
     }
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        this.readContent(driver, article);
-    }
-
-    @Override
-    protected String cleanHtml(Element dom) {
-        Elements elements = dom.select("p:contains(责任编辑：)");
-        if (elements.size() > 0) {
-            elements.remove();
-        }
-        return super.cleanHtml(dom);
+        this.readDateContent(driver, article);
     }
 }
