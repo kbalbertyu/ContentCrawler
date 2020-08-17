@@ -61,6 +61,14 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         return StringUtils.split(text, ",");
     }
 
+    protected String[] excludedSources() {
+        String text = StringUtils.trim(Tools.getCustomizingValue("EXCLUDE_SOURCES"));
+        if (StringUtils.isBlank(text)) {
+            return null;
+        }
+        return StringUtils.split(text, ",");
+    }
+
     protected List<Source> getSources() {
         List<Source> sources = this.getBTCNSources();
         sources.add(ApplicationContext.getBean(ChinaNetPhoto.class));
@@ -139,8 +147,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         }
         for (Source source : this.getSources()) {
             String sourceName = StringUtils.substringAfterLast(source.getClass().getName(), ".");
-            String[] allowedSources = this.allowedSources();
-            if (ArrayUtils.isNotEmpty(allowedSources) && !ArrayUtils.contains(allowedSources, sourceName)) {
+            if (!this.allowed(sourceName)) {
                 continue;
             }
             logger.info("Start fetching from source: {}", sourceName);
@@ -166,6 +173,21 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         if (this.messengers.isNotEmpty()) {
             // this.sendErrorMessage(config);
         }
+    }
+
+    private boolean allowed(String sourceName) {
+        String[] allowedSources = this.allowedSources();
+        if (ArrayUtils.isNotEmpty(allowedSources) && !ArrayUtils.contains(allowedSources, sourceName)) {
+            return false;
+        }
+
+
+        String[] excludedSources = this.excludedSources();
+        if (ArrayUtils.isNotEmpty(excludedSources) && ArrayUtils.contains(excludedSources, sourceName)) {
+            return false;
+        }
+
+        return true;
     }
 
     private void flushArticleCaches(WebDriver driver, Config config) {
