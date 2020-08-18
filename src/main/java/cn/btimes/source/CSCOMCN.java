@@ -10,15 +10,14 @@ import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:kbalbertyu@gmail.com">Albert Yu</a> 2019-01-23 3:29 PM
@@ -47,7 +46,11 @@ public class CSCOMCN extends Source {
 
     @Override
     protected CSSQuery getCSSQuery() {
-        return new CSSQuery(".box-bigpic, .box-pic", ".article-t", "a:last-child", "", "", ".info > p > em");
+        Date date = new Date();
+        String ym = DateFormatUtils.format(date, "yyyyMM");
+        String ymd = DateFormatUtils.format(date, "yyyyMMdd");
+        String titleListQuery = String.format("a[href*=/%s/t%s_]", ym, ymd);
+        return new CSSQuery(".box-bigpic, .box-pic, " + titleListQuery, ".article-t", "a:last-child", "", "", ".info > p > em");
     }
 
     @Override
@@ -69,9 +72,27 @@ public class CSCOMCN extends Source {
     }
 
     @Override
+    protected void parseTitleList(List<Article> articles, Elements list) {
+        for (Element row : list) {
+            Article article = new Article();
+            String tagName = row.tagName();
+            if (StringUtils.equalsIgnoreCase(tagName, "a")) {
+                article.setTitle(row.text());
+                article.setUrl(row.attr("href"));
+            } else {
+                this.parseTitle(row, article);
+                this.parseCover(row, article);
+            }
+            if (articles.contains(article)) {
+                continue;
+            }
+            articles.add(article);
+        }
+    }
+
+    @Override
     protected void readArticle(WebDriver driver, Article article) {
         Document doc = this.openArticlePage(driver, article);
-
         StringBuilder sb = new StringBuilder();
 
         while (true) {
@@ -94,7 +115,7 @@ public class CSCOMCN extends Source {
             if (StringUtils.isNotBlank(cover)) {
                 Image imageObj = new Image(cover, "");
                 article.getContentImages().add(imageObj);
-            } else {
+            } else if (!this.allowArticleWithoutImage()) {
                 String message = String.format("This article is skipped due to having no images: %d -> %s",
                     article.getId(), article.getTitle());
                 throw new ArticleNoImageException(message);
@@ -107,10 +128,5 @@ public class CSCOMCN extends Source {
     @Override
     protected int getSourceId() {
         return 297;
-    }
-
-    @Override
-    boolean allowArticleWithoutImage() {
-        return true;
     }
 }
