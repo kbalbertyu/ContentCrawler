@@ -148,6 +148,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         for (Source source : this.getSources()) {
             String sourceName = StringUtils.substringAfterLast(source.getClass().getName(), ".");
             if (!this.allowed(sourceName)) {
+                logger.warn("Source is skipped: {}", sourceName);
                 continue;
             }
             logger.info("Start fetching from source: {}", sourceName);
