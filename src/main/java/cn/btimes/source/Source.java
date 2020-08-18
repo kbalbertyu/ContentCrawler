@@ -295,7 +295,7 @@ public abstract class Source {
     }
 
     boolean allowArticleWithoutImage() {
-        return false;
+        return true;
     }
 
     void parseCover(Element row, Article article) {
