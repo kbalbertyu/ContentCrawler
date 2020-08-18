@@ -458,6 +458,7 @@ public abstract class Source {
 
         if (article.getId() > 0) {
             this.updateArticle(article);
+            logger.info("Article updated: {} -> {}", article.getTitle(), article.getId());
             return;
         }
 
