@@ -382,6 +382,10 @@ public abstract class Source {
             } catch (PastDateException e) {
                 logger.error("Article publish date has past {} minutes: {}",
                     config.getMaxPastMinutes(), article.getUrl(), e);
+                if (article.getId() == 0) {
+                    dbManager.save(new ActionLog(logId), ActionLog.class);
+                    dbManager.save(new ActionLog(logIdTitle), ActionLog.class);
+                }
             } catch (BusinessException e) {
                 String message = String.format("Unable to read article %s", article.getUrl());
                 logger.error(message, e);
