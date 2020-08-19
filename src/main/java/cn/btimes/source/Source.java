@@ -372,6 +372,13 @@ public abstract class Source {
                     logger.info("Article saved already: {} -> {}", article.getTitle(), article.getUrl());
                     continue;
                 }
+            } else {
+                logId = "ArticleImage_" + article.getId();
+                ActionLog log = dbManager.readById(logId, ActionLog.class);
+                if (log != null) {
+                    logger.info("Article doesn't contain image: {} -> {}", article.getTitle(), article.getId());
+                    continue;
+                }
             }
             try {
                 this.readArticle(driver, article);
@@ -379,6 +386,9 @@ public abstract class Source {
                 saved++;
             } catch (ArticleNoImageException e) {
                 logger.error(e.getMessage() + ": " + article.getUrl(), e);
+                if (article.getId() > 0) {
+                    dbManager.save(new ActionLog(logId), ActionLog.class);
+                }
             } catch (PastDateException e) {
                 logger.error("Article publish date has past {} minutes: {}",
                     config.getMaxPastMinutes(), article.getUrl(), e);
@@ -453,8 +463,8 @@ public abstract class Source {
                 List<SavedImage> savedImages = this.saveImages(article, result.getFiles());
                 this.deleteDownloadedImages(savedImages);
                 this.replaceImages(article, savedImages);
-            } else {
-                throw new BusinessException("This article is skipped due to having no images: " + article.getTitle());
+            } else if (!this.allowArticleWithoutImage() || article.getId() > 0) {
+                throw new ArticleNoImageException("This article is skipped due to having no images: " + article.getTitle());
             }
         }
         this.cleanThirdPartyImages(article);

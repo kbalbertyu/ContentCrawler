@@ -71,5 +71,8 @@ public class BTimes extends Source {
         this.fetchContentImages(article, doc);
     }
 
-
+    @Override
+    boolean allowArticleWithoutImage() {
+        return false;
+    }
 }
