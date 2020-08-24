@@ -376,7 +376,7 @@ public abstract class Source {
                 logId = "ArticleImage_" + article.getId();
                 ActionLog log = dbManager.readById(logId, ActionLog.class);
                 if (log != null) {
-                    logger.info("Article doesn't contain image: {} -> {}", article.getTitle(), article.getId());
+                    logger.debug("Article doesn't contain image: {} -> {}", article.getTitle(), article.getId());
                     continue;
                 }
             }
