@@ -79,10 +79,8 @@ public class ServiceExecutor implements ServiceExecutorInterface {
     protected List<Source> getBTCNSources() {
         List<Source> sources = new ArrayList<>();
         sources.add(ApplicationContext.getBean(HaiWaiNet.class));
-        sources.add(ApplicationContext.getBean(ZhiTongCaiJing.class));
         sources.add(ApplicationContext.getBean(CBR21.class));
         sources.add(ApplicationContext.getBean(ZQRB.class));
-        sources.add(ApplicationContext.getBean(TechWeb.class));
         sources.add(ApplicationContext.getBean(ZNFinNews.class));
         sources.add(ApplicationContext.getBean(CYZone.class));
         sources.add(ApplicationContext.getBean(ChinaNews.class));
