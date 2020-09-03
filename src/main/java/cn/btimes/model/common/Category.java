@@ -16,7 +16,7 @@ public enum Category {
     AUTO(64, "汽车"),
     TRAVEL(65, "旅游"),
     FUTURE_INDUSTRIES(68, "未来产业"),
-    CHINESE_CONCEPT_STOCK(73, "中概股"),
+    CHINESE_CONCEPT_STOCK(88, "美通社供稿"),
     GALLERY(85, "图集"),
     /**  For Kpopstarz.cn **/
     General(1, "新闻"),
