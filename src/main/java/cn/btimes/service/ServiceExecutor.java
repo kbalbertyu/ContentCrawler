@@ -84,6 +84,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
         sources.add(ApplicationContext.getBean(CYZone.class));
         sources.add(ApplicationContext.getBean(TechWeb.class));
         sources.add(ApplicationContext.getBean(ZhiTongCaiJing.class));
+        sources.add(ApplicationContext.getBean(P5W.class));
         return sources;
     }
 
