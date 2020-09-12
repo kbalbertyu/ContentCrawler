@@ -101,9 +101,6 @@ public class PRNAsia extends Source {
     protected void readArticle(WebDriver driver, Article article) {
         this.readSummaryContent(driver, article);
         this.parseRelatedArticles(driver);
-        if (CollectionUtils.isEmpty(article.getContentImages())) {
-            throw new BusinessException("Only article with image is allowed.");
-        }
     }
 
     private void parseRelatedArticles(WebDriver driver) {
