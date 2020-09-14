@@ -60,7 +60,7 @@ public class Wow36KRChuhai extends Source {
     @Override
     protected void readArticle(WebDriver driver, Article article) {
         this.readContent(driver, article);
-        article.setUrl("http://letschuhai.com/");
+        article.setUrl(driver.getCurrentUrl());
     }
 
     @Override
