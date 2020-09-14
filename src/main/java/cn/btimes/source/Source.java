@@ -172,16 +172,6 @@ public abstract class Source {
 
     }
 
-    void parseTitleSummaryList(List<Article> articles, Elements list) {
-        for (Element row : list) {
-            Article article = new Article();
-            this.parseTitle(row, article);
-            this.parseSummary(row, article);
-
-            articles.add(article);
-        }
-    }
-
     protected void parseDateTitleSummaryList(List<Article> articles, Elements list) {
         int i = 0;
         for (Element row : list) {
@@ -288,7 +278,7 @@ public abstract class Source {
         Element contentElm = contentElms.first();
         article.setContent(this.cleanHtml(contentElm));
         this.parseCoverImageFromContent(doc, article);
-        this.fetchContentImages(article, contentElm);
+        this.fetchContentImages(article);
     }
 
     void parseCoverImageFromContent(Document doc, Article article) {
@@ -358,7 +348,7 @@ public abstract class Source {
 
         int saved = 0;
         for (Article article : articles) {
-            String logId = null;
+            String logId;
             String logIdTitle = null;
             if (article.getId() == 0) {
                 logId = Common.toMD5(article.getUrl());
@@ -536,10 +526,9 @@ public abstract class Source {
                 logger.error(message, e);
                 Messenger messenger = new Messenger(this.getClass().getName(), message + e.getMessage());
                 this.messengers.add(messenger);
-                WaitTime.Normal.execute();
             }
         }
-        throw new BusinessException(String.format("Unable to save the article: [%s]%s -> %s",
+        throw new BusinessException(String.format("Unable to save the article nb v [%s]%s -> %s",
             article.getSource(), article.getTitle(), article.getUrl()));
     }
 
@@ -592,12 +581,19 @@ public abstract class Source {
         }
     }
 
-    void fetchContentImages(Article article, Element contentElm) {
-        String content = article.getContent();
-        Elements images = contentElm.select("img");
+    void fetchContentImages(Article article) {
+        Document doc = Jsoup.parse(article.getContent());
+        Elements images = doc.select("img");
         List<Image> contentImages = article.getContentImages();
         for (Element image : images) {
-            String src = image.attr("src");
+            String srcAttr = this.getContentImageSrcAttr();
+            String src = image.attr(srcAttr);
+            if (StringUtils.equalsIgnoreCase(srcAttr, "data-src")) {
+                image.attr("src", src);
+            }
+            image.removeAttr("crossorigin");
+            image.removeAttr("data-src");
+
             if (StringUtils.containsIgnoreCase(src, "data:image") ||
                 StringUtils.containsIgnoreCase(src, "base64") ||
                 StringUtils.containsIgnoreCase(src, "/data/images") ||
@@ -605,7 +601,8 @@ public abstract class Source {
                 continue;
             }
             String absSrc = Common.getAbsoluteUrl(src, article.getUrl());
-            content = StringUtils.replace(content, src, absSrc);
+            image.attr("src", absSrc);
+
             Image imageObj = new Image(absSrc, "");
             contentImages.add(imageObj);
         }
@@ -620,8 +617,12 @@ public abstract class Source {
                 throw new ArticleNoImageException(message);
             }
         }
-        article.setContent(content);
+        article.setContent(doc.select("body").html());
         article.setContentImages(contentImages);
+    }
+
+    String getContentImageSrcAttr() {
+        return "src";
     }
 
     protected void resizeContentImage(Article article, String[] from, String[] to) {
@@ -781,7 +782,7 @@ public abstract class Source {
             .userAgent("Mozilla")
             .method(Method.POST)
             .data("maxFileNum", "50")
-            .data("maxFileSize", "20 MB")
+            .data("maxFileSize", "200 MB")
             .data("unique_key", Common.toMD5(String.valueOf(System.currentTimeMillis())))
             .data("field", "image_hidden")
             .data("func", "photo_image_content")

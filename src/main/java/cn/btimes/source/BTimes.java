@@ -8,7 +8,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.inject.Inject;
 import com.mailman.model.common.WebApiResult;
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
@@ -67,8 +66,7 @@ public class BTimes extends Source {
 
     @Override
     protected void readArticle(WebDriver driver, Article article) {
-        Document doc = Jsoup.parse(article.getContent());
-        this.fetchContentImages(article, doc);
+        this.fetchContentImages(article);
     }
 
     @Override

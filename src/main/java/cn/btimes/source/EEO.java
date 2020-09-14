@@ -99,7 +99,7 @@ public class EEO extends Source {
             contentElm.prepend(imageElm.outerHtml());
         }
         article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
+        this.fetchContentImages(article);
     }
 
     @Override

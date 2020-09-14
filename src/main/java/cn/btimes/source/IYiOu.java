@@ -178,7 +178,7 @@ public class IYiOu extends SourceWithoutDriver {
 
         this.convertImageToNoneHttps(contentElm);
         article.setContent(this.cleanHtml(contentElm));
-        this.fetchContentImages(article, contentElm);
+        this.fetchContentImages(article);
     }
 
     @Override

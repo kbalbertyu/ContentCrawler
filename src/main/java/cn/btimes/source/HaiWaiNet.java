@@ -112,8 +112,7 @@ public class HaiWaiNet extends Source {
 
                 List<HWNGallery> galleries = hna.getGalleries();
                 if (CollectionUtils.isEmpty(galleries)) {
-                    Document contentElm = Jsoup.parse(content);
-                    this.fetchContentImages(article, contentElm);
+                    this.fetchContentImages(article);
                 } else {
                     List<Image> contentImages = article.getContentImages();
                     for (HWNGallery gallery : galleries) {

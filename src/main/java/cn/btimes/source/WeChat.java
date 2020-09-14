@@ -85,11 +85,12 @@ public class WeChat extends Source {
         article.setUrl(news.getUrl());
         article.setDate(new Date());
         String content = StringUtils.replace(news.getContent(), "data-src", "src");
-        article.setContent(content);
         Document doc = Jsoup.parse(content);
         doc.select("img[src*=bdWEcuuSicwNa9ib2ZZBOiaxEtP5wgrKicEqv5U8Ze39MrYsQ4emNd0grU7ibB5f8icqLG8XFfiahYbicgVkVOgYiab3dFA]").remove();
 
-        this.fetchContentImages(article, doc);
+        article.setContent(doc.html());
+
+        this.fetchContentImages(article);
         this.saveArticle(article, driver);
     }
 
