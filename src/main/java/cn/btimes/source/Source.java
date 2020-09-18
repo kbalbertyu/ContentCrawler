@@ -269,6 +269,8 @@ public abstract class Source {
     }
 
     protected void parseContent(Document doc, Article article) {
+        this.checkContent(doc);
+
         CSSQuery cssQuery = this.getCSSQuery();
         this.checkArticleContentExistence(doc, cssQuery.getContent());
         Elements contentElms = doc.select(cssQuery.getContent());
@@ -279,6 +281,13 @@ public abstract class Source {
         article.setContent(this.cleanHtml(contentElm));
         this.parseCoverImageFromContent(doc, article);
         this.fetchContentImages(article);
+    }
+
+    void checkContent(Document doc) {
+        String html = doc.html();
+        if (Tools.containsAny(html, "本文来自", "本文转载", "文章来自", "文章转载", "转载自")) {
+            throw new BusinessException("Article is skipped due to contains unsupported keywords.");
+        }
     }
 
     void parseCoverImageFromContent(Document doc, Article article) {
