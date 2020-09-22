@@ -73,7 +73,7 @@ public class P5W extends Source {
 
     @Override
     protected String cleanHtml(Element dom) {
-        Elements elements = dom.select(".headAd contentAdv_3");
+        Elements elements = dom.select(".headAd");
         if (elements.size() > 0) {
             elements.remove();
         }
