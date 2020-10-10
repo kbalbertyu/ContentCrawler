@@ -285,7 +285,8 @@ public abstract class Source {
 
     void checkContent(Document doc) {
         String html = doc.html();
-        if (Tools.containsAny(html, "本文来自", "本文转载", "文章来自", "文章转载", "转载自", "本文为", "证券时报", "本文转自")) {
+        if (Tools.containsAny(html, "本文来自", "本文转载", "文章来自", "文章转载", "转载自", "本文为", "证券时报", "本文转自") ||
+            Tools.contains(html, "本文", "转自")) {
             throw new BusinessException("Article is skipped due to contains unsupported keywords.");
         }
     }
