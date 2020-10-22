@@ -3,11 +3,15 @@ package cn.btimes.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
+import cn.btimes.utils.Tools;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
+import sun.swing.StringUIClientPropertyKey;
 
+import javax.tools.Tool;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -74,5 +78,16 @@ public class CYZone extends Source {
     @Override
     protected void readArticle(WebDriver driver, Article article) {
         this.readContent(driver, article);
+    }
+
+    @Override
+    void removeDomNotInContentArea(Document doc) {
+        super.removeDomNotInContentArea(doc);
+        doc.select(".article-tags, .share-collect, #cyzone-comments-main, .recommend-warp, .m-def-main-right").remove();
+    }
+
+    @Override
+    boolean isOriginal(String html) {
+        return StringUtils.contains(html, "本文为创业邦原创");
     }
 }

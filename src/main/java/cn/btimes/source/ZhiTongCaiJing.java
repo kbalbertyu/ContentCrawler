@@ -3,6 +3,7 @@ package cn.btimes.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -91,5 +92,16 @@ public class ZhiTongCaiJing extends Source {
         Elements elements = dom.select(".type, h1, .h-30, #author_external");
         if (elements.size() > 0) elements.remove();
         return super.cleanHtml(dom);
+    }
+
+    @Override
+    void removeDomNotInContentArea(Document doc) {
+        super.removeDomNotInContentArea(doc);
+        doc.select(".detail-r").remove();
+    }
+
+    @Override
+    String removeExcludedBeforeCheck(String html) {
+        return StringUtils.remove(html, "本文编辑");
     }
 }

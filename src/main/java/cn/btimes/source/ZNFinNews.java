@@ -87,4 +87,10 @@ public class ZNFinNews extends Source {
         if (imageElm == null) return;
         article.setCoverImage(imageElm.attr("src"));
     }
+
+    @Override
+    void removeDomNotInContentArea(Document doc) {
+        super.removeDomNotInContentArea(doc);
+        doc.select("footer").remove();
+    }
 }

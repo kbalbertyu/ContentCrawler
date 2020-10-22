@@ -70,4 +70,10 @@ public class TechWeb extends Source {
     protected void readArticle(WebDriver driver, Article article) {
         this.readDateContent(driver, article);
     }
+
+    @Override
+    void removeDomNotInContentArea(Document doc) {
+        super.removeDomNotInContentArea(doc);
+        doc.select(".main_r, .main_l, span.from:contains(来源):contains(TechWeb.com.cn), .relative_news, .tags, .article_product, .weibo_weixin, .hotpot, .recommend").remove();
+    }
 }

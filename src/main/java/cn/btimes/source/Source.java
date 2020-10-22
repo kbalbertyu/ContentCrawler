@@ -286,9 +286,21 @@ public abstract class Source {
     void checkContent(Document doc) {
         this.removeDomNotInContentArea(doc);
         String html = doc.html();
+        if (this.isOriginal(html)) {
+            return;
+        }
+        html = this.removeExcludedBeforeCheck(html);
         if (Tools.containsAny(html, "本文", "转自", "源自", "转载", "来自", "证券时报", "来源")) {
             throw new BusinessException("Article is skipped due to contains unsupported keywords.");
         }
+    }
+
+    String removeExcludedBeforeCheck(String html) {
+        return html;
+    }
+
+    boolean isOriginal(String doc) {
+        return false;
     }
 
     void removeDomNotInContentArea(Document doc) {

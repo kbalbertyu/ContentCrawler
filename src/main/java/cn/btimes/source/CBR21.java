@@ -83,6 +83,6 @@ public class CBR21 extends Source {
     @Override
     void removeDomNotInContentArea(Document doc) {
         super.removeDomNotInContentArea(doc);
-        doc.select(".article-rel, .sidebar, .footer").remove();
+        doc.select(".article-rel, .sidebar, .footer, span:contains(来源：21世纪商业评论)").remove();
     }
 }

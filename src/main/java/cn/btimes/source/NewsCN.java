@@ -131,4 +131,10 @@ public class NewsCN extends Source {
     protected void readArticle(WebDriver driver, Article article) {
         this.readContent(driver, article);
     }
+
+    @Override
+    void removeDomNotInContentArea(Document doc) {
+        super.removeDomNotInContentArea(doc);
+        doc.select("span:contains(来源):contains(新华网), .bottom, .footer").remove();
+    }
 }
