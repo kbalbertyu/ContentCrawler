@@ -286,7 +286,7 @@ public abstract class Source {
     void checkContent(Document doc) {
         this.removeDomNotInContentArea(doc);
         String html = doc.html();
-        if (Tools.containsAny(html, "本文", "转自", "源自", "转载", "来自", "证券时报")) {
+        if (Tools.containsAny(html, "本文", "转自", "源自", "转载", "来自", "证券时报", "来源")) {
             throw new BusinessException("Article is skipped due to contains unsupported keywords.");
         }
     }
