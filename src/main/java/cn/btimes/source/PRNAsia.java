@@ -130,4 +130,10 @@ public class PRNAsia extends Source {
             return null;
         }
     }
+
+    @Override
+    void removeDomNotInContentArea(Document doc) {
+        super.removeDomNotInContentArea(doc);
+        doc.select("#page-footer, header, .offiaccount, #dvKeyword, #shareBottom, #storyList").remove();
+    }
 }
