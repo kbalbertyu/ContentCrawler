@@ -79,4 +79,10 @@ public class CBR21 extends Source {
     protected void readArticle(WebDriver driver, Article article) {
         this.readContent(driver, article);
     }
+
+    @Override
+    void removeDomNotInContentArea(Document doc) {
+        super.removeDomNotInContentArea(doc);
+        doc.select(".article-rel, .sidebar, .footer").remove();
+    }
 }
