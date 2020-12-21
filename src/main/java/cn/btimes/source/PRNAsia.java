@@ -8,8 +8,6 @@ import com.amzass.enums.common.Country;
 import com.amzass.service.sellerhunt.HtmlParser;
 import com.amzass.utils.common.Constants;
 import com.amzass.utils.common.DateHelper;
-import com.amzass.utils.common.Exceptions.BusinessException;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -135,5 +133,9 @@ public class PRNAsia extends Source {
     void removeDomNotInContentArea(Document doc) {
         super.removeDomNotInContentArea(doc);
         doc.select("#page-footer, header, .offiaccount, #dvKeyword, #shareBottom, #storyList").remove();
+    }
+
+    @Override
+    void checkContent(Document doc) {
     }
 }
