@@ -26,7 +26,7 @@ public class HeXun extends Source {
     private static final Map<String, Category> URLS = new HashMap<>();
 
     static {
-        URLS.put("http://house.hexun.com/list/", Category.REALESTATE);
+        URLS.put("http://news.hexun.com/original/", Category.ECONOMY);
     }
 
     @Override
@@ -48,6 +48,11 @@ public class HeXun extends Source {
     protected CSSQuery getCSSQuery() {
         return new CSSQuery("#temp01 > ul > li", ".art_contextBox", "a", "",
             "", "span");
+    }
+
+    @Override
+    String getStatus() {
+        return "3";
     }
 
     @Override
@@ -83,7 +88,7 @@ public class HeXun extends Source {
 
     @Override
     protected int getSourceId() {
-        return 842;
+        return 1877;
     }
 
     @Override
@@ -93,5 +98,11 @@ public class HeXun extends Source {
             elements.remove();
         }
         return super.cleanHtml(dom);
+    }
+
+    @Override
+    void removeDomNotInContentArea(Document doc) {
+        super.removeDomNotInContentArea(doc);
+        doc.select(".statement").remove();
     }
 }

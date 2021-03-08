@@ -77,6 +77,7 @@ public class ServiceExecutor implements ServiceExecutorInterface {
 
     protected List<Source> getBTCNSources() {
         List<Source> sources = new ArrayList<>();
+        sources.add(ApplicationContext.getBean(HeXun.class));
         sources.add(ApplicationContext.getBean(PRNAsia.class));
         sources.add(ApplicationContext.getBean(NewsCNNew.class));
         sources.add(ApplicationContext.getBean(NewsCN.class));
