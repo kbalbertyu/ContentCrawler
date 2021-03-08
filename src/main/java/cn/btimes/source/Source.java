@@ -206,7 +206,7 @@ public abstract class Source {
         String dateTextCssQuery = this.getCSSQuery().getTime();
         this.checkDateTextExistence(row, dateTextCssQuery);
         String timeText = HtmlParser.text(row, dateTextCssQuery);
-        if (!cn.btimes.utils.Tools.containsAny(timeText, "小时", "分", "秒", "今")) {
+        if (!Tools.containsAny(timeText, "小时", "分", "秒", "今")) {
             logger.warn("Skip past date article: {}", timeText);
             return null;
         }
