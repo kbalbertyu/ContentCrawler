@@ -97,7 +97,7 @@ public class ZhiTongCaiJing extends Source {
     @Override
     void removeDomNotInContentArea(Document doc) {
         super.removeDomNotInContentArea(doc);
-        doc.select(".detail-r").remove();
+        doc.select(".detail-r, footer").remove();
     }
 
     @Override
