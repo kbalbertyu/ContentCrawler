@@ -6,8 +6,10 @@ import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import cn.btimes.utils.Common;
 import cn.btimes.utils.PageUtils;
+import com.amzass.utils.PageLoadHelper;
 import com.amzass.utils.PageLoadHelper.WaitTime;
 import com.amzass.utils.common.Constants;
+import com.amzass.utils.common.RegexUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -32,11 +34,6 @@ public class NewsCN extends Source {
         URLS.put("http://www.news.cn/tech/qqbb.htm", Category.TECH);
         URLS.put("http://www.news.cn/auto/jsxx.htm", Category.AUTO);
         URLS.put("http://www.xinhuanet.com/house/24xsjx.htm", Category.REALESTATE);
-        URLS.put("http://www.xinhuanet.com/fortune/gd.htm", Category.ECONOMY);
-        URLS.put("http://www.xinhuanet.com/fortune/", Category.ECONOMY);
-        URLS.put("http://www.xinhuanet.com/house/index.htm", Category.REALESTATE);
-        URLS.put("http://www.xinhuanet.com/tech/index.htm", Category.TECH);
-        URLS.put("http://www.xinhuanet.com/money/index.htm", Category.FINANCE);
     }
 
     @Override
@@ -46,18 +43,24 @@ public class NewsCN extends Source {
 
     @Override
     protected String getDateRegex() {
-        return "\\d{4}-\\d{2}-\\d{2}";
+        return "\\d{4}-\\d{2}/\\d{2}";
     }
 
     @Override
     protected String getDateFormat() {
-        return "yyyy-MM-dd";
+        return "yyyy-MM/dd";
     }
 
     @Override
     protected CSSQuery getCSSQuery() {
         return new CSSQuery("#showData0 > li", "#p-detail", "h3 > a", "",
-            "", ".time");
+            "", "");
+    }
+
+    @Override
+    protected void parseDate(Element doc, Article article) {
+        String timeText = RegexUtils.getMatched(article.getUrl(), this.getDateRegex());
+        article.setDate(this.parseDateText(timeText));
     }
 
     @Override
@@ -99,6 +102,12 @@ public class NewsCN extends Source {
     @Override
     void loadMoreList(WebDriver driver) {
         By by = By.id("dataMoreBtn");
+        if (!PageLoadHelper.clickable(driver, by, WaitTime.Shortest)) {
+            by = By.className("xpage-more-btn");
+            if (!PageLoadHelper.clickable(driver, by, WaitTime.Shortest)) {
+                return;
+            }
+        }
         PageUtils.scrollToElement(driver, by);
         WaitTime.Shortest.execute();
         PageUtils.scrollBy(driver, 100L);
