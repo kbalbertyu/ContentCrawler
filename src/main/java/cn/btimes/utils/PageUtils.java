@@ -66,6 +66,11 @@ public class PageUtils extends com.amzass.utils.common.PageUtils {
 
     public static void scrollToElement(WebDriver driver, By by) {
         WebElement element = PageLoadHelper.findElement(driver, by, WaitTime.Shortest);
+        if (element == null) return;
+        scrollToElement(driver, element);
+    }
+
+    public static void scrollToElement(WebDriver driver, WebElement element) {
         if (element == null) {
             return;
         }
@@ -94,5 +99,21 @@ public class PageUtils extends com.amzass.utils.common.PageUtils {
     public static void savePage(Document doc, String fileName) {
         File file = FileUtils.getFile(Directory.Tmp.path(), fileName);
         Tools.writeStringToFile(file, doc.outerHtml());
+    }
+
+    public static void click(WebDriver driver, By by) {
+        PageUtils.scrollToElement(driver, by);
+        com.amzass.utils.common.PageUtils.click(driver, by);
+    }
+
+    public static void click(WebDriver driver, WebElement element) {
+        PageUtils.scrollToElement(driver, element);
+        com.amzass.utils.common.PageUtils.click(driver, element);
+    }
+
+    public static void openInNewTab(WebDriver driver, String url) {
+        JavascriptExecutor jse = (JavascriptExecutor) driver;
+        jse.executeScript("window.open('" + url + "')");
+        WaitTime.Short.execute();
     }
 }
