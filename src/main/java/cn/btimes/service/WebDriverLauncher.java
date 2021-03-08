@@ -78,6 +78,7 @@ public class WebDriverLauncher {
             chromeDriverVersion = ChromeDriverVersion.values()[0];
         }
 
+        logger.info("Starting driver: {}", chromeDriverVersion);
         DesiredCapabilities dCaps = this.prepareChromeCaps(profile);
         WebDriver driver = webDriverManager.initCustomChromeDriver(chromeDriverVersion, Constants.DEFAULT_DRIVER_TIME_OUT, dCaps);
         if (login && config != null && (adminCookies == null || adminCookies.getOrDefault(config.getApplication(), null) == null)) {
@@ -159,7 +160,8 @@ public class WebDriverLauncher {
         if (alert != null) {
             alert.accept();
         }
-        if (!PageLoadHelper.present(driver, By.name("mb_password"), WaitTime.Short)) {
+        return;
+        /*if (!PageLoadHelper.present(driver, By.name("mb_password"), WaitTime.Short)) {
             return;
         }
         PageUtils.setValue(driver, By.name("mb_password"), config.getAdminPassword());
@@ -169,7 +171,7 @@ public class WebDriverLauncher {
             PageUtils.setValue(driver, By.name("wr_key"), code);
         }
         PageUtils.click(driver, By.cssSelector("button[type=submit]"));
-        WaitTime.Short.execute();
+        WaitTime.Short.execute();*/
     }
 
     private String resolveCaptcha(Config config) {
