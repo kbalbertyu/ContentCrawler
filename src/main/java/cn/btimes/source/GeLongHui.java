@@ -81,4 +81,9 @@ public class GeLongHui extends Source {
     boolean isOriginal(Document doc) {
         return doc.select("span.author:contains(原创)").size() == 1;
     }
+
+    @Override
+    protected String getSourceName() {
+        return "格隆汇";
+    }
 }

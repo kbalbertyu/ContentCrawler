@@ -105,4 +105,9 @@ public class HeXun extends Source {
         super.removeDomNotInContentArea(doc);
         doc.select(".statement").remove();
     }
+
+    @Override
+    protected String getSourceName() {
+        return "和讯网";
+    }
 }

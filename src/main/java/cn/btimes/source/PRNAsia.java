@@ -138,4 +138,9 @@ public class PRNAsia extends Source {
     @Override
     void checkContent(Document doc) {
     }
+
+    @Override
+    protected String getSourceName() {
+        return "美通社";
+    }
 }

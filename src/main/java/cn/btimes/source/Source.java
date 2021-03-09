@@ -492,6 +492,7 @@ public abstract class Source {
             return;
         }
 
+        String content = this.formatContent(article.getContent());
         int cateId = config.getCategories().get(article.getCategory());
         Connection conn = this.createWebConnection(config.getArticleSaveUrl(), adminCookie)
             .data("getstring", "")
@@ -503,7 +504,7 @@ public abstract class Source {
             .data("ar_title", article.getTitle())
             .data("ar_mtitle", "")
             .data("ar_summary", article.getSummary())
-            .data("ar_content", article.getContent())
+            .data("ar_content", content)
             .data("tex", "")
             .data("ar_cat[]", String.valueOf(cateId))
             .data("ar_keyword", "")
@@ -556,6 +557,10 @@ public abstract class Source {
         }
         throw new BusinessException(String.format("Unable to save the article nb v [%s]%s -> %s",
             article.getSource(), article.getTitle(), article.getUrl()));
+    }
+
+    private String formatContent(String content) {
+        return String.format("<p>来源: %s</p>", this.getSourceName()) + content;
     }
 
     private void updateArticle(Article article) {
@@ -1198,5 +1203,9 @@ public abstract class Source {
             .removeAttr("style")
             .removeAttr("srcset")
             .removeAttr("origin");
+    }
+
+    protected String getSourceName() {
+        return "";
     }
 }

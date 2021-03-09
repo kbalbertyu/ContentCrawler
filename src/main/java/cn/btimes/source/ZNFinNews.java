@@ -108,4 +108,9 @@ public class ZNFinNews extends Source {
         String src = imageElm.attr("data-original");
         article.setCoverImage(Common.getAbsoluteUrl(src, driver.getCurrentUrl()));
     }
+
+    @Override
+    protected String getSourceName() {
+        return "锌财经";
+    }
 }

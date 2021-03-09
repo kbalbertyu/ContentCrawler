@@ -79,4 +79,9 @@ public class GPLP extends Source {
         super.removeDomNotInContentArea(doc);
         doc.select("strong:contains(来源：GPLP犀牛财经)").remove();
     }
+
+    @Override
+    protected String getSourceName() {
+        return "犀牛财经";
+    }
 }

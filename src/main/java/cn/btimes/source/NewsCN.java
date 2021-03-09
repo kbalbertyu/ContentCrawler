@@ -146,4 +146,9 @@ public class NewsCN extends Source {
         super.removeDomNotInContentArea(doc);
         doc.select("span:contains(来源):contains(新华网), .bottom, .footer").remove();
     }
+
+    @Override
+    protected String getSourceName() {
+        return "新华网";
+    }
 }

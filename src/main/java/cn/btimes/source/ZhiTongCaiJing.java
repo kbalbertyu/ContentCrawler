@@ -104,4 +104,9 @@ public class ZhiTongCaiJing extends Source {
     String removeExcludedBeforeCheck(String html) {
         return StringUtils.remove(html, "本文编辑");
     }
+
+    @Override
+    protected String getSourceName() {
+        return "智通财经";
+    }
 }

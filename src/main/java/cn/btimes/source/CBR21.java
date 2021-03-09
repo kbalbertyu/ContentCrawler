@@ -85,4 +85,9 @@ public class CBR21 extends Source {
         super.removeDomNotInContentArea(doc);
         doc.select(".article-rel, .sidebar, .footer, span:contains(来源：21世纪商业评论)").remove();
     }
+
+    @Override
+    protected String getSourceName() {
+        return "21商评网";
+    }
 }

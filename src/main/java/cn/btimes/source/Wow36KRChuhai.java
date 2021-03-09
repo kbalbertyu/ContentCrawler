@@ -92,4 +92,9 @@ public class Wow36KRChuhai extends Source {
         }
         return super.cleanHtml(dom);
     }
+
+    @Override
+    protected String getSourceName() {
+        return "36氪出海公众号";
+    }
 }

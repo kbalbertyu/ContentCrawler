@@ -76,4 +76,9 @@ public class TechWeb extends Source {
         super.removeDomNotInContentArea(doc);
         doc.select(".main_r, .main_l, span.from:contains(来源):contains(TechWeb.com.cn), .relative_news, .tags, .article_product, .weibo_weixin, .hotpot, .recommend").remove();
     }
+
+    @Override
+    protected String getSourceName() {
+        return "Tech Web";
+    }
 }

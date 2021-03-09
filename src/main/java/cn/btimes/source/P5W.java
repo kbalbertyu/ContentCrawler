@@ -79,4 +79,9 @@ public class P5W extends Source {
         }
         return super.cleanHtml(dom);
     }
+
+    @Override
+    protected String getSourceName() {
+        return "全景财经";
+    }
 }

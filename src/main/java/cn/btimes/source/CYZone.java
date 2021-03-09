@@ -90,4 +90,9 @@ public class CYZone extends Source {
     boolean isOriginal(Document doc) {
         return StringUtils.contains(doc.html(), "本文为创业邦原创");
     }
+
+    @Override
+    protected String getSourceName() {
+        return "创业邦";
+    }
 }
