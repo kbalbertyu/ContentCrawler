@@ -87,7 +87,7 @@ public class CYZone extends Source {
     }
 
     @Override
-    boolean isOriginal(String html) {
-        return StringUtils.contains(html, "本文为创业邦原创");
+    boolean isOriginal(Document doc) {
+        return StringUtils.contains(doc.html(), "本文为创业邦原创");
     }
 }

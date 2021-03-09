@@ -76,4 +76,9 @@ public class GeLongHui extends Source {
     protected void readArticle(WebDriver driver, Article article) {
         this.readContent(driver, article);
     }
+
+    @Override
+    boolean isOriginal(Document doc) {
+        return doc.select("span.author:contains(原创)").size() == 1;
+    }
 }
