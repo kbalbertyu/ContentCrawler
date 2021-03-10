@@ -79,7 +79,7 @@ public class GPLP extends Source {
     @Override
     void removeDomNotInContentArea(Document doc) {
         super.removeDomNotInContentArea(doc);
-        doc.select("strong:contains(来源：GPLP犀牛财经)").remove();
+        doc.select("strong:contains(来源：GPLP犀牛财经), p:contains(本文仅供参考)").remove();
     }
 
     @Override
