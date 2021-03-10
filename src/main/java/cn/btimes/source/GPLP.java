@@ -3,6 +3,7 @@ package cn.btimes.source;
 import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
@@ -56,6 +57,7 @@ public class GPLP extends Source {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
         this.parseTitleList(articles, list);
+        articles.removeIf(article -> StringUtils.contains(article.getTitle(), "视频"));
         return articles;
     }
 
