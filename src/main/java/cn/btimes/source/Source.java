@@ -279,6 +279,9 @@ public abstract class Source {
         }
         Element contentElm = contentElms.first();
         article.setContent(this.cleanHtml(contentElm));
+        if (article.containsVideo()) {
+            throw new BusinessException(String.format("Article contains video: %s -> %s", article.getTitle(), article.getUrl()));
+        }
         this.parseCoverImageFromContent(doc, article);
         this.fetchContentImages(article);
     }

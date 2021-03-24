@@ -2,6 +2,7 @@ package cn.btimes.model.common;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import com.amzass.utils.common.Exceptions.BusinessException;
+import com.amzass.utils.common.Tools;
 import com.google.common.base.Objects;
 import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
@@ -65,5 +66,9 @@ public class Article {
     @Override
     public int hashCode() {
         return Objects.hashCode(url);
+    }
+
+    public boolean containsVideo() {
+        return Tools.containsAny(this.content, "<embed", "<video", "object", "iframe");
     }
 }
