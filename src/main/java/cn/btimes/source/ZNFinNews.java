@@ -4,6 +4,7 @@ import cn.btimes.model.common.Article;
 import cn.btimes.model.common.CSSQuery;
 import cn.btimes.model.common.Category;
 import cn.btimes.utils.Common;
+import cn.btimes.utils.Tools;
 import com.amzass.service.sellerhunt.HtmlParser;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
@@ -68,7 +69,7 @@ public class ZNFinNews extends Source {
         Elements list = this.readList(doc);
         for (Element row : list) {
             String source = HtmlParser.text(row, ".article-from");
-            if (!StringUtils.containsIgnoreCase(source, "ZAKER")) {
+            if (!Tools.containsAny(source, "ZAKER", "锌财经")) {
                 continue;
             }
             Article article = this.parseDateTitleWithTimeText(row);
