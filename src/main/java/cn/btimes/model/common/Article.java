@@ -34,6 +34,7 @@ public class Article {
     private Category category;
     private String coverImage;
     private boolean hideTopImages = true;
+    private boolean original = false;
 
     public boolean hasImages() {
         return CollectionUtils.isNotEmpty(contentImages);
@@ -69,6 +70,6 @@ public class Article {
     }
 
     public boolean containsVideo() {
-        return Tools.containsAny(this.content, "<embed", "<video", "object", "iframe");
+        return Tools.containsAny(this.content, "<embed", "<video", "object", "iframe", ".mp4", "</script>");
     }
 }

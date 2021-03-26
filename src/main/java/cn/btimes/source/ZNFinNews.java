@@ -67,10 +67,14 @@ public class ZNFinNews extends Source {
         List<Article> articles = new ArrayList<>();
         Elements list = this.readList(doc);
         for (Element row : list) {
+            String source = HtmlParser.text(row, ".article-from");
+            if (!StringUtils.containsIgnoreCase(source, "ZAKER")) {
+                continue;
+            }
             Article article = this.parseDateTitleWithTimeText(row);
             if (article == null) break;
-
-            String title = HtmlParser.text(row, "div.title");
+            article.setOriginal(true);
+            String title = HtmlParser.text(row, "h2");
             article.setTitle(title);
 
             articles.add(article);

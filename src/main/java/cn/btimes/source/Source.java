@@ -269,7 +269,9 @@ public abstract class Source {
     }
 
     protected void parseContent(Document doc, Article article) {
-        this.checkContent(doc);
+        if (!article.isOriginal()) {
+            this.checkContent(doc);
+        }
 
         CSSQuery cssQuery = this.getCSSQuery();
         this.checkArticleContentExistence(doc, cssQuery.getContent());
