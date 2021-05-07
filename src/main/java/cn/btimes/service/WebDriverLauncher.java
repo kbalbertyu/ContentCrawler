@@ -17,6 +17,7 @@ import com.amzass.utils.common.Tools;
 import com.google.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.CapabilityType;
@@ -109,7 +110,8 @@ public class WebDriverLauncher {
         }
         options.setExperimentalOption("prefs", chromePrefs);
         if (StringUtils.isNotBlank(profile)) {
-            options.addArguments("user-data-dir=Profile\\" + profile);
+            String path = SystemUtils.getJavaIoTmpDir().getAbsolutePath();
+            options.addArguments("user-data-dir=" + path + "\\DriverProfile\\" + profile);
         }
 
         DesiredCapabilities cap = DesiredCapabilities.chrome();
